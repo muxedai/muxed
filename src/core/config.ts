@@ -11,13 +11,28 @@ const StdioServerConfigSchema = z.object({
   cwd: z.string().optional(),
 });
 
+const ReconnectionSchema = z.object({
+  maxDelay: z.number().optional(),
+  initialDelay: z.number().optional(),
+  growFactor: z.number().optional(),
+  maxRetries: z.number().optional(),
+});
+
 const HttpServerConfigSchema = z.object({
   url: z.string(),
   transport: z.enum(['streamable-http', 'sse']).optional(),
   headers: z.record(z.string(), z.string()).optional(),
+  sessionId: z.string().optional(),
+  reconnection: ReconnectionSchema.optional(),
 });
 
 const ServerConfigSchema = z.union([StdioServerConfigSchema, HttpServerConfigSchema]);
+
+const HttpListenerSchema = z.object({
+  enabled: z.boolean().optional(),
+  port: z.number().optional(),
+  host: z.string().optional(),
+});
 
 const DaemonConfigSchema = z.object({
   idleTimeout: z.number().optional(),
@@ -29,12 +44,48 @@ const DaemonConfigSchema = z.object({
   taskExpiryTimeout: z.number().optional(),
   logLevel: z.enum(['debug', 'info', 'warn', 'error']).optional(),
   shutdownTimeout: z.number().optional(),
+  http: HttpListenerSchema.optional(),
 });
 
 const McpdConfigSchema = z.object({
   mcpServers: z.record(z.string(), ServerConfigSchema),
   daemon: DaemonConfigSchema.optional(),
+  mergeClaudeConfig: z.boolean().optional(),
 });
+
+export function getClaudeDesktopConfigPath(): string | null {
+  const platform = os.platform();
+  const home = os.homedir();
+  if (platform === 'darwin') {
+    return path.join(
+      home,
+      'Library',
+      'Application Support',
+      'Claude',
+      'claude_desktop_config.json'
+    );
+  }
+  if (platform === 'linux') {
+    return path.join(home, '.config', 'Claude', 'claude_desktop_config.json');
+  }
+  return null;
+}
+
+function mergeClaudeDesktopServers(servers: Record<string, unknown>): Record<string, unknown> {
+  const configPath = getClaudeDesktopConfigPath();
+  if (!configPath || !fs.existsSync(configPath)) return servers;
+
+  try {
+    const raw = JSON.parse(fs.readFileSync(configPath, 'utf-8')) as Record<string, unknown>;
+    const claudeServers = raw.mcpServers as Record<string, unknown> | undefined;
+    if (!claudeServers || typeof claudeServers !== 'object') return servers;
+
+    // Claude Desktop servers as base, mcpd servers take precedence
+    return { ...claudeServers, ...servers };
+  } catch {
+    return servers;
+  }
+}
 
 const DAEMON_DEFAULTS = {
   idleTimeout: 300_000,
@@ -102,12 +153,23 @@ export function loadConfig(configPath?: string): McpdConfig {
 
   const config = result.data as McpdConfig;
 
+  // Merge Claude Desktop servers if enabled
+  if (config.mergeClaudeConfig) {
+    config.mcpServers = mergeClaudeDesktopServers(config.mcpServers) as McpdConfig['mcpServers'];
+  }
+
   validateServerConfigs(config);
 
   // Apply daemon defaults
   config.daemon = {
     ...DAEMON_DEFAULTS,
     ...config.daemon,
+    http: {
+      enabled: false,
+      port: 3100,
+      host: '127.0.0.1',
+      ...config.daemon?.http,
+    },
   };
 
   return config;

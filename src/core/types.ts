@@ -21,6 +21,13 @@ export type HttpServerConfig = {
   url: string;
   transport?: 'streamable-http' | 'sse';
   headers?: Record<string, string>;
+  sessionId?: string;
+  reconnection?: {
+    maxDelay?: number;
+    initialDelay?: number;
+    growFactor?: number;
+    maxRetries?: number;
+  };
 };
 
 export type ServerConfig = StdioServerConfig | HttpServerConfig;
@@ -36,12 +43,18 @@ export type DaemonConfig = {
   taskExpiryTimeout?: number; // default: 3600000 (1 hour)
   logLevel?: 'debug' | 'info' | 'warn' | 'error'; // default: 'info'
   shutdownTimeout?: number; // default: 10000 (10s)
+  http?: {
+    enabled?: boolean;
+    port?: number;
+    host?: string;
+  };
 };
 
 // Top-level config
 export type McpdConfig = {
   mcpServers: Record<string, ServerConfig>;
   daemon?: DaemonConfig;
+  mergeClaudeConfig?: boolean;
 };
 
 // Runtime server status

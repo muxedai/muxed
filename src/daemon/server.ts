@@ -20,10 +20,13 @@ type JsonRpcResponse = {
   error?: { code: number; message: string; data?: unknown };
 };
 
+type JsonRpcHandler = (request: JsonRpcRequest, clientTimeout?: number) => Promise<JsonRpcResponse>;
+
 export type DaemonServer = {
   server: net.Server;
   resetIdleTimer: () => void;
   shutdown: () => Promise<void>;
+  handleRequest: JsonRpcHandler;
 };
 
 export function createDaemonServer(serverPool: ServerPool, config: McpdConfig): DaemonServer {
@@ -451,5 +454,5 @@ export function createDaemonServer(serverPool: ServerPool, config: McpdConfig): 
   server.listen(socketPath);
   resetIdleTimer();
 
-  return { server, resetIdleTimer, shutdown };
+  return { server, resetIdleTimer, shutdown, handleRequest };
 }

@@ -1,5 +1,6 @@
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
+import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { LATEST_PROTOCOL_VERSION } from '@modelcontextprotocol/sdk/types.js';
 import type { Tool, Resource, Prompt } from '@modelcontextprotocol/sdk/types.js';
@@ -10,7 +11,7 @@ import type {
   Implementation,
   ServerCapabilities,
 } from './types.js';
-import { isStdioConfig } from './types.js';
+import { isStdioConfig, isHttpConfig } from './types.js';
 import { getLogger } from '../utils/logger.js';
 
 export type ServerManagerOptions = {
@@ -23,7 +24,11 @@ type HealthCallback = (name: string, status: ServerConnectionStatus, error?: str
 
 export class ServerManager {
   private client: Client | undefined;
-  private transport: StdioClientTransport | StreamableHTTPClientTransport | undefined;
+  private transport:
+    | StdioClientTransport
+    | StreamableHTTPClientTransport
+    | SSEClientTransport
+    | undefined;
   private status: ServerConnectionStatus = 'closed';
   private error: string | undefined;
   private serverInfo: Implementation | undefined;
@@ -87,12 +92,31 @@ export class ServerManager {
             : undefined,
           cwd: this.config.cwd,
         });
-      } else {
-        const opts: ConstructorParameters<typeof StreamableHTTPClientTransport>[1] = {};
+      } else if (isHttpConfig(this.config) && this.config.transport === 'sse') {
+        const opts: ConstructorParameters<typeof SSEClientTransport>[1] = {};
         if (this.config.headers) {
           opts.requestInit = { headers: this.config.headers };
         }
-        this.transport = new StreamableHTTPClientTransport(new URL(this.config.url), opts);
+        this.transport = new SSEClientTransport(new URL(this.config.url), opts);
+      } else {
+        const httpConfig = this.config;
+        const opts: ConstructorParameters<typeof StreamableHTTPClientTransport>[1] = {};
+        if (httpConfig.headers) {
+          opts.requestInit = { headers: httpConfig.headers };
+        }
+        if (httpConfig.sessionId) {
+          opts.sessionId = httpConfig.sessionId;
+        }
+        if (httpConfig.reconnection) {
+          const r = httpConfig.reconnection;
+          opts.reconnectionOptions = {
+            maxReconnectionDelay: r.maxDelay ?? 30_000,
+            initialReconnectionDelay: r.initialDelay ?? 1_000,
+            reconnectionDelayGrowFactor: r.growFactor ?? 1.5,
+            maxRetries: r.maxRetries ?? 2,
+          };
+        }
+        this.transport = new StreamableHTTPClientTransport(new URL(httpConfig.url), opts);
       }
 
       this.client = new Client(
@@ -141,7 +165,10 @@ export class ServerManager {
       this.capabilities = this.client.getServerCapabilities();
       this.serverInfo = this.client.getServerVersion();
       this.instructions = this.client.getInstructions();
-      this.protocolVersion = LATEST_PROTOCOL_VERSION;
+      this.protocolVersion =
+        (this.transport instanceof StreamableHTTPClientTransport
+          ? this.transport.protocolVersion
+          : undefined) ?? LATEST_PROTOCOL_VERSION;
       this.status = 'connected';
       this.consecutiveFailures = 0;
 

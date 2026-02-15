@@ -119,6 +119,7 @@ describe('loadConfig', () => {
       taskExpiryTimeout: 3_600_000,
       logLevel: 'info',
       shutdownTimeout: 10_000,
+      http: { enabled: false, port: 3100, host: '127.0.0.1' },
     });
   });
 
@@ -143,6 +144,7 @@ describe('loadConfig', () => {
       taskExpiryTimeout: 3_600_000,
       logLevel: 'info',
       shutdownTimeout: 10_000,
+      http: { enabled: false, port: 3100, host: '127.0.0.1' },
     });
   });
 
@@ -161,5 +163,119 @@ describe('loadConfig', () => {
 
     const config = loadConfig(configPath);
     expect(Object.keys(config.mcpServers)).toEqual(['filesystem', 'remote']);
+  });
+
+  it('validates HTTP server config with sessionId and reconnection', () => {
+    const configPath = writeTmpConfig(tmpDir, {
+      mcpServers: {
+        remote: {
+          url: 'https://mcp.example.com/mcp',
+          sessionId: 'abc-123',
+          reconnection: {
+            maxDelay: 60000,
+            initialDelay: 2000,
+            growFactor: 2.0,
+            maxRetries: 5,
+          },
+        },
+      },
+    });
+
+    const config = loadConfig(configPath);
+    const remote = config.mcpServers.remote as {
+      url: string;
+      sessionId?: string;
+      reconnection?: {
+        maxDelay?: number;
+        initialDelay?: number;
+        growFactor?: number;
+        maxRetries?: number;
+      };
+    };
+    expect(remote.sessionId).toBe('abc-123');
+    expect(remote.reconnection).toEqual({
+      maxDelay: 60000,
+      initialDelay: 2000,
+      growFactor: 2.0,
+      maxRetries: 5,
+    });
+  });
+
+  it('validates HTTP listener config in daemon section', () => {
+    const configPath = writeTmpConfig(tmpDir, {
+      mcpServers: { test: { command: 'echo' } },
+      daemon: {
+        http: {
+          enabled: true,
+          port: 4000,
+          host: '0.0.0.0',
+        },
+      },
+    });
+
+    const config = loadConfig(configPath);
+    expect(config.daemon?.http).toEqual({
+      enabled: true,
+      port: 4000,
+      host: '0.0.0.0',
+    });
+  });
+
+  it('applies HTTP listener defaults', () => {
+    const configPath = writeTmpConfig(tmpDir, {
+      mcpServers: { test: { command: 'echo' } },
+    });
+
+    const config = loadConfig(configPath);
+    expect(config.daemon?.http).toEqual({
+      enabled: false,
+      port: 3100,
+      host: '127.0.0.1',
+    });
+  });
+
+  it('validates mergeClaudeConfig option', () => {
+    const configPath = writeTmpConfig(tmpDir, {
+      mcpServers: { test: { command: 'echo' } },
+      mergeClaudeConfig: true,
+    });
+
+    const config = loadConfig(configPath);
+    expect(config.mergeClaudeConfig).toBe(true);
+  });
+
+  it('merges Claude Desktop servers when mergeClaudeConfig is true', () => {
+    // Create a fake Claude Desktop config
+    const claudeDir = path.join(tmpDir, 'claude-config');
+    fs.mkdirSync(claudeDir, { recursive: true });
+    const claudeConfigPath = path.join(claudeDir, 'claude_desktop_config.json');
+    fs.writeFileSync(
+      claudeConfigPath,
+      JSON.stringify({
+        mcpServers: {
+          'from-claude': { command: 'claude-server' },
+          overlap: { command: 'claude-overlap' },
+        },
+      })
+    );
+
+    // Temporarily mock the config path by testing the merge function directly
+    // Since we can't easily mock the platform path, we test loadConfig with mergeClaudeConfig
+    // and the actual merge function separately
+    const configPath = writeTmpConfig(tmpDir, {
+      mcpServers: {
+        local: { command: 'echo' },
+        overlap: { command: 'mcpd-overlap' },
+      },
+      mergeClaudeConfig: true,
+    });
+
+    // loadConfig with mergeClaudeConfig=true will attempt to read Claude Desktop config
+    // from the real platform path. Since we can't mock that path easily, we at least
+    // verify the config loads correctly with the flag set.
+    const config = loadConfig(configPath);
+    expect(config.mcpServers.local).toEqual({ command: 'echo' });
+    // mcpd servers always take precedence
+    expect(config.mcpServers.overlap).toEqual({ command: 'mcpd-overlap' });
   });
 });

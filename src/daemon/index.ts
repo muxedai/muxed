@@ -4,6 +4,7 @@ import { ServerPool } from '../core/server-pool.js';
 import { ensureMcpdDir, getPidPath } from '../utils/paths.js';
 import { initLogger } from '../utils/logger.js';
 import { createDaemonServer } from './server.js';
+import { createHttpListener } from './http-server.js';
 
 export async function startDaemon(configPath?: string): Promise<void> {
   const config = loadConfig(configPath);
@@ -25,7 +26,18 @@ export async function startDaemon(configPath?: string): Promise<void> {
   const totalCount = serverPool.listServers().length;
   logger.info(`Connected ${connectedCount}/${totalCount} servers`);
 
-  const { server, shutdown } = createDaemonServer(serverPool, config);
+  const { server, shutdown, handleRequest } = createDaemonServer(serverPool, config);
+
+  // Start HTTP listener if enabled
+  let httpShutdown: (() => Promise<void>) | undefined;
+  const httpConfig = config.daemon?.http;
+  if (httpConfig?.enabled) {
+    const { shutdown: httpStop } = createHttpListener(handleRequest, {
+      port: httpConfig.port ?? 3100,
+      host: httpConfig.host ?? '127.0.0.1',
+    });
+    httpShutdown = httpStop;
+  }
 
   // Write PID file once server is listening
   server.on('listening', () => {
@@ -38,10 +50,15 @@ export async function startDaemon(configPath?: string): Promise<void> {
     }
   });
 
+  async function fullShutdown(): Promise<void> {
+    if (httpShutdown) await httpShutdown();
+    await shutdown();
+  }
+
   // Graceful shutdown on SIGTERM
   process.on('SIGTERM', () => {
     logger.info('Received SIGTERM');
-    shutdown().catch(() => {
+    fullShutdown().catch(() => {
       process.exit(1);
     });
   });
@@ -49,7 +66,7 @@ export async function startDaemon(configPath?: string): Promise<void> {
   // Graceful shutdown on SIGINT
   process.on('SIGINT', () => {
     logger.info('Received SIGINT');
-    shutdown().catch(() => {
+    fullShutdown().catch(() => {
       process.exit(1);
     });
   });
@@ -57,7 +74,7 @@ export async function startDaemon(configPath?: string): Promise<void> {
   // Handle uncaught errors
   process.on('uncaughtException', (err) => {
     logger.error(`Uncaught exception: ${err.message}`);
-    shutdown().catch(() => {
+    fullShutdown().catch(() => {
       process.exit(1);
     });
   });
