@@ -11,10 +11,13 @@ const testDir = path.join(os.tmpdir(), 'mcpd-server-test');
 const testSocketPath = path.join(testDir, 'mcpd.sock');
 const testPidPath = path.join(testDir, 'mcpd.pid');
 
+const testLogPath = path.join(testDir, 'mcpd.log');
+
 vi.mock('../utils/paths.js', () => ({
   getPidPath: () => testPidPath,
   getSocketPath: () => testSocketPath,
   getMcpdDir: () => testDir,
+  getLogPath: () => testLogPath,
   ensureMcpdDir: () => fs.mkdirSync(testDir, { recursive: true }),
 }));
 

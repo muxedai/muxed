@@ -1,14 +1,28 @@
 import type { Tool, Resource, Prompt } from '@modelcontextprotocol/sdk/types.js';
-import type { McpdConfig, ServerState } from './types.js';
+import type { McpdConfig, ServerState, TrackedTask } from './types.js';
 import { ServerManager } from './server-manager.js';
+import { getLogger } from '../utils/logger.js';
 
 export class ServerPool {
   private servers = new Map<string, ServerManager>();
+  private trackedTasks = new Map<string, TrackedTask>();
+  private taskExpiryTimer: ReturnType<typeof setInterval> | undefined;
+  private taskExpiryTimeout: number = 3_600_000;
 
   async connectAll(config: McpdConfig): Promise<void> {
     const entries = Object.entries(config.mcpServers);
+    this.taskExpiryTimeout = config.daemon?.taskExpiryTimeout ?? 3_600_000;
+
     for (const [name, serverConfig] of entries) {
-      this.servers.set(name, new ServerManager(name, serverConfig));
+      const manager = new ServerManager(name, serverConfig, {
+        connectTimeout: config.daemon?.connectTimeout,
+        healthCheckInterval: config.daemon?.healthCheckInterval,
+        maxRestartAttempts: config.daemon?.maxRestartAttempts,
+      });
+      manager.setHealthCallback((serverName, status, error) => {
+        this.onServerHealthChange(serverName, status, error);
+      });
+      this.servers.set(name, manager);
     }
 
     const results = await Promise.allSettled(
@@ -19,14 +33,76 @@ export class ServerPool {
       const entry = entries[i];
       const result = results[i];
       if (entry && result && result.status === 'rejected') {
-        console.error(`Server "${entry[0]}" failed to connect:`, result.reason);
+        getLogger().error(`Server "${entry[0]}" failed to connect: ${result.reason}`, entry[0]);
       }
     }
+
+    this.startTaskExpiry();
   }
 
   async disconnectAll(): Promise<void> {
+    this.stopTaskExpiry();
     await Promise.allSettled([...this.servers.values()].map((manager) => manager.disconnect()));
   }
+
+  private onServerHealthChange(serverName: string, status: string, error?: string): void {
+    if (status === 'closed' || status === 'error') {
+      // Mark tasks for this server as unreachable
+      for (const [taskId, task] of this.trackedTasks) {
+        if (task.server === serverName && task.status === 'active') {
+          task.status = 'unreachable';
+          getLogger().warn(
+            `Task ${taskId} marked as unreachable (server ${serverName} disconnected)`,
+            serverName
+          );
+        }
+      }
+    } else if (status === 'connected') {
+      getLogger().info(`Server reconnected`, serverName);
+    }
+
+    if (error) {
+      getLogger().error(`Health change: ${status} - ${error}`, serverName);
+    }
+  }
+
+  // --- Task tracking ---
+
+  trackTask(taskId: string, server: string): void {
+    this.trackedTasks.set(taskId, {
+      taskId,
+      server,
+      status: 'active',
+      createdAt: Date.now(),
+    });
+  }
+
+  getTrackedTask(taskId: string): TrackedTask | undefined {
+    return this.trackedTasks.get(taskId);
+  }
+
+  private startTaskExpiry(): void {
+    this.stopTaskExpiry();
+    // Check every 5 minutes for stale tasks
+    this.taskExpiryTimer = setInterval(() => {
+      const now = Date.now();
+      for (const [taskId, task] of this.trackedTasks) {
+        if (now - task.createdAt > this.taskExpiryTimeout) {
+          this.trackedTasks.delete(taskId);
+          getLogger().info(`Expired stale task ${taskId}`, task.server);
+        }
+      }
+    }, 300_000);
+  }
+
+  private stopTaskExpiry(): void {
+    if (this.taskExpiryTimer) {
+      clearInterval(this.taskExpiryTimer);
+      this.taskExpiryTimer = undefined;
+    }
+  }
+
+  // --- Server access ---
 
   getServer(name: string): ServerManager | undefined {
     return this.servers.get(name);
@@ -185,6 +261,12 @@ export class ServerPool {
     serverName: string,
     taskId: string
   ): Promise<Awaited<ReturnType<ServerManager['getTask']>>> {
+    // Check if task is tracked and unreachable
+    const tracked = this.trackedTasks.get(taskId);
+    if (tracked && tracked.status === 'unreachable') {
+      throw new Error(`Task ${taskId} is unreachable: server "${tracked.server}" disconnected`);
+    }
+
     const manager = this.servers.get(serverName);
     if (!manager) {
       throw new Error(`Server not found: ${serverName}`);
@@ -196,6 +278,11 @@ export class ServerPool {
     serverName: string,
     taskId: string
   ): Promise<Awaited<ReturnType<ServerManager['getTaskResult']>>> {
+    const tracked = this.trackedTasks.get(taskId);
+    if (tracked && tracked.status === 'unreachable') {
+      throw new Error(`Task ${taskId} is unreachable: server "${tracked.server}" disconnected`);
+    }
+
     const manager = this.servers.get(serverName);
     if (!manager) {
       throw new Error(`Server not found: ${serverName}`);
@@ -207,11 +294,18 @@ export class ServerPool {
     serverName: string,
     taskId: string
   ): Promise<Awaited<ReturnType<ServerManager['cancelTask']>>> {
+    const tracked = this.trackedTasks.get(taskId);
+    if (tracked && tracked.status === 'unreachable') {
+      throw new Error(`Task ${taskId} is unreachable: server "${tracked.server}" disconnected`);
+    }
+
     const manager = this.servers.get(serverName);
     if (!manager) {
       throw new Error(`Server not found: ${serverName}`);
     }
-    return await manager.cancelTask(taskId);
+    const result = await manager.cancelTask(taskId);
+    this.trackedTasks.delete(taskId);
+    return result;
   }
 
   async reload(
@@ -240,7 +334,14 @@ export class ServerPool {
     for (const [name, serverConfig] of Object.entries(newConfig.mcpServers)) {
       if (!oldNames.has(name)) {
         added.push(name);
-        const manager = new ServerManager(name, serverConfig);
+        const manager = new ServerManager(name, serverConfig, {
+          connectTimeout: newConfig.daemon?.connectTimeout,
+          healthCheckInterval: newConfig.daemon?.healthCheckInterval,
+          maxRestartAttempts: newConfig.daemon?.maxRestartAttempts,
+        });
+        manager.setHealthCallback((serverName, status, error) => {
+          this.onServerHealthChange(serverName, status, error);
+        });
         this.servers.set(name, manager);
         await manager.connect(newConfig.daemon?.connectTimeout).catch(() => {});
       } else {
@@ -249,7 +350,14 @@ export class ServerPool {
           changed.push(name);
           const oldManager = this.servers.get(name)!;
           await oldManager.disconnect().catch(() => {});
-          const newManager = new ServerManager(name, serverConfig);
+          const newManager = new ServerManager(name, serverConfig, {
+            connectTimeout: newConfig.daemon?.connectTimeout,
+            healthCheckInterval: newConfig.daemon?.healthCheckInterval,
+            maxRestartAttempts: newConfig.daemon?.maxRestartAttempts,
+          });
+          newManager.setHealthCallback((serverName, status, error) => {
+            this.onServerHealthChange(serverName, status, error);
+          });
           this.servers.set(name, newManager);
           await newManager.connect(newConfig.daemon?.connectTimeout).catch(() => {});
         }

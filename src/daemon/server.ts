@@ -3,6 +3,7 @@ import type { ServerPool } from '../core/server-pool.js';
 import type { McpdConfig } from '../core/types.js';
 import { loadConfig } from '../core/config.js';
 import { getSocketPath } from '../utils/paths.js';
+import { getLogger } from '../utils/logger.js';
 import fs from 'node:fs';
 
 type JsonRpcRequest = {
@@ -29,21 +30,30 @@ export function createDaemonServer(serverPool: ServerPool, config: McpdConfig): 
   const socketPath = getSocketPath();
   let idleTimer: ReturnType<typeof setTimeout> | undefined;
   let shutdownInProgress = false;
+  const activeSockets = new Set<net.Socket>();
+  let inFlightRequests = 0;
 
   const idleTimeout = config.daemon?.idleTimeout ?? 300_000;
   const requestTimeout = config.daemon?.requestTimeout ?? 60_000;
+  const maxTotalTimeout = config.daemon?.maxTotalTimeout ?? 300_000;
+  const shutdownTimeout = config.daemon?.shutdownTimeout ?? 10_000;
   const startTime = Date.now();
+  const logger = getLogger();
 
   function resetIdleTimer(): void {
     if (idleTimer) clearTimeout(idleTimer);
     if (idleTimeout > 0) {
       idleTimer = setTimeout(() => {
+        logger.info('Idle timeout reached, shutting down');
         shutdown().catch(() => {});
       }, idleTimeout);
     }
   }
 
-  async function handleRequest(request: JsonRpcRequest): Promise<JsonRpcResponse> {
+  async function handleRequest(
+    request: JsonRpcRequest,
+    clientTimeout?: number
+  ): Promise<JsonRpcResponse> {
     const { method, params, id } = request;
 
     switch (method) {
@@ -57,7 +67,9 @@ export function createDaemonServer(serverPool: ServerPool, config: McpdConfig): 
       }
 
       case 'tools/call': {
-        const p = params as { name?: string; arguments?: Record<string, unknown> } | undefined;
+        const p = params as
+          | { name?: string; arguments?: Record<string, unknown>; timeout?: number }
+          | undefined;
         if (!p?.name) {
           return {
             jsonrpc: '2.0',
@@ -75,11 +87,8 @@ export function createDaemonServer(serverPool: ServerPool, config: McpdConfig): 
           };
         }
 
-        const result = await found.manager.callTool(
-          found.tool.name,
-          p.arguments ?? {},
-          requestTimeout
-        );
+        const timeout = clientTimeout ?? p.timeout ?? requestTimeout;
+        const result = await found.manager.callTool(found.tool.name, p.arguments ?? {}, timeout);
         return { jsonrpc: '2.0', id, result };
       }
 
@@ -270,6 +279,8 @@ export function createDaemonServer(serverPool: ServerPool, config: McpdConfig): 
         }
 
         const taskHandle = await found.manager.callToolWithTask(found.tool.name, p.arguments ?? {});
+        // Track the task for cleanup
+        serverPool.trackTask(taskHandle.taskId, found.manager.name);
         return { jsonrpc: '2.0', id, result: { ...taskHandle, server: found.manager.name } };
       }
 
@@ -277,6 +288,9 @@ export function createDaemonServer(serverPool: ServerPool, config: McpdConfig): 
         const p = params as { configPath?: string } | undefined;
         const newConfig = loadConfig(p?.configPath);
         const changes = await serverPool.reload(newConfig);
+        logger.info(
+          `Config reloaded: added=${changes.added.length}, removed=${changes.removed.length}, changed=${changes.changed.length}`
+        );
         return { jsonrpc: '2.0', id, result: changes };
       }
 
@@ -298,7 +312,17 @@ export function createDaemonServer(serverPool: ServerPool, config: McpdConfig): 
   }
 
   const server = net.createServer((socket) => {
+    if (shutdownInProgress) {
+      socket.destroy();
+      return;
+    }
+
+    activeSockets.add(socket);
     let buffer = '';
+
+    socket.on('close', () => {
+      activeSockets.delete(socket);
+    });
 
     socket.on('data', (data) => {
       buffer += data.toString();
@@ -325,7 +349,10 @@ export function createDaemonServer(serverPool: ServerPool, config: McpdConfig): 
           continue;
         }
 
-        handleRequest(request)
+        inFlightRequests++;
+        const clientTimeout = (request.params as { timeout?: number } | undefined)?.timeout;
+
+        handleRequest(request, clientTimeout)
           .then((response) => {
             if (!socket.destroyed) {
               socket.write(JSON.stringify(response) + '\n');
@@ -343,12 +370,15 @@ export function createDaemonServer(serverPool: ServerPool, config: McpdConfig): 
             if (!socket.destroyed) {
               socket.write(JSON.stringify(errorResponse) + '\n');
             }
+          })
+          .finally(() => {
+            inFlightRequests--;
           });
       }
     });
 
     socket.on('error', () => {
-      // Ignore client socket errors
+      activeSockets.delete(socket);
     });
   });
 
@@ -356,11 +386,44 @@ export function createDaemonServer(serverPool: ServerPool, config: McpdConfig): 
     if (shutdownInProgress) return;
     shutdownInProgress = true;
 
+    logger.info('Shutting down daemon...');
+
     if (idleTimer) clearTimeout(idleTimer);
 
+    // Stop accepting new connections
     server.close();
-    await serverPool.disconnectAll();
 
+    // Wait for in-flight requests to complete (with timeout)
+    if (inFlightRequests > 0) {
+      logger.info(`Waiting for ${inFlightRequests} in-flight requests to complete...`);
+      await Promise.race([
+        new Promise<void>((resolve) => {
+          const check = setInterval(() => {
+            if (inFlightRequests <= 0) {
+              clearInterval(check);
+              resolve();
+            }
+          }, 100);
+        }),
+        new Promise<void>((resolve) => setTimeout(resolve, shutdownTimeout)),
+      ]);
+
+      if (inFlightRequests > 0) {
+        logger.warn(`Forcing shutdown with ${inFlightRequests} requests still in flight`);
+      }
+    }
+
+    // Close all active sockets
+    for (const socket of activeSockets) {
+      socket.destroy();
+    }
+    activeSockets.clear();
+
+    // Disconnect all MCP servers
+    await serverPool.disconnectAll();
+    logger.info('All servers disconnected');
+
+    // Clean up files
     try {
       fs.unlinkSync(socketPath);
     } catch {
@@ -374,6 +437,7 @@ export function createDaemonServer(serverPool: ServerPool, config: McpdConfig): 
       // Ignore if already removed
     }
 
+    logger.info('Daemon shutdown complete');
     process.exit(0);
   }
 

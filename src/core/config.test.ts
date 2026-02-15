@@ -113,6 +113,12 @@ describe('loadConfig', () => {
       idleTimeout: 300_000,
       connectTimeout: 30_000,
       requestTimeout: 60_000,
+      healthCheckInterval: 30_000,
+      maxRestartAttempts: -1,
+      maxTotalTimeout: 300_000,
+      taskExpiryTimeout: 3_600_000,
+      logLevel: 'info',
+      shutdownTimeout: 10_000,
     });
   });
 
@@ -131,6 +137,12 @@ describe('loadConfig', () => {
       idleTimeout: 600_000,
       connectTimeout: 30_000,
       requestTimeout: 60_000,
+      healthCheckInterval: 30_000,
+      maxRestartAttempts: -1,
+      maxTotalTimeout: 300_000,
+      taskExpiryTimeout: 3_600_000,
+      logLevel: 'info',
+      shutdownTimeout: 10_000,
     });
   });
 

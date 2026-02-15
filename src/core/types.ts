@@ -30,6 +30,12 @@ export type DaemonConfig = {
   idleTimeout?: number; // default: 300000 (5 min)
   connectTimeout?: number; // default: 30000 (30s)
   requestTimeout?: number; // default: 60000 (60s)
+  healthCheckInterval?: number; // default: 30000 (30s)
+  maxRestartAttempts?: number; // default: -1 (unlimited)
+  maxTotalTimeout?: number; // default: 300000 (5 min)
+  taskExpiryTimeout?: number; // default: 3600000 (1 hour)
+  logLevel?: 'debug' | 'info' | 'warn' | 'error'; // default: 'info'
+  shutdownTimeout?: number; // default: 10000 (10s)
 };
 
 // Top-level config
@@ -51,6 +57,17 @@ export type ServerState = {
   capabilities?: ServerCapabilities;
   protocolVersion?: string;
   instructions?: string;
+  restartCount?: number;
+  lastHealthCheck?: string;
+  consecutiveFailures?: number;
+};
+
+// Tracked task entry for cleanup
+export type TrackedTask = {
+  taskId: string;
+  server: string;
+  status: 'active' | 'unreachable';
+  createdAt: number;
 };
 
 // Type guards to distinguish config types

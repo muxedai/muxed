@@ -23,6 +23,12 @@ const DaemonConfigSchema = z.object({
   idleTimeout: z.number().optional(),
   connectTimeout: z.number().optional(),
   requestTimeout: z.number().optional(),
+  healthCheckInterval: z.number().optional(),
+  maxRestartAttempts: z.number().optional(),
+  maxTotalTimeout: z.number().optional(),
+  taskExpiryTimeout: z.number().optional(),
+  logLevel: z.enum(['debug', 'info', 'warn', 'error']).optional(),
+  shutdownTimeout: z.number().optional(),
 });
 
 const McpdConfigSchema = z.object({
@@ -34,6 +40,12 @@ const DAEMON_DEFAULTS = {
   idleTimeout: 300_000,
   connectTimeout: 30_000,
   requestTimeout: 60_000,
+  healthCheckInterval: 30_000,
+  maxRestartAttempts: -1,
+  maxTotalTimeout: 300_000,
+  taskExpiryTimeout: 3_600_000,
+  logLevel: 'info' as const,
+  shutdownTimeout: 10_000,
 };
 
 function findConfigFile(configPath?: string): string {
