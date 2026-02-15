@@ -7,10 +7,12 @@ import { LATEST_PROTOCOL_VERSION } from '@modelcontextprotocol/sdk/types.js';
 import type { Tool, Resource, Prompt } from '@modelcontextprotocol/sdk/types.js';
 import type {
   ServerConfig,
+  HttpServerConfig,
   ServerConnectionStatus,
   ServerState,
   Implementation,
   ServerCapabilities,
+  AuthorizationCodeAuth,
 } from './types.js';
 import { isStdioConfig, isHttpConfig } from './types.js';
 import { getLogger } from '../utils/logger.js';
@@ -89,8 +91,6 @@ export class ServerManager {
     this.error = undefined;
     const timeout = connectTimeout ?? this.connectTimeout;
 
-    let callbackServer: CallbackServer | undefined;
-
     try {
       if (isStdioConfig(this.config)) {
         this.transport = new StdioClientTransport({
@@ -102,6 +102,12 @@ export class ServerManager {
           cwd: this.config.cwd,
         });
       } else if (isHttpConfig(this.config) && this.config.transport === 'sse') {
+        // For authorization_code flow, delegate to connectWithOAuth
+        if (this.config.auth?.type === 'authorization_code') {
+          await this.connectWithOAuth(this.config, this.config.auth, timeout);
+          return;
+        }
+
         const opts: ConstructorParameters<typeof SSEClientTransport>[1] = {};
         if (this.config.headers) {
           opts.requestInit = { headers: this.config.headers };
@@ -133,51 +139,16 @@ export class ServerManager {
           };
         }
 
-        // Set up OAuth auth provider if configured
+        // For authorization_code flow, delegate to connectWithOAuth
+        if (httpConfig.auth?.type === 'authorization_code') {
+          await this.connectWithOAuth(httpConfig, httpConfig.auth, timeout);
+          return;
+        }
+
+        // Set up OAuth auth provider if configured (client_credentials)
         if (httpConfig.auth) {
           const authProvider = createAuthProvider(httpConfig.auth, this.name);
           opts.authProvider = authProvider;
-
-          // For authorization_code flow, start callback server first
-          if (httpConfig.auth.type === 'authorization_code') {
-            callbackServer = new CallbackServer();
-            const callbackPromise = callbackServer.start(httpConfig.auth.callbackPort ?? 0);
-            const port = await callbackServer.waitForPort();
-            (authProvider as AuthorizationCodeProvider).setRedirectUrl(port);
-
-            this.transport = new StreamableHTTPClientTransport(new URL(httpConfig.url), opts);
-
-            // Try connecting — if auth is needed, SDK throws UnauthorizedError
-            // or the transport handles it via the provider
-            this.client = this.createClient();
-            const requestOptions = timeout ? { signal: AbortSignal.timeout(timeout) } : undefined;
-
-            try {
-              await this.client.connect(this.transport, requestOptions);
-            } catch (err) {
-              if (err instanceof UnauthorizedError) {
-                getLogger().info(
-                  'Authorization required, waiting for browser callback...',
-                  this.name
-                );
-                const { code } = await callbackPromise;
-                await this.transport.finishAuth(code);
-
-                // Re-create client and transport for fresh connection
-                this.transport = new StreamableHTTPClientTransport(new URL(httpConfig.url), opts);
-                this.client = this.createClient();
-                await this.client.connect(this.transport, requestOptions);
-              } else {
-                throw err;
-              }
-            } finally {
-              callbackServer.close();
-              callbackServer = undefined;
-            }
-
-            await this.finishConnect();
-            return;
-          }
         }
 
         this.transport = new StreamableHTTPClientTransport(new URL(httpConfig.url), opts);
@@ -186,7 +157,17 @@ export class ServerManager {
       this.client = this.createClient();
 
       const requestOptions = timeout ? { signal: AbortSignal.timeout(timeout) } : undefined;
-      await this.client.connect(this.transport, requestOptions);
+
+      try {
+        await this.client.connect(this.transport, requestOptions);
+      } catch (err) {
+        if (err instanceof UnauthorizedError && isHttpConfig(this.config) && !this.config.auth) {
+          getLogger().info('Server requires auth, initiating OAuth flow...', this.name);
+          await this.connectWithOAuth(this.config, { type: 'authorization_code' }, timeout);
+          return;
+        }
+        throw err;
+      }
 
       await this.finishConnect();
     } catch (err) {
@@ -194,10 +175,6 @@ export class ServerManager {
       this.error = err instanceof Error ? err.message : String(err);
       this.emitHealthChange('error', this.error);
       getLogger().error(`Connection failed: ${this.error}`, this.name);
-    } finally {
-      if (callbackServer) {
-        callbackServer.close();
-      }
     }
   }
 
@@ -263,6 +240,78 @@ export class ServerManager {
     this.startHealthChecks();
     this.emitHealthChange('connected');
     getLogger().info('Connected successfully', this.name);
+  }
+
+  private async connectWithOAuth(
+    httpConfig: HttpServerConfig,
+    authConfig: AuthorizationCodeAuth,
+    timeout?: number
+  ): Promise<void> {
+    const callbackServer = new CallbackServer();
+    try {
+      const callbackPromise = callbackServer.start(authConfig.callbackPort ?? 0);
+      const port = await callbackServer.waitForPort();
+
+      const authProvider = new AuthorizationCodeProvider(authConfig, this.name);
+      authProvider.setRedirectUrl(port);
+
+      const createTransport = (): SSEClientTransport | StreamableHTTPClientTransport => {
+        if (httpConfig.transport === 'sse') {
+          const opts: ConstructorParameters<typeof SSEClientTransport>[1] = {};
+          if (httpConfig.headers) {
+            opts.requestInit = { headers: httpConfig.headers };
+          }
+          opts.authProvider = authProvider;
+          return new SSEClientTransport(new URL(httpConfig.url), opts);
+        }
+
+        const opts: ConstructorParameters<typeof StreamableHTTPClientTransport>[1] = {};
+        if (httpConfig.headers) {
+          opts.requestInit = { headers: httpConfig.headers };
+        }
+        if (httpConfig.sessionId) {
+          opts.sessionId = httpConfig.sessionId;
+        }
+        if (httpConfig.reconnection) {
+          const r = httpConfig.reconnection;
+          opts.reconnectionOptions = {
+            maxReconnectionDelay: r.maxDelay ?? 30_000,
+            initialReconnectionDelay: r.initialDelay ?? 1_000,
+            reconnectionDelayGrowFactor: r.growFactor ?? 1.5,
+            maxRetries: r.maxRetries ?? 2,
+          };
+        }
+        opts.authProvider = authProvider;
+        return new StreamableHTTPClientTransport(new URL(httpConfig.url), opts);
+      };
+
+      let transport = createTransport();
+      this.transport = transport;
+      this.client = this.createClient();
+      const requestOptions = timeout ? { signal: AbortSignal.timeout(timeout) } : undefined;
+
+      try {
+        await this.client.connect(transport, requestOptions);
+      } catch (err) {
+        if (err instanceof UnauthorizedError) {
+          getLogger().info('Authorization required, waiting for browser callback...', this.name);
+          const { code } = await callbackPromise;
+          await transport.finishAuth(code);
+
+          // Re-create client and transport for fresh connection
+          transport = createTransport();
+          this.transport = transport;
+          this.client = this.createClient();
+          await this.client.connect(transport, requestOptions);
+        } else {
+          throw err;
+        }
+      }
+
+      await this.finishConnect();
+    } finally {
+      callbackServer.close();
+    }
   }
 
   async disconnect(): Promise<void> {
@@ -522,12 +571,20 @@ export class ServerManager {
   }
 
   getAuthStatus(): { type: string; hasTokens: boolean } | undefined {
-    if (!isHttpConfig(this.config) || !this.config.auth) return undefined;
+    if (!isHttpConfig(this.config)) return undefined;
+    if (this.config.auth) {
+      const store = new TokenStore(this.name);
+      return {
+        type: this.config.auth.type,
+        hasTokens: store.hasTokens(),
+      };
+    }
+    // Check for stored auto-OAuth tokens (no explicit auth config)
     const store = new TokenStore(this.name);
-    return {
-      type: this.config.auth.type,
-      hasTokens: store.hasTokens(),
-    };
+    if (store.hasTokens()) {
+      return { type: 'authorization_code', hasTokens: true };
+    }
+    return undefined;
   }
 
   getState(): ServerState {
