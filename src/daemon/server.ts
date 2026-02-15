@@ -1,6 +1,7 @@
 import net from 'node:net';
 import type { ServerPool } from '../core/server-pool.js';
 import type { McpdConfig } from '../core/types.js';
+import { loadConfig } from '../core/config.js';
 import { getSocketPath } from '../utils/paths.js';
 import fs from 'node:fs';
 
@@ -115,6 +116,168 @@ export function createDaemonServer(serverPool: ServerPool, config: McpdConfig): 
             servers: serverPool.listServers(),
           },
         };
+      }
+
+      case 'tools/grep': {
+        const p = params as { pattern?: string } | undefined;
+        if (!p?.pattern) {
+          return {
+            jsonrpc: '2.0',
+            id,
+            error: { code: -32602, message: 'Missing required parameter: pattern' },
+          };
+        }
+        try {
+          return { jsonrpc: '2.0', id, result: serverPool.grepTools(p.pattern) };
+        } catch (err) {
+          return {
+            jsonrpc: '2.0',
+            id,
+            error: {
+              code: -32602,
+              message: err instanceof Error ? err.message : 'Invalid pattern',
+            },
+          };
+        }
+      }
+
+      case 'resources/list': {
+        const server = (params as { server?: string } | undefined)?.server;
+        return { jsonrpc: '2.0', id, result: serverPool.listAllResources(server) };
+      }
+
+      case 'resources/read': {
+        const p = params as { server?: string; uri?: string } | undefined;
+        if (!p?.server || !p?.uri) {
+          return {
+            jsonrpc: '2.0',
+            id,
+            error: { code: -32602, message: 'Missing required parameters: server, uri' },
+          };
+        }
+        const contents = await serverPool.readResource(p.server, p.uri);
+        return { jsonrpc: '2.0', id, result: contents };
+      }
+
+      case 'prompts/list': {
+        const server = (params as { server?: string } | undefined)?.server;
+        return { jsonrpc: '2.0', id, result: serverPool.listAllPrompts(server) };
+      }
+
+      case 'prompts/get': {
+        const p = params as
+          | {
+              server?: string;
+              name?: string;
+              arguments?: Record<string, string>;
+            }
+          | undefined;
+        if (!p?.server || !p?.name) {
+          return {
+            jsonrpc: '2.0',
+            id,
+            error: { code: -32602, message: 'Missing required parameters: server, name' },
+          };
+        }
+        const promptResult = await serverPool.getPrompt(p.server, p.name, p.arguments);
+        return { jsonrpc: '2.0', id, result: promptResult };
+      }
+
+      case 'completions/complete': {
+        const p = params as
+          | {
+              server?: string;
+              ref?: { type: string; name: string; uri?: string };
+              argument?: { name: string; value: string };
+            }
+          | undefined;
+        if (!p?.server || !p?.ref || !p?.argument) {
+          return {
+            jsonrpc: '2.0',
+            id,
+            error: {
+              code: -32602,
+              message: 'Missing required parameters: server, ref, argument',
+            },
+          };
+        }
+        const completionResult = await serverPool.complete(p.server, p.ref, p.argument);
+        return { jsonrpc: '2.0', id, result: completionResult };
+      }
+
+      case 'tasks/list': {
+        const server = (params as { server?: string } | undefined)?.server;
+        const tasksResult = await serverPool.listAllTasks(server);
+        return { jsonrpc: '2.0', id, result: tasksResult };
+      }
+
+      case 'tasks/get': {
+        const p = params as { server?: string; taskId?: string } | undefined;
+        if (!p?.server || !p?.taskId) {
+          return {
+            jsonrpc: '2.0',
+            id,
+            error: { code: -32602, message: 'Missing required parameters: server, taskId' },
+          };
+        }
+        const taskStatus = await serverPool.getTask(p.server, p.taskId);
+        return { jsonrpc: '2.0', id, result: taskStatus };
+      }
+
+      case 'tasks/result': {
+        const p = params as { server?: string; taskId?: string } | undefined;
+        if (!p?.server || !p?.taskId) {
+          return {
+            jsonrpc: '2.0',
+            id,
+            error: { code: -32602, message: 'Missing required parameters: server, taskId' },
+          };
+        }
+        const taskResultData = await serverPool.getTaskResult(p.server, p.taskId);
+        return { jsonrpc: '2.0', id, result: taskResultData };
+      }
+
+      case 'tasks/cancel': {
+        const p = params as { server?: string; taskId?: string } | undefined;
+        if (!p?.server || !p?.taskId) {
+          return {
+            jsonrpc: '2.0',
+            id,
+            error: { code: -32602, message: 'Missing required parameters: server, taskId' },
+          };
+        }
+        const cancelResult = await serverPool.cancelTask(p.server, p.taskId);
+        return { jsonrpc: '2.0', id, result: cancelResult };
+      }
+
+      case 'tools/call-async': {
+        const p = params as { name?: string; arguments?: Record<string, unknown> } | undefined;
+        if (!p?.name) {
+          return {
+            jsonrpc: '2.0',
+            id,
+            error: { code: -32602, message: 'Missing required parameter: name' },
+          };
+        }
+
+        const found = serverPool.findTool(p.name);
+        if (!found) {
+          return {
+            jsonrpc: '2.0',
+            id,
+            error: { code: -32602, message: `Tool not found: ${p.name}` },
+          };
+        }
+
+        const taskHandle = await found.manager.callToolWithTask(found.tool.name, p.arguments ?? {});
+        return { jsonrpc: '2.0', id, result: { ...taskHandle, server: found.manager.name } };
+      }
+
+      case 'config/reload': {
+        const p = params as { configPath?: string } | undefined;
+        const newConfig = loadConfig(p?.configPath);
+        const changes = await serverPool.reload(newConfig);
+        return { jsonrpc: '2.0', id, result: changes };
       }
 
       case 'daemon/stop': {
