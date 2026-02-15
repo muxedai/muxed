@@ -1,8 +1,6 @@
 import { fork } from 'node:child_process';
 import fs from 'node:fs';
 import net from 'node:net';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { getPidPath, getSocketPath } from '../utils/paths.js';
 
 export function getDaemonPid(): number | null {
@@ -83,7 +81,9 @@ export async function cleanupStaleFiles(): Promise<void> {
 }
 
 export async function daemonize(configPath?: string): Promise<void> {
-  const cliEntry = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', 'cli.ts');
+  // Use process.argv[1] to get the actual script being run (works for both
+  // built dist/cli.mjs and dev src/cli.ts)
+  const cliEntry = process.argv[1]!;
 
   const args = ['--daemon'];
   if (configPath) {
