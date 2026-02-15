@@ -117,6 +117,38 @@ export function createDaemonServer(serverPool: ServerPool, config: McpdConfig): 
         return { jsonrpc: '2.0', id, result: found.tool };
       }
 
+      case 'auth/status': {
+        const server = (params as { server?: string } | undefined)?.server;
+        const results: Array<{ server: string; auth: { type: string; hasTokens: boolean } }> = [];
+
+        if (server) {
+          const manager = serverPool.getServer(server);
+          if (!manager) {
+            return {
+              jsonrpc: '2.0',
+              id,
+              error: { code: -32602, message: `Server not found: ${server}` },
+            };
+          }
+          const authStatus = manager.getAuthStatus();
+          if (authStatus) {
+            results.push({ server, auth: authStatus });
+          }
+        } else {
+          for (const state of serverPool.listServers()) {
+            const manager = serverPool.getServer(state.name);
+            if (manager) {
+              const authStatus = manager.getAuthStatus();
+              if (authStatus) {
+                results.push({ server: state.name, auth: authStatus });
+              }
+            }
+          }
+        }
+
+        return { jsonrpc: '2.0', id, result: results };
+      }
+
       case 'daemon/status': {
         return {
           jsonrpc: '2.0',

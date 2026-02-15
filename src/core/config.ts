@@ -18,12 +18,30 @@ const ReconnectionSchema = z.object({
   maxRetries: z.number().optional(),
 });
 
+const ClientCredentialsAuthSchema = z.object({
+  type: z.literal('client_credentials'),
+  clientId: z.string(),
+  clientSecret: z.string(),
+  scope: z.string().optional(),
+});
+
+const AuthorizationCodeAuthSchema = z.object({
+  type: z.literal('authorization_code'),
+  clientId: z.string().optional(),
+  clientSecret: z.string().optional(),
+  scope: z.string().optional(),
+  callbackPort: z.number().int().min(0).max(65535).optional(),
+});
+
+const OAuthConfigSchema = z.union([ClientCredentialsAuthSchema, AuthorizationCodeAuthSchema]);
+
 const HttpServerConfigSchema = z.object({
   url: z.string(),
   transport: z.enum(['streamable-http', 'sse']).optional(),
   headers: z.record(z.string(), z.string()).optional(),
   sessionId: z.string().optional(),
   reconnection: ReconnectionSchema.optional(),
+  auth: OAuthConfigSchema.optional(),
 });
 
 const ServerConfigSchema = z.union([StdioServerConfigSchema, HttpServerConfigSchema]);

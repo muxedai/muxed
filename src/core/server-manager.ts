@@ -2,6 +2,7 @@ import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
 import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
+import { UnauthorizedError } from '@modelcontextprotocol/sdk/client/auth.js';
 import { LATEST_PROTOCOL_VERSION } from '@modelcontextprotocol/sdk/types.js';
 import type { Tool, Resource, Prompt } from '@modelcontextprotocol/sdk/types.js';
 import type {
@@ -13,6 +14,12 @@ import type {
 } from './types.js';
 import { isStdioConfig, isHttpConfig } from './types.js';
 import { getLogger } from '../utils/logger.js';
+import {
+  createAuthProvider,
+  CallbackServer,
+  AuthorizationCodeProvider,
+  TokenStore,
+} from './oauth/index.js';
 
 export type ServerManagerOptions = {
   connectTimeout?: number;
@@ -82,6 +89,8 @@ export class ServerManager {
     this.error = undefined;
     const timeout = connectTimeout ?? this.connectTimeout;
 
+    let callbackServer: CallbackServer | undefined;
+
     try {
       if (isStdioConfig(this.config)) {
         this.transport = new StdioClientTransport({
@@ -97,6 +106,13 @@ export class ServerManager {
         if (this.config.headers) {
           opts.requestInit = { headers: this.config.headers };
         }
+
+        // Set up OAuth auth provider if configured
+        if (this.config.auth) {
+          const authProvider = createAuthProvider(this.config.auth, this.name);
+          opts.authProvider = authProvider;
+        }
+
         this.transport = new SSEClientTransport(new URL(this.config.url), opts);
       } else {
         const httpConfig = this.config;
@@ -116,75 +132,137 @@ export class ServerManager {
             maxRetries: r.maxRetries ?? 2,
           };
         }
+
+        // Set up OAuth auth provider if configured
+        if (httpConfig.auth) {
+          const authProvider = createAuthProvider(httpConfig.auth, this.name);
+          opts.authProvider = authProvider;
+
+          // For authorization_code flow, start callback server first
+          if (httpConfig.auth.type === 'authorization_code') {
+            callbackServer = new CallbackServer();
+            const callbackPromise = callbackServer.start(httpConfig.auth.callbackPort ?? 0);
+            const port = await callbackServer.waitForPort();
+            (authProvider as AuthorizationCodeProvider).setRedirectUrl(port);
+
+            this.transport = new StreamableHTTPClientTransport(new URL(httpConfig.url), opts);
+
+            // Try connecting — if auth is needed, SDK throws UnauthorizedError
+            // or the transport handles it via the provider
+            this.client = this.createClient();
+            const requestOptions = timeout ? { signal: AbortSignal.timeout(timeout) } : undefined;
+
+            try {
+              await this.client.connect(this.transport, requestOptions);
+            } catch (err) {
+              if (err instanceof UnauthorizedError) {
+                getLogger().info(
+                  'Authorization required, waiting for browser callback...',
+                  this.name
+                );
+                const { code } = await callbackPromise;
+                await this.transport.finishAuth(code);
+
+                // Re-create client and transport for fresh connection
+                this.transport = new StreamableHTTPClientTransport(new URL(httpConfig.url), opts);
+                this.client = this.createClient();
+                await this.client.connect(this.transport, requestOptions);
+              } else {
+                throw err;
+              }
+            } finally {
+              callbackServer.close();
+              callbackServer = undefined;
+            }
+
+            await this.finishConnect();
+            return;
+          }
+        }
+
         this.transport = new StreamableHTTPClientTransport(new URL(httpConfig.url), opts);
       }
 
-      this.client = new Client(
-        { name: 'mcpd', version: '0.1.0' },
-        {
-          capabilities: { tasks: { list: {}, cancel: {} } },
-          listChanged: {
-            tools: {
-              autoRefresh: false,
-              onChanged: () => {
-                this.refreshTools().catch(() => {});
-              },
-            },
-            resources: {
-              autoRefresh: false,
-              onChanged: () => {
-                this.refreshResources().catch(() => {});
-              },
-            },
-            prompts: {
-              autoRefresh: false,
-              onChanged: () => {
-                this.refreshPrompts().catch(() => {});
-              },
-            },
-          },
-        }
-      );
-
-      this.client.onclose = () => {
-        const previousStatus = this.status;
-        if (this.status !== 'error') {
-          this.status = 'closed';
-        }
-        // Detect unexpected disconnection and trigger auto-restart
-        if (previousStatus === 'connected' && !this.stopped) {
-          getLogger().warn('Connection closed unexpectedly, will attempt restart', this.name);
-          this.emitHealthChange('closed');
-          this.scheduleRestart();
-        }
-      };
+      this.client = this.createClient();
 
       const requestOptions = timeout ? { signal: AbortSignal.timeout(timeout) } : undefined;
       await this.client.connect(this.transport, requestOptions);
 
-      this.capabilities = this.client.getServerCapabilities();
-      this.serverInfo = this.client.getServerVersion();
-      this.instructions = this.client.getInstructions();
-      this.protocolVersion =
-        (this.transport instanceof StreamableHTTPClientTransport
-          ? this.transport.protocolVersion
-          : undefined) ?? LATEST_PROTOCOL_VERSION;
-      this.status = 'connected';
-      this.consecutiveFailures = 0;
-
-      await this.refreshTools();
-      await this.refreshResources();
-      await this.refreshPrompts();
-
-      this.startHealthChecks();
-      this.emitHealthChange('connected');
-      getLogger().info('Connected successfully', this.name);
+      await this.finishConnect();
     } catch (err) {
       this.status = 'error';
       this.error = err instanceof Error ? err.message : String(err);
       this.emitHealthChange('error', this.error);
       getLogger().error(`Connection failed: ${this.error}`, this.name);
+    } finally {
+      if (callbackServer) {
+        callbackServer.close();
+      }
     }
+  }
+
+  private createClient(): Client {
+    const client = new Client(
+      { name: 'mcpd', version: '0.1.0' },
+      {
+        capabilities: { tasks: { list: {}, cancel: {} } },
+        listChanged: {
+          tools: {
+            autoRefresh: false,
+            onChanged: () => {
+              this.refreshTools().catch(() => {});
+            },
+          },
+          resources: {
+            autoRefresh: false,
+            onChanged: () => {
+              this.refreshResources().catch(() => {});
+            },
+          },
+          prompts: {
+            autoRefresh: false,
+            onChanged: () => {
+              this.refreshPrompts().catch(() => {});
+            },
+          },
+        },
+      }
+    );
+
+    client.onclose = () => {
+      const previousStatus = this.status;
+      if (this.status !== 'error') {
+        this.status = 'closed';
+      }
+      if (previousStatus === 'connected' && !this.stopped) {
+        getLogger().warn('Connection closed unexpectedly, will attempt restart', this.name);
+        this.emitHealthChange('closed');
+        this.scheduleRestart();
+      }
+    };
+
+    return client;
+  }
+
+  private async finishConnect(): Promise<void> {
+    if (!this.client) return;
+    this.capabilities = this.client.getServerCapabilities();
+    this.serverInfo = this.client.getServerVersion();
+    this.instructions = this.client.getInstructions();
+    this.protocolVersion =
+      (this.transport instanceof StreamableHTTPClientTransport
+        ? this.transport.protocolVersion
+        : undefined) ?? LATEST_PROTOCOL_VERSION;
+    this.status = 'connected';
+    this.consecutiveFailures = 0;
+
+    await this.refreshTools();
+    await this.refreshResources();
+    await this.refreshPrompts();
+
+    this.startHealthChecks();
+    this.emitHealthChange('connected');
+    getLogger().info('Connected successfully', this.name);
   }
 
   async disconnect(): Promise<void> {
@@ -441,6 +519,15 @@ export class ServerManager {
 
   getStatus(): ServerConnectionStatus {
     return this.status;
+  }
+
+  getAuthStatus(): { type: string; hasTokens: boolean } | undefined {
+    if (!isHttpConfig(this.config) || !this.config.auth) return undefined;
+    const store = new TokenStore(this.name);
+    return {
+      type: this.config.auth.type,
+      hasTokens: store.hasTokens(),
+    };
   }
 
   getState(): ServerState {
