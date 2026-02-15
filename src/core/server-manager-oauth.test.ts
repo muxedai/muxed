@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { UnauthorizedError } from '@modelcontextprotocol/sdk/client/auth.js';
+import { StreamableHTTPError } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
+import { SseError } from '@modelcontextprotocol/sdk/client/sse.js';
 import type { HttpServerConfig } from './types.js';
 
 // ---- Shared mock state ----
@@ -29,20 +31,29 @@ vi.mock('@modelcontextprotocol/sdk/client/index.js', () => ({
   }),
 }));
 
-vi.mock('@modelcontextprotocol/sdk/client/streamableHttp.js', () => ({
-  StreamableHTTPClientTransport: vi.fn().mockImplementation(function (
-    this: Record<string, unknown>
-  ) {
-    this.finishAuth = (...args: unknown[]) => mockTransportFinishAuth(...args);
-    this.protocolVersion = '2025-11-25';
-  }),
-}));
+vi.mock('@modelcontextprotocol/sdk/client/streamableHttp.js', async (importOriginal) => {
+  const orig =
+    await importOriginal<typeof import('@modelcontextprotocol/sdk/client/streamableHttp.js')>();
+  return {
+    StreamableHTTPError: orig.StreamableHTTPError,
+    StreamableHTTPClientTransport: vi.fn().mockImplementation(function (
+      this: Record<string, unknown>
+    ) {
+      this.finishAuth = (...args: unknown[]) => mockTransportFinishAuth(...args);
+      this.protocolVersion = '2025-11-25';
+    }),
+  };
+});
 
-vi.mock('@modelcontextprotocol/sdk/client/sse.js', () => ({
-  SSEClientTransport: vi.fn().mockImplementation(function (this: Record<string, unknown>) {
-    this.finishAuth = (...args: unknown[]) => mockTransportFinishAuth(...args);
-  }),
-}));
+vi.mock('@modelcontextprotocol/sdk/client/sse.js', async (importOriginal) => {
+  const orig = await importOriginal<typeof import('@modelcontextprotocol/sdk/client/sse.js')>();
+  return {
+    SseError: orig.SseError,
+    SSEClientTransport: vi.fn().mockImplementation(function (this: Record<string, unknown>) {
+      this.finishAuth = (...args: unknown[]) => mockTransportFinishAuth(...args);
+    }),
+  };
+});
 
 vi.mock('@modelcontextprotocol/sdk/client/stdio.js', () => ({
   StdioClientTransport: vi.fn(),
@@ -117,6 +128,57 @@ describe('auto-OAuth for HTTP servers', () => {
     expect(mockCallbackServerStart).toHaveBeenCalled();
     expect(mockTransportFinishAuth).toHaveBeenCalledWith('test-auth-code');
     expect(mockCallbackServerClose).toHaveBeenCalled();
+  });
+
+  it('initiates OAuth flow when HTTP server returns StreamableHTTPError 401', async () => {
+    const config: HttpServerConfig = { url: 'http://example.com/mcp' };
+    const manager = new ServerManager('test-http-401', config, {
+      maxRestartAttempts: 0,
+      healthCheckInterval: 0,
+    });
+
+    mockClientConnect
+      .mockRejectedValueOnce(new StreamableHTTPError(401, 'Unauthorized'))
+      .mockRejectedValueOnce(new UnauthorizedError())
+      .mockResolvedValueOnce(undefined);
+
+    await manager.connect();
+
+    expect(manager.getStatus()).toBe('connected');
+    expect(CallbackServer).toHaveBeenCalled();
+  });
+
+  it('initiates OAuth flow when SSE server returns SseError 401', async () => {
+    const config: HttpServerConfig = { url: 'http://example.com/mcp', transport: 'sse' };
+    const manager = new ServerManager('test-sse-401', config, {
+      maxRestartAttempts: 0,
+      healthCheckInterval: 0,
+    });
+
+    mockClientConnect
+      .mockRejectedValueOnce(new SseError(401, 'Unauthorized'))
+      .mockRejectedValueOnce(new UnauthorizedError())
+      .mockResolvedValueOnce(undefined);
+
+    await manager.connect();
+
+    expect(manager.getStatus()).toBe('connected');
+    expect(CallbackServer).toHaveBeenCalled();
+  });
+
+  it('does not initiate auto-OAuth for non-401 StreamableHTTPError', async () => {
+    const config: HttpServerConfig = { url: 'http://example.com/mcp' };
+    const manager = new ServerManager('test-http-500', config, {
+      maxRestartAttempts: 0,
+      healthCheckInterval: 0,
+    });
+
+    mockClientConnect.mockRejectedValueOnce(new StreamableHTTPError(500, 'Internal Server Error'));
+
+    await manager.connect();
+
+    expect(manager.getStatus()).toBe('error');
+    expect(CallbackServer).not.toHaveBeenCalled();
   });
 
   it('does not initiate auto-OAuth when server has explicit client_credentials auth', async () => {

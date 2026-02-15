@@ -1,7 +1,11 @@
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { SSEClientTransport } from '@modelcontextprotocol/sdk/client/sse.js';
-import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
+import {
+  StreamableHTTPClientTransport,
+  StreamableHTTPError,
+} from '@modelcontextprotocol/sdk/client/streamableHttp.js';
+import { SseError } from '@modelcontextprotocol/sdk/client/sse.js';
 import { UnauthorizedError } from '@modelcontextprotocol/sdk/client/auth.js';
 import { LATEST_PROTOCOL_VERSION } from '@modelcontextprotocol/sdk/types.js';
 import type { Tool, Resource, Prompt } from '@modelcontextprotocol/sdk/types.js';
@@ -161,7 +165,11 @@ export class ServerManager {
       try {
         await this.client.connect(this.transport, requestOptions);
       } catch (err) {
-        if (err instanceof UnauthorizedError && isHttpConfig(this.config) && !this.config.auth) {
+        const is401 =
+          err instanceof UnauthorizedError ||
+          (err instanceof StreamableHTTPError && err.code === 401) ||
+          (err instanceof SseError && err.code === 401);
+        if (is401 && isHttpConfig(this.config) && !this.config.auth) {
           getLogger().info('Server requires auth, initiating OAuth flow...', this.name);
           await this.connectWithOAuth(this.config, { type: 'authorization_code' }, timeout);
           return;
