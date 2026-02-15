@@ -1,4 +1,4 @@
-import type { Tool, ServerState } from '../core/types.js';
+import type { Tool, Resource, Prompt, ServerState } from '../core/types.js';
 
 type ContentBlock = {
   type: string;
@@ -176,6 +176,162 @@ export function formatStatus(status: DaemonStatus): string {
     }
   }
 
+  return lines.join('\n');
+}
+
+export function formatResources(resources: Array<{ server: string; resource: Resource }>): string {
+  if (resources.length === 0) return 'No resources available.';
+
+  const headers = ['Resource', 'Title', 'MIME Type', 'Description'];
+  const rows = resources.map(({ server, resource }) => [
+    `${server}/${resource.name}`,
+    resource.title ?? '\u2014',
+    resource.mimeType ?? '\u2014',
+    truncate(resource.description ?? '', 50),
+  ]);
+
+  return formatTable(headers, rows);
+}
+
+export function formatReadResource(result: {
+  contents: Array<{ text?: string; blob?: string; mimeType?: string; uri?: string }>;
+}): string {
+  const parts: string[] = [];
+  for (const content of result.contents) {
+    if (content.text !== undefined) {
+      parts.push(content.text);
+    } else if (content.blob) {
+      parts.push(`[Binary: ${content.mimeType ?? 'unknown'}, ${content.blob.length} bytes]`);
+    }
+  }
+  return parts.join('\n');
+}
+
+export function formatPrompts(prompts: Array<{ server: string; prompt: Prompt }>): string {
+  if (prompts.length === 0) return 'No prompts available.';
+
+  const headers = ['Prompt', 'Title', 'Description', 'Args'];
+  const rows = prompts.map(({ server, prompt }) => [
+    `${server}/${prompt.name}`,
+    prompt.title ?? '\u2014',
+    truncate(prompt.description ?? '', 50),
+    prompt.arguments ? String(prompt.arguments.length) : '0',
+  ]);
+
+  return formatTable(headers, rows);
+}
+
+export function formatPromptMessages(result: {
+  description?: string;
+  messages: Array<{
+    role: string;
+    content:
+      | { type: string; text?: string; mimeType?: string; data?: string }
+      | Array<{ type: string; text?: string; mimeType?: string; data?: string }>;
+  }>;
+}): string {
+  const lines: string[] = [];
+  if (result.description) {
+    lines.push(result.description);
+    lines.push('');
+  }
+
+  for (const msg of result.messages) {
+    lines.push(`[${msg.role}]`);
+    const contents = Array.isArray(msg.content) ? msg.content : [msg.content];
+    for (const block of contents) {
+      switch (block.type) {
+        case 'text':
+          lines.push(block.text ?? '');
+          break;
+        case 'image':
+          lines.push(`[Image: ${block.mimeType}]`);
+          break;
+        case 'audio':
+          lines.push(`[Audio: ${block.mimeType}]`);
+          break;
+        case 'resource':
+          lines.push(`[Resource]`);
+          break;
+        default:
+          lines.push(`[${block.type}]`);
+      }
+    }
+    lines.push('');
+  }
+
+  return lines.join('\n').trimEnd();
+}
+
+export function formatCompletions(result: {
+  completion: { values: string[]; total?: number; hasMore?: boolean };
+}): string {
+  if (result.completion.values.length === 0) return 'No completions.';
+
+  const lines = result.completion.values.map((v) => `  ${v}`);
+  if (result.completion.hasMore) {
+    lines.push(`  ... (${result.completion.total ?? 'more'} total)`);
+  }
+  return lines.join('\n');
+}
+
+export function formatTasks(
+  serverTasks: Array<{ server: string; tasks: Array<Record<string, unknown>> }>
+): string {
+  const allTasks: Array<{ server: string; task: Record<string, unknown> }> = [];
+  for (const { server, tasks } of serverTasks) {
+    for (const task of tasks) {
+      allTasks.push({ server, task });
+    }
+  }
+
+  if (allTasks.length === 0) return 'No active tasks.';
+
+  const headers = ['Task ID', 'Status', 'Server', 'Message'];
+  const rows = allTasks.map(({ server, task }) => [
+    String(task.taskId ?? ''),
+    String(task.status ?? ''),
+    server,
+    truncate(String(task.statusMessage ?? ''), 40),
+  ]);
+
+  return formatTable(headers, rows);
+}
+
+export function formatTask(task: Record<string, unknown>): string {
+  const lines: string[] = [];
+  lines.push(`Task ID: ${task.taskId}`);
+  lines.push(`Status: ${task.status}`);
+  if (task.statusMessage) {
+    lines.push(`Message: ${task.statusMessage}`);
+  }
+  if (task.createdAt) {
+    lines.push(`Created: ${task.createdAt}`);
+  }
+  if (task.lastUpdatedAt) {
+    lines.push(`Updated: ${task.lastUpdatedAt}`);
+  }
+  return lines.join('\n');
+}
+
+export function formatReload(result: {
+  added: string[];
+  removed: string[];
+  changed: string[];
+}): string {
+  const lines: string[] = [];
+  if (result.added.length > 0) {
+    lines.push(`Added: ${result.added.join(', ')}`);
+  }
+  if (result.removed.length > 0) {
+    lines.push(`Removed: ${result.removed.join(', ')}`);
+  }
+  if (result.changed.length > 0) {
+    lines.push(`Changed: ${result.changed.join(', ')}`);
+  }
+  if (lines.length === 0) {
+    return 'No changes detected.';
+  }
   return lines.join('\n');
 }
 
