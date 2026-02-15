@@ -366,9 +366,11 @@ export function formatInit(result: InitResult): string {
   // Conflicts
   if (result.conflicts.length > 0) {
     lines.push('');
-    lines.push('Conflicts (resolved by prefixing):');
+    lines.push('Conflicts resolved:');
     for (const c of result.conflicts) {
-      lines.push(`  ${c.name} \u2192 ${c.resolution}`);
+      const others = c.agents.filter((a) => a !== c.chosenAgent);
+      const alsoIn = others.length > 0 ? ` (also in: ${others.join(', ')})` : '';
+      lines.push(`  ${c.name} \u2014 kept config from ${c.chosenAgent}${alsoIn}`);
     }
   }
 

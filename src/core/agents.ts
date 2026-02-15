@@ -36,11 +36,17 @@ export type DiscoveredConfig = {
   rawContent: Record<string, unknown>;
 };
 
-// Conflict when multiple agents define the same server name with different configs
+// Unresolved conflict: same server name, different configs across agents
+export type UnresolvedConflict = {
+  name: string;
+  options: Array<{ agent: string; config: ServerConfig }>;
+};
+
+// Resolved conflict: records which agent's config was kept
 export type Conflict = {
   name: string;
   agents: string[];
-  resolution: string;
+  chosenAgent: string;
 };
 
 // Result of the full init operation
@@ -285,12 +291,12 @@ export function mergeServers(
   merged: Record<string, ServerConfig>;
   imported: string[];
   skipped: string[];
-  conflicts: Conflict[];
+  unresolvedConflicts: UnresolvedConflict[];
 } {
   const merged: Record<string, ServerConfig> = { ...existingServers };
   const imported: string[] = [];
   const skipped: string[] = [];
-  const conflicts: Conflict[] = [];
+  const unresolvedConflicts: UnresolvedConflict[] = [];
 
   // Group all servers by name across agents
   const byName = new Map<string, Array<{ agent: string; config: ServerConfig }>>();
@@ -318,24 +324,12 @@ export function mergeServers(
       merged[name] = unique[0]!.config;
       imported.push(name);
     } else {
-      // Conflict: same name, different configs — prefix with agent name
-      const conflictAgents: string[] = [];
-      for (const entry of unique) {
-        const prefix = entry.agent.replace(/\s*\(global\)/, '');
-        const prefixed = `${prefix}-${name}`;
-        merged[prefixed] = entry.config;
-        imported.push(prefixed);
-        conflictAgents.push(entry.agent);
-      }
-      conflicts.push({
-        name,
-        agents: conflictAgents,
-        resolution: `prefixed as ${unique.map((e) => `${e.agent.replace(/\s*\(global\)/, '')}-${name}`).join(', ')}`,
-      });
+      // Conflict: same name, different configs — leave unresolved
+      unresolvedConflicts.push({ name, options: unique });
     }
   }
 
-  return { merged, imported, skipped, conflicts };
+  return { merged, imported, skipped, unresolvedConflicts };
 }
 
 // Detect indentation used in a JSON file

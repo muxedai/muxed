@@ -61,7 +61,7 @@ describe('mergeServers', () => {
 
     expect(result.imported).toEqual(['filesystem', 'github']);
     expect(result.skipped).toEqual([]);
-    expect(result.conflicts).toEqual([]);
+    expect(result.unresolvedConflicts).toEqual([]);
     expect(result.merged.filesystem).toEqual({
       command: 'npx',
       args: ['-y', '@modelcontextprotocol/server-filesystem'],
@@ -107,10 +107,10 @@ describe('mergeServers', () => {
     const result = mergeServers(discovered, {});
 
     expect(result.imported).toEqual(['github']);
-    expect(result.conflicts).toEqual([]);
+    expect(result.unresolvedConflicts).toEqual([]);
   });
 
-  it('resolves conflicts by prefixing with agent name', () => {
+  it('returns unresolved conflicts for same-name servers with different configs', () => {
     const discovered: DiscoveredConfig[] = [
       makeDiscovered(
         { name: 'cursor' },
@@ -128,14 +128,17 @@ describe('mergeServers', () => {
 
     const result = mergeServers(discovered, {});
 
-    expect(result.imported).toContain('cursor-github');
-    expect(result.imported).toContain('vscode-github');
-    expect(result.conflicts).toHaveLength(1);
-    expect(result.conflicts[0]!.name).toBe('github');
-    expect(result.conflicts[0]!.agents).toEqual(['cursor', 'vscode']);
+    expect(result.imported).toEqual([]);
+    expect(result.merged).toEqual({});
+    expect(result.unresolvedConflicts).toHaveLength(1);
+    expect(result.unresolvedConflicts[0]!.name).toBe('github');
+    expect(result.unresolvedConflicts[0]!.options).toEqual([
+      { agent: 'cursor', config: { command: 'npx', args: ['cursor-github'] } },
+      { agent: 'vscode', config: { command: 'npx', args: ['vscode-github'] } },
+    ]);
   });
 
-  it('handles global scope agent labels in conflicts', () => {
+  it('handles global scope agent labels in unresolved conflicts', () => {
     const discovered: DiscoveredConfig[] = [
       makeDiscovered(
         { name: 'cursor', scope: 'local' },
@@ -153,8 +156,12 @@ describe('mergeServers', () => {
 
     const result = mergeServers(discovered, {});
 
-    expect(result.imported).toContain('cursor-myserver');
-    expect(result.conflicts).toHaveLength(1);
+    expect(result.imported).toEqual([]);
+    expect(result.unresolvedConflicts).toHaveLength(1);
+    expect(result.unresolvedConflicts[0]!.options).toEqual([
+      { agent: 'cursor', config: { command: 'a' } },
+      { agent: 'cursor (global)', config: { command: 'b' } },
+    ]);
   });
 
   it('returns empty results for empty input', () => {
@@ -162,7 +169,7 @@ describe('mergeServers', () => {
 
     expect(result.imported).toEqual([]);
     expect(result.skipped).toEqual([]);
-    expect(result.conflicts).toEqual([]);
+    expect(result.unresolvedConflicts).toEqual([]);
     expect(result.merged).toEqual({});
   });
 });
