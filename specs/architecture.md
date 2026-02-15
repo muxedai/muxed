@@ -265,7 +265,11 @@ Task flow: `tools/call` returns `CreateTaskResult` with `taskId` → poll with `
 ## Implementation Iterations
 
 1. [Project Setup](./01-project-setup.md) - tooling, deps, Claude Code hooks
-2. [MVP](./02-mvp.md) - daemon + CLI core: `servers`, `tools`, `call`, `info`, `stop`, `status` (with full MCP 2025-11-25 data model)
+2. MVP (with full MCP 2025-11-25 data model):
+   - [2a: Foundation](./02a-foundation.md) - types, config loader, path utilities
+   - [2b: MCP Connection](./02b-mcp-connection.md) - ServerManager, ServerPool, SDK integration
+   - [2c: Daemon](./02c-daemon.md) - Unix socket JSON-RPC server, daemonization, idle timeout
+   - [2d: CLI](./02d-cli.md) - client, formatter, commands (`servers`, `tools`, `info`, `call`, `stop`, `status`)
 3. [Complete CLI](./03-complete-cli.md) - `grep`, `resources`, `read`, `reload`, `prompts`, `completions`, tasks commands, stdin, `--json`
 4. [Robustness](./04-robustness.md) - health checks, auto-restart, graceful shutdown, logging, task cleanup
 5. [Advanced](./05-advanced.md) - Streamable HTTP transport, HTTP listener, Claude Desktop config merge, protocol version negotiation

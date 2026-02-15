@@ -6,7 +6,7 @@ Add remaining CLI commands and polish the interface: `grep`, `resources`, `read`
 
 ## Prerequisites
 
-Iteration 2 (MVP) complete.
+Iteration 2d (CLI) complete — full MVP is operational.
 
 ## Steps
 
