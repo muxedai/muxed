@@ -17,10 +17,28 @@ export type StdioServerConfig = {
   cwd?: string;
 };
 
+export type ClientCredentialsAuth = {
+  type: 'client_credentials';
+  clientId: string;
+  clientSecret: string;
+  scope?: string;
+};
+
+export type AuthorizationCodeAuth = {
+  type: 'authorization_code';
+  clientId?: string;
+  clientSecret?: string;
+  scope?: string;
+  callbackPort?: number;
+};
+
+export type OAuthConfig = ClientCredentialsAuth | AuthorizationCodeAuth;
+
 export type HttpServerConfig = {
   url: string;
   transport?: 'streamable-http' | 'sse';
   headers?: Record<string, string>;
+  auth?: OAuthConfig;
 };
 
 export type ServerConfig = StdioServerConfig | HttpServerConfig;
