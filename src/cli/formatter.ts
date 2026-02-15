@@ -1,4 +1,5 @@
-import type { Tool, Resource, Prompt, ServerState } from '../core/types.js';
+import type { Tool, Resource, Prompt, ServerState, ServerConfig } from '../core/types.js';
+import { isStdioConfig, isHttpConfig } from '../core/types.js';
 import type { InitResult } from '../core/agents.js';
 
 type ContentBlock = {
@@ -398,6 +399,66 @@ export function formatInit(result: InitResult): string {
   }
 
   return lines.join('\n');
+}
+
+export function formatMcpServer(name: string, config: ServerConfig, scope?: string): string {
+  const lines: string[] = [];
+  lines.push(`Name: ${name}`);
+  if (scope) lines.push(`Scope: ${scope}`);
+
+  if (isStdioConfig(config)) {
+    lines.push(`Transport: stdio`);
+    lines.push(`Command: ${config.command}`);
+    if (config.args && config.args.length > 0) lines.push(`Args: ${config.args.join(' ')}`);
+    if (config.env && Object.keys(config.env).length > 0) {
+      lines.push('Env:');
+      for (const [key, value] of Object.entries(config.env)) {
+        lines.push(`  ${key}=${value}`);
+      }
+    }
+    if (config.cwd) lines.push(`Cwd: ${config.cwd}`);
+  } else if (isHttpConfig(config)) {
+    lines.push(`Transport: ${config.transport ?? 'streamable-http'}`);
+    lines.push(`URL: ${config.url}`);
+    if (config.headers && Object.keys(config.headers).length > 0) {
+      lines.push('Headers:');
+      for (const [key, value] of Object.entries(config.headers)) {
+        lines.push(`  ${key}: ${value}`);
+      }
+    }
+    if (config.auth) {
+      lines.push(`Auth: ${config.auth.type}`);
+      if (config.auth.clientId) lines.push(`  Client ID: ${config.auth.clientId}`);
+      if (config.auth.scope) lines.push(`  Scope: ${config.auth.scope}`);
+      if (config.auth.type === 'authorization_code' && config.auth.callbackPort) {
+        lines.push(`  Callback Port: ${config.auth.callbackPort}`);
+      }
+    }
+  }
+
+  return lines.join('\n');
+}
+
+export function formatMcpServerList(
+  servers: Array<{ name: string; config: ServerConfig; scope: string }>
+): string {
+  if (servers.length === 0) return 'No MCP servers configured.';
+
+  const headers = ['Name', 'Type', 'Command/URL', 'Scope', 'Auth'];
+  const rows = servers.map(({ name, config, scope }) => {
+    if (isStdioConfig(config)) {
+      const cmd = config.args ? `${config.command} ${config.args.join(' ')}` : config.command;
+      return [name, 'stdio', truncate(cmd, 50), scope, '\u2014'];
+    }
+    if (isHttpConfig(config)) {
+      const transport = config.transport ?? 'http';
+      const auth = config.auth ? config.auth.type : '\u2014';
+      return [name, transport, truncate(config.url, 50), scope, auth];
+    }
+    return [name, '?', '\u2014', scope, '\u2014'];
+  });
+
+  return formatTable(headers, rows);
 }
 
 export function formatJson(data: unknown): string {
