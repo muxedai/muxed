@@ -117,6 +117,10 @@ const DAEMON_DEFAULTS = {
   shutdownTimeout: 10_000,
 };
 
+function getGlobalConfigPath(): string {
+  return path.join(os.homedir(), '.config', 'mcpd', 'config.json');
+}
+
 function findConfigFile(configPath?: string): string {
   if (configPath) {
     if (!fs.existsSync(configPath)) {
@@ -130,7 +134,7 @@ function findConfigFile(configPath?: string): string {
     return cwdConfig;
   }
 
-  const homeConfig = path.join(os.homedir(), '.config', 'mcpd', 'config.json');
+  const homeConfig = getGlobalConfigPath();
   if (fs.existsSync(homeConfig)) {
     return homeConfig;
   }
@@ -170,6 +174,27 @@ export function loadConfig(configPath?: string): McpdConfig {
   }
 
   const config = result.data as McpdConfig;
+
+  // Merge global config servers when using a project-level config
+  const globalConfigPath = getGlobalConfigPath();
+  if (
+    path.resolve(filePath) !== path.resolve(globalConfigPath) &&
+    fs.existsSync(globalConfigPath)
+  ) {
+    try {
+      const globalRaw = JSON.parse(fs.readFileSync(globalConfigPath, 'utf-8'));
+      const globalResult = McpdConfigSchema.safeParse(globalRaw);
+      if (globalResult.success) {
+        // Global servers as base, project servers take precedence
+        config.mcpServers = {
+          ...globalResult.data.mcpServers,
+          ...config.mcpServers,
+        } as McpdConfig['mcpServers'];
+      }
+    } catch {
+      // Ignore invalid global config
+    }
+  }
 
   // Merge Claude Desktop servers if enabled
   if (config.mergeClaudeConfig) {

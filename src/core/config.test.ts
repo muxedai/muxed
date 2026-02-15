@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
@@ -162,7 +162,8 @@ describe('loadConfig', () => {
     });
 
     const config = loadConfig(configPath);
-    expect(Object.keys(config.mcpServers)).toEqual(['filesystem', 'remote']);
+    expect(Object.keys(config.mcpServers)).toContain('filesystem');
+    expect(Object.keys(config.mcpServers)).toContain('remote');
   });
 
   it('validates HTTP server config with sessionId and reconnection', () => {
@@ -242,6 +243,77 @@ describe('loadConfig', () => {
 
     const config = loadConfig(configPath);
     expect(config.mergeClaudeConfig).toBe(true);
+  });
+
+  it('merges global config servers into project config', () => {
+    // Write a fake global config
+    const globalDir = path.join(os.homedir(), '.config', 'mcpd');
+    const globalPath = path.join(globalDir, 'config.json');
+    const hadGlobalConfig = fs.existsSync(globalPath);
+    const originalGlobalContent = hadGlobalConfig ? fs.readFileSync(globalPath, 'utf-8') : null;
+
+    fs.mkdirSync(globalDir, { recursive: true });
+    fs.writeFileSync(
+      globalPath,
+      JSON.stringify({
+        mcpServers: {
+          'global-server': { command: 'global-cmd' },
+          overlap: { command: 'global-overlap' },
+        },
+      })
+    );
+
+    try {
+      const configPath = writeTmpConfig(tmpDir, {
+        mcpServers: {
+          local: { command: 'local-cmd' },
+          overlap: { command: 'local-overlap' },
+        },
+      });
+
+      const config = loadConfig(configPath);
+      // Global server is included
+      expect(config.mcpServers['global-server']).toEqual({ command: 'global-cmd' });
+      // Local server is included
+      expect(config.mcpServers.local).toEqual({ command: 'local-cmd' });
+      // Project-level takes precedence on name conflicts
+      expect(config.mcpServers.overlap).toEqual({ command: 'local-overlap' });
+    } finally {
+      // Restore original global config
+      if (originalGlobalContent !== null) {
+        fs.writeFileSync(globalPath, originalGlobalContent);
+      } else {
+        fs.unlinkSync(globalPath);
+      }
+    }
+  });
+
+  it('does not merge global config when loading the global config itself', () => {
+    const globalDir = path.join(os.homedir(), '.config', 'mcpd');
+    const globalPath = path.join(globalDir, 'config.json');
+    const hadGlobalConfig = fs.existsSync(globalPath);
+    const originalGlobalContent = hadGlobalConfig ? fs.readFileSync(globalPath, 'utf-8') : null;
+
+    fs.mkdirSync(globalDir, { recursive: true });
+    fs.writeFileSync(
+      globalPath,
+      JSON.stringify({
+        mcpServers: {
+          'global-only': { command: 'global-cmd' },
+        },
+      })
+    );
+
+    try {
+      const config = loadConfig(globalPath);
+      expect(Object.keys(config.mcpServers)).toEqual(['global-only']);
+    } finally {
+      if (originalGlobalContent !== null) {
+        fs.writeFileSync(globalPath, originalGlobalContent);
+      } else {
+        fs.unlinkSync(globalPath);
+      }
+    }
   });
 
   it('merges Claude Desktop servers when mergeClaudeConfig is true', () => {
