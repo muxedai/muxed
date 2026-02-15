@@ -87,12 +87,12 @@ export function formatToolInfo(server: string, tool: Tool): string {
 
   lines.push('');
   lines.push('Input Schema:');
-  lines.push('  ' + JSON.stringify(tool.inputSchema, null, 2).split('\n').join('\n  '));
+  lines.push('  ' + JSON.stringify(tool.inputSchema));
 
   if (tool.outputSchema) {
     lines.push('');
     lines.push('Output Schema:');
-    lines.push('  ' + JSON.stringify(tool.outputSchema, null, 2).split('\n').join('\n  '));
+    lines.push('  ' + JSON.stringify(tool.outputSchema));
   }
 
   const annotations = tool.annotations;
@@ -151,7 +151,7 @@ export function formatCallResult(result: CallToolResult): string {
   if (result.structuredContent) {
     parts.push('');
     parts.push('Structured Output:');
-    parts.push('  ' + JSON.stringify(result.structuredContent, null, 2).split('\n').join('\n  '));
+    parts.push('  ' + JSON.stringify(result.structuredContent));
   }
 
   return parts.join('\n');
