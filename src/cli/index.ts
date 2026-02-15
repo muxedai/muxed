@@ -16,6 +16,7 @@ import { tasksCommand } from './commands/tasks.js';
 import { taskCommand } from './commands/task.js';
 import { taskResultCommand } from './commands/task-result.js';
 import { taskCancelCommand } from './commands/task-cancel.js';
+import { initCommand } from './commands/init.js';
 
 export function runCli(): void {
   const program = new Command();
@@ -36,6 +37,7 @@ export function runCli(): void {
   program.addCommand(taskCommand);
   program.addCommand(taskResultCommand);
   program.addCommand(taskCancelCommand);
+  program.addCommand(initCommand);
   program.addCommand(reloadCommand);
   program.addCommand(stopCommand);
   program.addCommand(statusCommand);

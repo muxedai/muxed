@@ -1,4 +1,5 @@
 import type { Tool, Resource, Prompt, ServerState } from '../core/types.js';
+import type { InitResult } from '../core/agents.js';
 
 type ContentBlock = {
   type: string;
@@ -332,6 +333,68 @@ export function formatReload(result: {
   if (lines.length === 0) {
     return 'No changes detected.';
   }
+  return lines.join('\n');
+}
+
+export function formatInit(result: InitResult): string {
+  const lines: string[] = [];
+
+  if (result.dryRun) {
+    lines.push('[dry run] No files will be modified.\n');
+  }
+
+  // Discovered agents table
+  lines.push('Discovered MCP servers:\n');
+  const discHeaders = ['Agent', 'Scope', 'Config', 'Servers'];
+  const discRows = result.discovered.map((d) => [d.agent, d.scope, d.path, String(d.serverCount)]);
+  lines.push(formatTable(discHeaders, discRows));
+
+  // Imported
+  if (result.imported.length > 0) {
+    lines.push('');
+    lines.push(`Imported ${result.imported.length} server(s) into ${result.mcpdConfigPath}:`);
+    lines.push(`  ${result.imported.join(', ')}`);
+  }
+
+  // Skipped
+  if (result.skipped.length > 0) {
+    lines.push('');
+    lines.push(`Skipped ${result.skipped.length} (already existed):`);
+    lines.push(`  ${result.skipped.join(', ')}`);
+  }
+
+  // Conflicts
+  if (result.conflicts.length > 0) {
+    lines.push('');
+    lines.push('Conflicts (resolved by prefixing):');
+    for (const c of result.conflicts) {
+      lines.push(`  ${c.name} \u2192 ${c.resolution}`);
+    }
+  }
+
+  // Warnings
+  if (result.warnings.length > 0) {
+    lines.push('');
+    lines.push('Warnings:');
+    for (const w of result.warnings) {
+      lines.push(`  ${w}`);
+    }
+  }
+
+  // Modified files
+  if (result.modifiedFiles.length > 0) {
+    lines.push('');
+    lines.push('Modified files:');
+    for (const f of result.modifiedFiles) {
+      lines.push(`  ${f} (backed up to ${f}.bak)`);
+    }
+  }
+
+  if (result.imported.length === 0 && result.skipped.length > 0) {
+    lines.push('');
+    lines.push('All discovered servers already exist in mcpd config. Nothing to do.');
+  }
+
   return lines.join('\n');
 }
 
