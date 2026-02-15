@@ -6,48 +6,102 @@ import {
   modifyAgentConfig,
   getMcpdConfigPath,
 } from '../../core/agents.js';
-import type { InitResult } from '../../core/agents.js';
+import type { Conflict, InitResult, UnresolvedConflict } from '../../core/agents.js';
 import type { ServerConfig } from '../../core/types.js';
 import { formatInit, formatJson } from '../formatter.js';
+import { confirm, choose } from '../prompt.js';
 import fs from 'node:fs';
+
+const AGENT_PRIORITY = ['claude-code', 'cursor'];
+
+function pickByPriority(options: Array<{ agent: string; config: ServerConfig }>): {
+  agent: string;
+  config: ServerConfig;
+} {
+  for (const preferred of AGENT_PRIORITY) {
+    const match = options.find((o) => o.agent.replace(/\s*\(global\)/, '') === preferred);
+    if (match) return match;
+  }
+  return options[0]!;
+}
+
+function formatServerSummary(config: ServerConfig): string {
+  if ('command' in config) {
+    const args = config.args ? ` ${config.args.join(' ')}` : '';
+    return `${config.command}${args}`;
+  }
+  return config.url;
+}
+
+async function resolveConflicts(
+  unresolvedConflicts: UnresolvedConflict[],
+  isInteractive: boolean
+): Promise<{ resolved: Record<string, ServerConfig>; conflicts: Conflict[] }> {
+  const resolved: Record<string, ServerConfig> = {};
+  const conflicts: Conflict[] = [];
+
+  for (const conflict of unresolvedConflicts) {
+    let chosen: { agent: string; config: ServerConfig };
+
+    if (isInteractive) {
+      chosen = await choose(
+        `\nConflict: "${conflict.name}" has different configs:`,
+        conflict.options.map((o) => ({
+          label: `${o.agent}: ${formatServerSummary(o.config)}`,
+          value: o,
+        }))
+      );
+    } else {
+      chosen = pickByPriority(conflict.options);
+    }
+
+    resolved[conflict.name] = chosen.config;
+    conflicts.push({
+      name: conflict.name,
+      agents: conflict.options.map((o) => o.agent),
+      chosenAgent: chosen.agent,
+    });
+  }
+
+  return { resolved, conflicts };
+}
 
 export const initCommand = new Command('init')
   .description('Import MCP servers from coding agents into mcpd')
   .option('--dry-run', 'Show what would be done without writing files')
   .option('--json', 'Output as JSON')
+  .option('-y, --yes', 'Skip prompts; resolve conflicts by priority (claude-code > cursor > first)')
   .option('--no-delete', 'Keep original server entries in agent configs')
   .option('--no-replace', "Don't add mcpd entry to agent configs")
-  .action(async (opts: { dryRun?: boolean; json?: boolean; delete: boolean; replace: boolean }) => {
-    const configPath = initCommand.parent?.opts().config as string | undefined;
+  .action(
+    async (opts: {
+      dryRun?: boolean;
+      json?: boolean;
+      yes?: boolean;
+      delete: boolean;
+      replace: boolean;
+    }) => {
+      const configPath = initCommand.parent?.opts().config as string | undefined;
+      const isInteractive = !opts.dryRun && !opts.json && !opts.yes && !!process.stdin.isTTY;
 
-    // 1. Discover
-    const { discovered, warnings } = discoverAgentConfigs();
+      // 1. Discover
+      const { discovered, warnings } = discoverAgentConfigs();
 
-    if (discovered.length === 0) {
-      const msg = 'No MCP server configurations found in any known agent config files.';
-      console.log(opts.json ? formatJson({ message: msg }) : msg);
-      return;
-    }
+      if (discovered.length === 0) {
+        const msg = 'No MCP server configurations found in any known agent config files.';
+        console.log(opts.json ? formatJson({ message: msg }) : msg);
+        return;
+      }
 
-    // 2. Split by scope
-    const localConfigs = discovered.filter((d) => d.agent.scope === 'local');
-    const globalConfigs = discovered.filter((d) => d.agent.scope === 'global');
+      // 2. Determine mcpd config path — single merged config
+      const hasLocalConfigs = discovered.some((d) => d.agent.scope === 'local');
+      const mcpdPath = getMcpdConfigPath(hasLocalConfigs ? 'local' : 'global', configPath);
 
-    const imported: string[] = [];
-    const skipped: string[] = [];
-    const conflicts: InitResult['conflicts'] = [];
-    const modifiedFiles: string[] = [];
-    const mcpdPaths: string[] = [];
-
-    // 3. Process local configs
-    if (localConfigs.length > 0) {
-      const localMcpdPath = getMcpdConfigPath('local', configPath);
-      mcpdPaths.push(localMcpdPath);
-
+      // 3. Read existing mcpd servers
       let existingServers: Record<string, ServerConfig> = {};
-      if (fs.existsSync(localMcpdPath)) {
+      if (fs.existsSync(mcpdPath)) {
         try {
-          const existing = JSON.parse(fs.readFileSync(localMcpdPath, 'utf-8')) as Record<
+          const existing = JSON.parse(fs.readFileSync(mcpdPath, 'utf-8')) as Record<
             string,
             unknown
           >;
@@ -57,74 +111,65 @@ export const initCommand = new Command('init')
         }
       }
 
-      const result = mergeServers(localConfigs, existingServers);
-      imported.push(...result.imported);
-      skipped.push(...result.skipped);
-      conflicts.push(...result.conflicts);
+      // 4. Merge all discovered configs (local + global) into one
+      const result = mergeServers(discovered, existingServers);
 
-      if (!opts.dryRun && result.imported.length > 0) {
-        writeMcpdConfig(localMcpdPath, result.merged);
+      // 5. Resolve conflicts
+      const { resolved, conflicts } = await resolveConflicts(
+        result.unresolvedConflicts,
+        isInteractive
+      );
+
+      // Add resolved conflicts into merged and imported
+      const imported = [...result.imported];
+      for (const [name, config] of Object.entries(resolved)) {
+        result.merged[name] = config;
+        imported.push(name);
       }
-    }
 
-    // 4. Process global configs
-    if (globalConfigs.length > 0) {
-      const globalMcpdPath = getMcpdConfigPath('global', configPath);
-      if (!mcpdPaths.includes(globalMcpdPath)) mcpdPaths.push(globalMcpdPath);
+      // 6. Write mcpd config
+      if (!opts.dryRun && imported.length > 0) {
+        writeMcpdConfig(mcpdPath, result.merged);
+      }
 
-      let existingServers: Record<string, ServerConfig> = {};
-      if (fs.existsSync(globalMcpdPath)) {
-        try {
-          const existing = JSON.parse(fs.readFileSync(globalMcpdPath, 'utf-8')) as Record<
-            string,
-            unknown
-          >;
-          existingServers = (existing.mcpServers ?? {}) as Record<string, ServerConfig>;
-        } catch {
-          // Start fresh
+      // 7. Modify agent configs (backup + remove servers + optionally add mcpd entry)
+      const modifiedFiles: string[] = [];
+      const shouldDelete = isInteractive
+        ? await confirm(
+            'Remove imported servers from agent config files? (backups will be created)'
+          )
+        : opts.delete;
+
+      if (!opts.dryRun && shouldDelete) {
+        for (const dc of discovered) {
+          try {
+            modifyAgentConfig(dc, { delete: true, replace: opts.replace });
+            modifiedFiles.push(dc.configPath);
+          } catch (err) {
+            warnings.push(
+              `Failed to modify ${dc.configPath}: ${err instanceof Error ? err.message : String(err)}`
+            );
+          }
         }
       }
 
-      const result = mergeServers(globalConfigs, existingServers);
-      imported.push(...result.imported);
-      skipped.push(...result.skipped);
-      conflicts.push(...result.conflicts);
+      // 8. Build result
+      const initResult: InitResult = {
+        discovered: discovered.map((d) => ({
+          agent: d.agent.name,
+          scope: d.agent.scope,
+          path: d.configPath,
+          serverCount: Object.keys(d.servers).length,
+        })),
+        imported,
+        skipped: result.skipped,
+        conflicts,
+        warnings,
+        modifiedFiles,
+        mcpdConfigPath: mcpdPath,
+        dryRun: opts.dryRun ?? false,
+      };
 
-      if (!opts.dryRun && result.imported.length > 0) {
-        writeMcpdConfig(globalMcpdPath, result.merged);
-      }
+      console.log(opts.json ? formatJson(initResult) : formatInit(initResult));
     }
-
-    // 5. Modify agent configs (backup + remove servers + optionally add mcpd entry)
-    if (!opts.dryRun && opts.delete) {
-      for (const dc of discovered) {
-        try {
-          modifyAgentConfig(dc, { delete: opts.delete, replace: opts.replace });
-          modifiedFiles.push(dc.configPath);
-        } catch (err) {
-          warnings.push(
-            `Failed to modify ${dc.configPath}: ${err instanceof Error ? err.message : String(err)}`
-          );
-        }
-      }
-    }
-
-    // 6. Build result
-    const initResult: InitResult = {
-      discovered: discovered.map((d) => ({
-        agent: d.agent.name,
-        scope: d.agent.scope,
-        path: d.configPath,
-        serverCount: Object.keys(d.servers).length,
-      })),
-      imported,
-      skipped,
-      conflicts,
-      warnings,
-      modifiedFiles,
-      mcpdConfigPath: mcpdPaths.join(', '),
-      dryRun: opts.dryRun ?? false,
-    };
-
-    console.log(opts.json ? formatJson(initResult) : formatInit(initResult));
-  });
+  );
