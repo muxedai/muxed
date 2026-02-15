@@ -1,0 +1,63 @@
+import type {
+  Tool,
+  Resource,
+  Prompt,
+  Implementation,
+  ServerCapabilities,
+} from '@modelcontextprotocol/sdk/types.js';
+
+// Re-export SDK types for convenience
+export type { Tool, Resource, Prompt, Implementation, ServerCapabilities };
+
+// Server configuration variants
+export type StdioServerConfig = {
+  command: string;
+  args?: string[];
+  env?: Record<string, string>;
+  cwd?: string;
+};
+
+export type HttpServerConfig = {
+  url: string;
+  transport?: 'streamable-http' | 'sse';
+  headers?: Record<string, string>;
+};
+
+export type ServerConfig = StdioServerConfig | HttpServerConfig;
+
+// Daemon configuration
+export type DaemonConfig = {
+  idleTimeout?: number; // default: 300000 (5 min)
+  connectTimeout?: number; // default: 30000 (30s)
+  requestTimeout?: number; // default: 60000 (60s)
+};
+
+// Top-level config
+export type McpdConfig = {
+  mcpServers: Record<string, ServerConfig>;
+  daemon?: DaemonConfig;
+};
+
+// Runtime server status
+export type ServerConnectionStatus = 'connecting' | 'connected' | 'error' | 'closed';
+
+// Full server info stored after handshake
+export type ServerState = {
+  name: string;
+  config: ServerConfig;
+  status: ServerConnectionStatus;
+  error?: string;
+  serverInfo?: Implementation;
+  capabilities?: ServerCapabilities;
+  protocolVersion?: string;
+  instructions?: string;
+};
+
+// Type guards to distinguish config types
+export function isStdioConfig(config: ServerConfig): config is StdioServerConfig {
+  return 'command' in config;
+}
+
+export function isHttpConfig(config: ServerConfig): config is HttpServerConfig {
+  return 'url' in config;
+}
