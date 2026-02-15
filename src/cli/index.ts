@@ -17,10 +17,12 @@ import { taskCommand } from './commands/task.js';
 import { taskResultCommand } from './commands/task-result.js';
 import { taskCancelCommand } from './commands/task-cancel.js';
 import { initCommand } from './commands/init.js';
+import { mcpCommand } from './commands/mcp.js';
 
 export function runCli(): void {
   const program = new Command();
   program.name('mcpd').description('MCP Server Proxy/Aggregator').version('0.1.0');
+  program.enablePositionalOptions();
   program.option('--config <path>', 'Path to config file');
 
   program.addCommand(serversCommand);
@@ -38,6 +40,7 @@ export function runCli(): void {
   program.addCommand(taskResultCommand);
   program.addCommand(taskCancelCommand);
   program.addCommand(initCommand);
+  program.addCommand(mcpCommand);
   program.addCommand(reloadCommand);
   program.addCommand(stopCommand);
   program.addCommand(statusCommand);
