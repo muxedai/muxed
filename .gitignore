@@ -6,4 +6,4 @@ coverage
 .env.*
 .DS_Store
 *.log
-bin/_chunks/
+**/bin/_chunks/

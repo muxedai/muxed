@@ -7,6 +7,18 @@ settings:
 importers:
 
   .:
+    devDependencies:
+      husky:
+        specifier: ^9.1.7
+        version: 9.1.7
+      lint-staged:
+        specifier: ^16.2.7
+        version: 16.2.7
+      prettier:
+        specifier: ^3.8.1
+        version: 3.8.1
+
+  packages/mcpd:
     dependencies:
       '@modelcontextprotocol/sdk':
         specifier: ^1.26.0
@@ -27,12 +39,6 @@ importers:
       '@types/node':
         specifier: ^22.0.0
         version: 22.19.11
-      husky:
-        specifier: ^9.1.7
-        version: 9.1.7
-      lint-staged:
-        specifier: ^16.2.7
-        version: 16.2.7
       obuild:
         specifier: ^0.4.22
         version: 0.4.27(magicast@0.5.2)(picomatch@4.0.3)(rollup@4.57.1)(typescript@5.9.3)
@@ -46,7 +52,7 @@ importers:
         specifier: ^4.0.17
         version: 4.0.18(@types/node@22.19.11)(jiti@2.6.1)(lightningcss@1.31.1)(yaml@2.8.2)
 
-  website:
+  packages/website:
     dependencies:
       '@astrojs/starlight':
         specifier: ^0.37
@@ -69,6 +75,9 @@ importers:
       tailwindcss:
         specifier: ^4
         version: 4.2.0
+      zod:
+        specifier: ^3.23.0
+        version: 3.25.76
 
 packages:
 
