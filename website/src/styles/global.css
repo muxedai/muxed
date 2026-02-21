@@ -7,18 +7,18 @@
 @import 'tailwindcss/utilities.css' layer(utilities);
 
 @theme {
-  /* Accent: warm amber #e0a45e */
-  --color-accent-50: #fdf6ed;
-  --color-accent-100: #f9e5c8;
-  --color-accent-200: #f3cb91;
-  --color-accent-300: #ecaf5b;
-  --color-accent-400: #e0a45e;
-  --color-accent-500: #c88a3e;
-  --color-accent-600: #b07e3a;
-  --color-accent-700: #8c6230;
-  --color-accent-800: #6b4b26;
-  --color-accent-900: #4a331b;
-  --color-accent-950: #2d1f10;
+  /* Accent: soft indigo #818CF8 */
+  --color-accent-50: #eef0fe;
+  --color-accent-100: #d9ddfd;
+  --color-accent-200: #b5bcfb;
+  --color-accent-300: #919af9;
+  --color-accent-400: #818CF8;
+  --color-accent-500: #6366F1;
+  --color-accent-600: #4F46E5;
+  --color-accent-700: #4338CA;
+  --color-accent-800: #3730A3;
+  --color-accent-900: #312E81;
+  --color-accent-950: #1e1b4b;
 
   /* Gray: dark terminal backgrounds */
   --color-gray-50: #e8e8ec;

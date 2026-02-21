@@ -69,6 +69,9 @@ importers:
       tailwindcss:
         specifier: ^4
         version: 4.2.0
+      zod:
+        specifier: ^3.23.0
+        version: 3.25.76
 
 packages:
 
