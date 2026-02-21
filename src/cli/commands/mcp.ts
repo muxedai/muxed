@@ -183,7 +183,7 @@ async function tryReloadDaemon(): Promise<void> {
 // ─── mcp command group ───
 
 export const mcpCommand = new Command('mcp')
-  .description('MCP server proxy and management')
+  .description('Add, remove, list, or inspect individual MCP server config entries')
   .enablePositionalOptions()
   .action(async (_opts: unknown, cmd: Command) => {
     // When called without a subcommand, start the MCP proxy server over stdio
