@@ -3,12 +3,10 @@ import { serversCommand } from './commands/servers.js';
 import { toolsCommand } from './commands/tools.js';
 import { infoCommand } from './commands/info.js';
 import { callCommand } from './commands/call.js';
-import { stopCommand } from './commands/stop.js';
-import { statusCommand } from './commands/status.js';
 import { grepCommand } from './commands/grep.js';
 import { resourcesCommand } from './commands/resources.js';
 import { readCommand } from './commands/read.js';
-import { reloadCommand } from './commands/reload.js';
+import { daemonCommand } from './commands/daemon.js';
 import { promptsCommand } from './commands/prompts.js';
 import { promptCommand } from './commands/prompt.js';
 import { completionsCommand } from './commands/completions.js';
@@ -43,9 +41,7 @@ export function runCli(): void {
   program.addCommand(initCommand);
   program.addCommand(mcpCommand);
   program.addCommand(typegenCommand);
-  program.addCommand(reloadCommand);
-  program.addCommand(stopCommand);
-  program.addCommand(statusCommand);
+  program.addCommand(daemonCommand);
 
   program.parse();
 }
