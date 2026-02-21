@@ -3,7 +3,7 @@ import { ensureDaemon, sendRequest } from '../client.js';
 import { formatCompletions, formatJson } from '../formatter.js';
 
 export const completionsCommand = new Command('completions')
-  .description('Argument auto-completions')
+  .description('Get auto-completion suggestions for prompt or resource arguments')
   .argument('<type>', 'Reference type (prompt or resource)')
   .argument('<name>', 'Prompt or resource template name (server/name)')
   .argument('<arg>', 'Argument name')

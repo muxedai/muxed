@@ -4,7 +4,7 @@ import { ensureDaemon, sendRequest } from '../client.js';
 import { formatToolInfo, formatJson } from '../formatter.js';
 
 export const infoCommand = new Command('info')
-  .description('Tool schema details')
+  .description('Show input schema and description for a specific tool')
   .argument('<server/tool>', 'Tool identifier (e.g. myserver/mytool)')
   .option('--json', 'Output as JSON')
   .action(async (serverTool: string, opts: { json?: boolean }) => {

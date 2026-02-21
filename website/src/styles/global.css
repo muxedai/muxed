@@ -1,0 +1,38 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap');
+
+@layer base, starlight, theme, components, utilities;
+
+@import '@astrojs/starlight-tailwind';
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/utilities.css' layer(utilities);
+
+@theme {
+  /* Accent: warm amber #e0a45e */
+  --color-accent-50: #fdf6ed;
+  --color-accent-100: #f9e5c8;
+  --color-accent-200: #f3cb91;
+  --color-accent-300: #ecaf5b;
+  --color-accent-400: #e0a45e;
+  --color-accent-500: #c88a3e;
+  --color-accent-600: #b07e3a;
+  --color-accent-700: #8c6230;
+  --color-accent-800: #6b4b26;
+  --color-accent-900: #4a331b;
+  --color-accent-950: #2d1f10;
+
+  /* Gray: dark terminal backgrounds */
+  --color-gray-50: #e8e8ec;
+  --color-gray-100: #c4c4ca;
+  --color-gray-200: #8e8e96;
+  --color-gray-300: #5a5a62;
+  --color-gray-400: #36363e;
+  --color-gray-500: #2a2a30;
+  --color-gray-600: #24242a;
+  --color-gray-700: #1c1c21;
+  --color-gray-800: #141417;
+  --color-gray-900: #0c0c0e;
+  --color-gray-950: #080809;
+
+  --font-sans: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+  --font-mono: 'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+}

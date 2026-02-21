@@ -4,7 +4,7 @@ import { formatServers, formatJson } from '../formatter.js';
 import type { ServerState } from '../../core/types.js';
 
 export const serversCommand = new Command('servers')
-  .description('List servers with connection status')
+  .description('List connected MCP servers and their connection status')
   .option('--json', 'Output as JSON')
   .action(async (opts: { json?: boolean }) => {
     const configPath = serversCommand.parent?.opts().config as string | undefined;

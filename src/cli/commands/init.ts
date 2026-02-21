@@ -67,7 +67,7 @@ async function resolveConflicts(
 }
 
 export const initCommand = new Command('init')
-  .description('Import MCP servers from coding agents into mcpd')
+  .description('Discover and import MCP servers from agent configs (Claude Code, Cursor)')
   .option('--dry-run', 'Show what would be done without writing files')
   .option('--json', 'Output as JSON')
   .option('-y, --yes', 'Skip prompts; resolve conflicts by priority (claude-code > cursor > first)')

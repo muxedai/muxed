@@ -3,7 +3,7 @@ import { ensureDaemon, sendRequest } from '../client.js';
 import { formatTask, formatJson } from '../formatter.js';
 
 export const taskCancelCommand = new Command('task-cancel')
-  .description('Cancel a running task')
+  .description('Cancel a running async task')
   .argument('<server/taskId>', 'Task identifier (e.g. myserver/task-123)')
   .option('--json', 'Output as JSON')
   .action(async (serverTaskId: string, opts: { json?: boolean }) => {
