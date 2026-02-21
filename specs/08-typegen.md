@@ -96,29 +96,42 @@ For a daemon with two servers (`filesystem` with `read_file`/`write_file`, `gith
 
 declare module 'mcpd' {
   interface McpdToolMap {
+    /** Read the contents of a file at the given path. */
     'filesystem/read_file': {
       input: {
+        /** Absolute or relative path to the file. */
         path: string;
+        /** Text encoding (e.g. "utf-8", "ascii"). Defaults to "utf-8". */
         encoding?: string;
       };
       output: unknown;
     };
+    /** Create or overwrite a file with the given content. */
     'filesystem/write_file': {
       input: {
+        /** Absolute or relative path to the file. */
         path: string;
+        /** The content to write. */
         content: string;
       };
       output: unknown;
     };
+    /** Create a new issue in a GitHub repository. */
     'github/create_issue': {
       input: {
+        /** Repository in owner/name format. */
         repo: string;
+        /** Issue title. */
         title: string;
+        /** Markdown body for the issue. */
         body?: string;
+        /** Labels to apply. */
         labels?: string[];
       };
       output: {
+        /** The issue number. */
         number: number;
+        /** URL of the created issue. */
         url: string;
       };
     };
@@ -129,6 +142,17 @@ export {};
 ```
 
 The `declare module 'mcpd'` block merges with the base `McpdToolMap` interface. The `export {}` makes it a module (required for ambient module declarations to work in a `.d.ts` file).
+
+### JSDoc Comments
+
+Comments flow from two sources:
+
+1. **Tool `description`** → JSDoc on the tool map entry. This shows up when hovering over the tool name in `call('filesystem/read_file', ...)`.
+2. **Property `description`** in `inputSchema`/`outputSchema` → JSDoc on each property. These show up in autocomplete when typing the arguments object.
+
+`json-schema-to-typescript` already converts property-level `description` fields to JSDoc by default. The `extractTypeBody` function preserves them because they're inside the `{...}` body.
+
+For the tool-level description, we prepend it as a JSDoc comment before the tool map entry. The `Tool` object from MCP has a top-level `description` field (separate from the schema).
 
 ## User Experience
 
@@ -206,6 +230,43 @@ Use `json-schema-to-typescript` for the conversion. It handles:
 - `allOf` → intersection types
 - `$ref` → resolved inline (MCP tool schemas rarely use `$ref`)
 - Nested objects → nested interfaces
+- **`description` → JSDoc comments** (default behavior, no flag needed)
+
+### JSDoc from `description` Fields
+
+`json-schema-to-typescript` converts `description` at every level to `/** */` JSDoc comments by default. Given:
+
+```json
+{
+  "type": "object",
+  "properties": {
+    "path": {
+      "type": "string",
+      "description": "Absolute path to the file."
+    },
+    "encoding": {
+      "type": "string",
+      "description": "Text encoding (e.g. \"utf-8\"). Defaults to \"utf-8\"."
+    }
+  },
+  "required": ["path"]
+}
+```
+
+It produces:
+
+```ts
+{
+  /** Absolute path to the file. */
+  path: string;
+  /** Text encoding (e.g. "utf-8"). Defaults to "utf-8". */
+  encoding?: string;
+}
+```
+
+These property-level JSDoc comments survive `extractTypeBody` because they're inside the `{...}` block. They show up in autocomplete tooltips when typing argument objects.
+
+The schema-level `description` (on the root object) is intentionally dropped — the tool's own `description` field from the MCP `Tool` object is used instead, placed as a JSDoc comment on the tool map entry.
 
 ### Edge Cases
 
@@ -248,6 +309,7 @@ type ToolEntry = {
   server: string;
   tool: {
     name: string;
+    description?: string;
     inputSchema: Record<string, unknown>;
     outputSchema?: Record<string, unknown>;
   };
@@ -263,8 +325,11 @@ export async function generateTypes(tools: ToolEntry[]): Promise<string> {
       ? await schemaToType(tool.outputSchema, `${server}_${tool.name}_output`)
       : 'unknown';
 
+    // Tool description → JSDoc on the map entry
+    const jsdoc = tool.description ? `    /** ${escapeJsdoc(tool.description)} */\n` : '';
+
     toolTypes.push(
-      `    '${qualifiedName}': {\n      input: ${indent(inputType, 6)};\n      output: ${indent(outputType, 6)};\n    };`
+      `${jsdoc}    '${qualifiedName}': {\n      input: ${indent(inputType, 6)};\n      output: ${indent(outputType, 6)};\n    };`
     );
   }
 
@@ -282,6 +347,8 @@ export {};
 }
 
 async function schemaToType(schema: Record<string, unknown>, name: string): Promise<string> {
+  // json-schema-to-typescript converts `description` fields on properties
+  // to JSDoc comments by default — no special config needed.
   const compiled = await compile(schema, name, {
     bannerComment: '',
     additionalProperties: false,
@@ -291,6 +358,19 @@ async function schemaToType(schema: Record<string, unknown>, name: string): Prom
 }
 
 function extractTypeBody(compiled: string): string {
+  // json-schema-to-typescript produces:
+  //   /**
+  //    * Schema-level description
+  //    */
+  //   export interface Foo {
+  //     /** Property description */
+  //     bar: string;
+  //   }
+  //
+  // We extract the { ... } block, which preserves property-level JSDoc
+  // comments inside the body. The schema-level description above the
+  // interface is intentionally dropped — the tool's own `description`
+  // (from the Tool object) serves that role on the map entry instead.
   const match = compiled.match(/\{[\s\S]*\}/);
   if (!match) return 'Record<string, unknown>';
   return match[0];
@@ -298,6 +378,11 @@ function extractTypeBody(compiled: string): string {
 
 function escapeKey(key: string): string {
   return key.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+}
+
+function escapeJsdoc(text: string): string {
+  // Prevent premature close of JSDoc comment
+  return text.replace(/\*\//g, '*\\/');
 }
 
 function indent(text: string, spaces: number): string {
@@ -395,6 +480,7 @@ describe('generateTypes', () => {
         server: 'fs',
         tool: {
           name: 'read',
+          description: 'Read a file from disk.',
           inputSchema: {
             type: 'object',
             properties: { path: { type: 'string' } },
@@ -410,20 +496,84 @@ describe('generateTypes', () => {
     expect(output).toContain('output: unknown');
   });
 
+  it('includes tool description as JSDoc on map entry', async () => {
+    const tools = [
+      {
+        server: 'fs',
+        tool: {
+          name: 'read',
+          description: 'Read a file from disk.',
+          inputSchema: {
+            type: 'object',
+            properties: { path: { type: 'string' } },
+            required: ['path'],
+          },
+        },
+      },
+    ];
+    const output = await generateTypes(tools);
+    expect(output).toContain('/** Read a file from disk. */');
+  });
+
+  it('includes property descriptions as JSDoc on fields', async () => {
+    const tools = [
+      {
+        server: 'fs',
+        tool: {
+          name: 'read',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              path: { type: 'string', description: 'Absolute path to the file.' },
+              encoding: { type: 'string', description: 'Text encoding to use.' },
+            },
+            required: ['path'],
+          },
+        },
+      },
+    ];
+    const output = await generateTypes(tools);
+    expect(output).toContain('Absolute path to the file.');
+    expect(output).toContain('Text encoding to use.');
+  });
+
+  it('omits JSDoc when tool has no description', async () => {
+    const tools = [
+      {
+        server: 'fs',
+        tool: {
+          name: 'read',
+          inputSchema: {
+            type: 'object',
+            properties: { path: { type: 'string' } },
+            required: ['path'],
+          },
+        },
+      },
+    ];
+    const output = await generateTypes(tools);
+    // Should not have a JSDoc comment before the tool entry
+    expect(output).not.toMatch(/\/\*\*.*\*\/\s*\n\s*'fs\/read'/);
+  });
+
   it('generates typed output when outputSchema present', async () => {
     const tools = [
       {
         server: 'gh',
         tool: {
           name: 'create_issue',
+          description: 'Create a GitHub issue.',
           inputSchema: {
             type: 'object',
-            properties: { title: { type: 'string' } },
+            properties: { title: { type: 'string', description: 'Issue title.' } },
             required: ['title'],
           },
           outputSchema: {
             type: 'object',
-            properties: { number: { type: 'integer' }, url: { type: 'string' } },
+            properties: {
+              number: { type: 'integer', description: 'The issue number.' },
+              url: { type: 'string', description: 'URL of the created issue.' },
+            },
             required: ['number', 'url'],
           },
         },
@@ -432,6 +582,8 @@ describe('generateTypes', () => {
     const output = await generateTypes(tools);
     expect(output).toContain('number: number');
     expect(output).toContain('url: string');
+    expect(output).toContain('The issue number.');
+    expect(output).toContain('URL of the created issue.');
     expect(output).not.toContain('output: unknown');
   });
 
