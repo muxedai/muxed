@@ -24,23 +24,36 @@ export function runCli(): void {
   program.enablePositionalOptions();
   program.option('--config <path>', 'Path to config file');
 
+  program.commandsGroup('Servers:');
   program.addCommand(serversCommand);
+
+  program.commandsGroup('Tools:');
   program.addCommand(toolsCommand);
   program.addCommand(infoCommand);
   program.addCommand(callCommand);
   program.addCommand(grepCommand);
+
+  program.commandsGroup('Resources:');
   program.addCommand(resourcesCommand);
   program.addCommand(readCommand);
+
+  program.commandsGroup('Prompts:');
   program.addCommand(promptsCommand);
   program.addCommand(promptCommand);
   program.addCommand(completionsCommand);
+
+  program.commandsGroup('Tasks:');
   program.addCommand(tasksCommand);
   program.addCommand(taskCommand);
   program.addCommand(taskResultCommand);
   program.addCommand(taskCancelCommand);
+
+  program.commandsGroup('Configuration:');
   program.addCommand(initCommand);
   program.addCommand(mcpCommand);
   program.addCommand(typegenCommand);
+
+  program.commandsGroup('Daemon:');
   program.addCommand(daemonCommand);
 
   program.parse();

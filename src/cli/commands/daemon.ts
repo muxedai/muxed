@@ -13,14 +13,14 @@ function getExplicitConfig(cmd: Command): string | undefined {
 // ─── daemon command group ───
 
 export const daemonCommand = new Command('daemon')
-  .description('Manage the mcpd daemon')
+  .description('Start, stop, reload, or check status of the mcpd background daemon')
   .enablePositionalOptions();
 
 // ─── daemon start ───
 
 daemonCommand
   .command('start')
-  .description('Start the daemon')
+  .description('Start the daemon process in the background')
   .option('--json', 'Output as JSON')
   .action(async (opts: { json?: boolean }) => {
     const configPath = getExplicitConfig(daemonCommand);
@@ -78,7 +78,7 @@ daemonCommand
 
 daemonCommand
   .command('stop')
-  .description('Stop the daemon')
+  .description('Stop the running daemon process')
   .action(async () => {
     try {
       await sendRequest('daemon/stop');
@@ -92,7 +92,7 @@ daemonCommand
 
 daemonCommand
   .command('reload')
-  .description('Reload config, reconnect changed servers')
+  .description('Reload config and reconnect changed servers without restarting')
   .option('--json', 'Output as JSON')
   .action(async (opts: { json?: boolean }) => {
     const configPath = getExplicitConfig(daemonCommand);
@@ -109,7 +109,7 @@ daemonCommand
 
 daemonCommand
   .command('status')
-  .description('Show daemon status')
+  .description('Show daemon status including uptime and connected servers')
   .option('--json', 'Output as JSON')
   .action(async (opts: { json?: boolean }) => {
     const running = await isDaemonRunning();

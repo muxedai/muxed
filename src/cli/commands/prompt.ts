@@ -3,7 +3,7 @@ import { ensureDaemon, sendRequest } from '../client.js';
 import { formatPromptMessages, formatJson } from '../formatter.js';
 
 export const promptCommand = new Command('prompt')
-  .description('Get a prompt (render with arguments)')
+  .description('Render a prompt template with optional JSON arguments')
   .argument('<server/prompt>', 'Prompt identifier (e.g. myserver/myprompt)')
   .argument('[args-json]', 'JSON arguments')
   .option('--json', 'Output as JSON')

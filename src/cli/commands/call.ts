@@ -29,7 +29,7 @@ function readStdin(): Promise<string> {
 }
 
 export const callCommand = new Command('call')
-  .description('Invoke a tool')
+  .description('Execute a tool with JSON arguments (use - for stdin, --async for background)')
   .argument('<server/tool>', 'Tool identifier (e.g. myserver/mytool)')
   .argument('[json]', 'JSON arguments (use - for stdin)')
   .option('--timeout <ms>', 'Request timeout in milliseconds')

@@ -4,7 +4,7 @@ import { ensureDaemon, sendRequest } from '../client.js';
 import { formatTools, formatJson } from '../formatter.js';
 
 export const toolsCommand = new Command('tools')
-  .description('List available tools')
+  .description('List all available tools, optionally filtered by server name')
   .argument('[server]', 'Filter by server name')
   .option('--json', 'Output as JSON')
   .action(async (server: string | undefined, opts: { json?: boolean }) => {

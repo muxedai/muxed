@@ -4,7 +4,7 @@ import { ensureDaemon, sendRequest } from '../client.js';
 import { formatTools, formatJson } from '../formatter.js';
 
 export const grepCommand = new Command('grep')
-  .description('Search tool names, titles, and descriptions')
+  .description('Search tools by regex pattern across names, titles, and descriptions')
   .argument('<pattern>', 'Regex pattern to search')
   .option('--json', 'Output as JSON')
   .action(async (pattern: string, opts: { json?: boolean }) => {
