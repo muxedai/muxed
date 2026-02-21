@@ -1,0 +1,263 @@
+# mcpd — MCP Server Daemon & Aggregator CLI
+
+> Aggregate all your [Model Context Protocol](https://modelcontextprotocol.io/) (MCP) servers behind a single daemon. Fewer tokens. Faster execution. Better accuracy.
+
+**mcpd** is a background daemon and CLI that sits between your AI agent and your MCP servers. It solves the problems that [Anthropic](https://www.anthropic.com/engineering/code-execution-with-mcp) and [Cloudflare](https://blog.cloudflare.com/code-mode/) have been writing about: tool sprawl eating your context window, slow cold starts, and degraded accuracy as you add more servers.
+
+## The Problem
+
+The MCP ecosystem has a scaling problem. Every tool you connect dumps its full schema into the model's context window. A standard setup with 3-4 MCP servers can consume 20-30% of the context before the agent even starts working. Anthropic's research shows this leads to a 98.7% token overhead on intermediate results. Cloudflare found that agents can't reliably handle more than a handful of servers before tool selection accuracy collapses.
+
+**More tools = worse results.** And every tool in the context window is a token that isn't being used for your actual task — or for skills that drive agent quality.
+
+## How mcpd Fixes This
+
+**mcpd** is an optimization layer for your MCP infrastructure:
+
+- **Fewer tokens in context** — Tools stay in the daemon, not in the prompt. Agents discover tools on-demand with `mcpd grep` and `mcpd info` instead of loading every schema upfront. Load only what you need, when you need it.
+- **Faster execution** — Servers stay warm in a background daemon. No cold starts, no repeated connection negotiation. Call tools directly via CLI without round-tripping through the model.
+- **More precise tool selection** — By offloading tool management to mcpd, your agent's context window stays clean for what actually matters: reasoning, skills, and the task at hand. Fewer tools in context means the model picks the right one more often.
+- **Chain calls outside the model** — Pipe tool results through scripts and chain `mcpd call` commands in bash without every intermediate result flowing through the LLM. This is the same insight behind Anthropic's code execution approach and Cloudflare's Code Mode — but available today as a simple CLI.
+- **Skills get priority** — When tools are offloaded to mcpd, skills (procedural knowledge in the system prompt) get more of the context window. Models execute skills with significantly higher accuracy than tools. Your agent becomes better at its actual job.
+
+### For Agents in Production
+
+When you offload MCP tools to mcpd, your agents' context windows free up for skills — the procedural knowledge that drives quality. Research shows that skills loaded via progressive disclosure consistently outperform raw tool calls in accuracy. By moving tool management out of the model and into a daemon, your agents allocate more attention to the instructions that matter, producing measurably better results on complex workflows.
+
+## Quick Start
+
+```bash
+# Install globally
+npm install -g mcpd
+
+# Or use directly with npx
+npx mcpd tools
+
+# List all servers and their status
+mcpd servers
+
+# List all available tools across all servers
+mcpd tools
+
+# Call a tool
+mcpd call filesystem/read_file '{"path": "/tmp/hello.txt"}'
+
+# Search tools by name or description
+mcpd grep "search"
+
+# The daemon starts automatically and stops after 5 min idle
+```
+
+## Configuration
+
+Create `mcpd.config.json` in your project root (or `~/.config/mcpd/config.json` for global config):
+
+```json
+{
+  "mcpServers": {
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/home/user/projects"],
+      "env": {}
+    },
+    "postgres": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-postgres"],
+      "env": { "DATABASE_URL": "postgresql://..." }
+    },
+    "remote-api": {
+      "url": "https://mcp.example.com/mcp",
+      "transport": "streamable-http",
+      "headers": { "Authorization": "Bearer ..." }
+    }
+  }
+}
+```
+
+The format is intentionally compatible with the `mcpServers` section of `claude_desktop_config.json` — you can reuse your existing config.
+
+## Architecture
+
+```
+  mcpd call server/tool '{}'
+  ──────────────────────────────────►  ┌──────────────────────┐
+  (Unix socket: ~/.mcpd/mcpd.sock)    │     mcpd daemon      │
+                                      │                      │
+  mcpd tools                          │  ServerManager(fs)   │──► [stdio: filesystem]
+  ──────────────────────────────────►  │  ServerManager(pg)   │──► [stdio: postgres]
+                                      │  ServerManager(...)   │──► [HTTP: remote]
+  mcpd servers                        │                      │
+  ──────────────────────────────────►  └──────────────────────┘
+                                       (auto-exits after idle)
+```
+
+**Lazy start**: The daemon spawns automatically when you run any command. No explicit `mcpd start` needed.
+
+**Idle shutdown**: After 5 minutes (configurable) with no requests, the daemon shuts down and cleans up.
+
+## CLI Reference
+
+| Command | Description |
+|---------|-------------|
+| `mcpd servers` | List servers with connection status and capabilities |
+| `mcpd tools [server]` | List available tools (with annotations) |
+| `mcpd info <server/tool>` | Tool schema details (inputSchema, outputSchema) |
+| `mcpd call <server/tool> [json]` | Invoke a tool |
+| `mcpd grep <pattern>` | Search tool names, titles, and descriptions |
+| `mcpd resources [server]` | List resources |
+| `mcpd read <server/resource>` | Read a resource |
+| `mcpd prompts [server]` | List prompt templates |
+| `mcpd prompt <server/prompt> [args]` | Render a prompt |
+| `mcpd completions <type> <name> <arg> <value>` | Argument auto-completions |
+| `mcpd tasks [server]` | List active tasks |
+| `mcpd status` | Daemon status, PID, uptime |
+| `mcpd reload` | Reload config, reconnect changed servers |
+| `mcpd stop` | Stop daemon manually |
+| `mcpd init` | Generate config from discovered MCP servers |
+
+All commands support `--json` for machine-readable output.
+
+## Node.js API
+
+mcpd is also an npm package. Agents can write Node.js scripts that call MCP tools programmatically — with typed results, async/await, and the full npm ecosystem.
+
+```typescript
+import { createClient } from 'mcpd';
+
+const client = await createClient();
+
+// Discover tools
+const tools = await client.grep('search');
+
+// Call a tool
+const result = await client.call('filesystem/read_file', {
+  path: '/tmp/config.json'
+});
+
+// Parallel calls across servers
+const [users, tickets] = await Promise.all([
+  client.call('posthog/query-run', { query: { kind: 'HogQLQuery', query: 'SELECT ...' } }),
+  client.call('intercom/search-conversations', { query: 'billing', limit: 10 }),
+]);
+
+// Async tasks for long-running operations
+const task = await client.callAsync('analytics/export', { range: '30d' });
+const status = await client.task(task.server, task.taskId);
+```
+
+Install as a dependency for programmatic use:
+
+```bash
+npm install mcpd
+```
+
+The client auto-starts the daemon if it isn't running. Both `import from 'mcpd'` and `import from 'mcpd/client'` work.
+
+## Use with AI Coding Agents
+
+### Claude Code
+
+Add mcpd as a tool source in your Claude Code configuration. The `mcpd init` command can auto-discover MCP servers from your `claude_desktop_config.json` and generate an `mcpd.config.json`.
+
+### Cursor / Windsurf / Other Agents
+
+Any agent that supports MCP can connect to mcpd's daemon via the Unix socket or optional HTTP listener.
+
+## Daemon Settings
+
+```json
+{
+  "daemon": {
+    "idleTimeout": 300000,
+    "connectTimeout": 30000,
+    "requestTimeout": 60000,
+    "http": {
+      "enabled": false,
+      "port": 3100,
+      "host": "127.0.0.1"
+    }
+  }
+}
+```
+
+## Key Features
+
+### Connection Management
+- Automatic reconnection with exponential backoff (1s → 60s)
+- Periodic health checks via `ping()`
+- Stale PID/socket detection and cleanup
+
+### Full MCP 2025-11-25 Support
+- **Tools** with `title`, `annotations`, `outputSchema`, `structuredContent`
+- **Resources** with text and blob content types
+- **Prompts** with argument rendering
+- **Completions** for argument auto-complete
+- **Tasks** for long-running operations (`--async` flag)
+- **Content types**: text, image, audio, resource links, structured content
+
+### Transport Support
+- **stdio** — for local MCP servers (default)
+- **Streamable HTTP** — for remote MCP servers
+- **SSE** — legacy support for older servers
+
+## Replacing mcp-remote
+
+If you're using `mcp-remote` to connect Claude Desktop or ChatGPT to remote MCP servers, mcpd is a drop-in upgrade. Instead of adding N separate `mcp-remote` proxy entries to your config, point at one mcpd daemon that manages all your remote (and local) servers — with connection pooling, health checks, auto-reconnect, and a CLI for free.
+
+```jsonc
+// Before: mcp-remote in claude_desktop_config.json
+{ "command": "npx", "args": ["mcp-remote", "https://mcp.example.com/sse"] }
+
+// After: mcpd.config.json
+{ "url": "https://mcp.example.com/mcp", "transport": "streamable-http" }
+```
+
+## Comparison with Alternatives
+
+| Feature | mcpd | mcp-remote | mcp-proxy | MetaMCP | 1MCP |
+|---------|------|------------|-----------|---------|------|
+| Background daemon | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Lazy start / idle shutdown | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Multi-server aggregation | ✅ | ❌ | ✅ | ✅ | ✅ |
+| CLI interface | ✅ | ❌ | ❌ | ❌ | ✅ |
+| Auto-reconnect / health checks | ✅ | ❌ | ❌ | ✅ | ✅ |
+| MCP 2025-11-25 | ✅ | Partial | Partial | Partial | Partial |
+| Task support | ✅ | ❌ | ❌ | ❌ |
+| Zero config start | ✅ | ❌ | ❌ | ❌ |
+| Config compatible with Claude Desktop | ✅ | ❌ | ✅ | ❌ |
+
+## Development
+
+```bash
+# Install dependencies
+pnpm install
+
+# Run in development mode
+pnpm dev
+
+# Build
+pnpm build
+
+# Run tests
+pnpm test
+
+# Type check
+pnpm type-check
+
+# Format
+pnpm format
+```
+
+## Contributing
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+## License
+
+[MIT](LICENSE) © Georgiy Tarasov
+
+## Links
+
+- [Model Context Protocol Specification](https://modelcontextprotocol.io/)
+- [MCP TypeScript SDK](https://github.com/modelcontextprotocol/typescript-sdk)
+- [Awesome MCP Servers](https://github.com/punkpeye/awesome-mcp-servers)

@@ -1,0 +1,1455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>mcpd — Website Moodboard</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap');
+
+  /* ============================================
+     DESIGN TOKENS
+     ============================================ */
+  :root {
+    /* Background layers */
+    --bg-deep:       #0c0c0e;
+    --bg-surface:    #141417;
+    --bg-elevated:   #1c1c21;
+    --bg-hover:      #24242a;
+
+    /* Text hierarchy */
+    --text-primary:  #e8e8ec;
+    --text-secondary:#8e8e96;
+    --text-muted:    #5a5a62;
+
+    /* Accent — soft indigo. Rides the AI-tools color trend,
+       sits between Linear's deeper #5E6AD2 and generic purple.
+       Signals intelligence and precision. */
+    --accent:        #818CF8;
+    --accent-dim:    #6366F1;
+    --accent-glow:   rgba(129, 140, 248, 0.08);
+
+    /* Functional colors */
+    --green:         #5ec269;
+    --green-dim:     #3a7a42;
+    --blue:          #5e9ce0;
+    --red:           #d45e5e;
+
+    /* Borders */
+    --border:        #2a2a30;
+    --border-light:  #36363e;
+
+    /* Typography */
+    --font:          'JetBrains Mono', 'SF Mono', 'Fira Code', monospace;
+
+    /* Spacing scale (4px base) */
+    --s1: 4px;  --s2: 8px;  --s3: 12px;  --s4: 16px;
+    --s5: 20px; --s6: 24px; --s7: 32px;  --s8: 48px;
+    --s9: 64px; --s10: 96px;
+
+    /* Border radius */
+    --radius-sm: 4px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+  }
+
+  /* ============================================
+     LIGHT THEME
+     ============================================ */
+  :root.light {
+    --bg-deep:       #f5f5f3;
+    --bg-surface:    #ffffff;
+    --bg-elevated:   #eeeee9;
+    --bg-hover:      #e6e6e0;
+
+    --text-primary:  #1a1a1e;
+    --text-secondary:#5c5c66;
+    --text-muted:    #9a9aa2;
+
+    --accent:        #6366F1;
+    --accent-dim:    #4F46E5;
+    --accent-glow:   rgba(99, 102, 241, 0.06);
+
+    --green:         #3a8a44;
+    --green-dim:     #2d6e34;
+    --blue:          #3b72b8;
+    --red:           #c04444;
+
+    --border:        #d8d8d2;
+    --border-light:  #c8c8c0;
+  }
+
+  /* ============================================
+     THEME TOGGLE
+     ============================================ */
+  .theme-toggle {
+    position: fixed;
+    top: var(--s3);
+    left: var(--s3);
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    padding: var(--s1) var(--s3);
+    font-size: 11px;
+    font-family: var(--font);
+    font-weight: 500;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    z-index: 100;
+    transition: all 0.2s;
+  }
+  .theme-toggle:hover {
+    color: var(--text-primary);
+    border-color: var(--border-light);
+  }
+
+  /* ============================================
+     RESET & BASE
+     ============================================ */
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: var(--font);
+    background: var(--bg-deep);
+    color: var(--text-primary);
+    font-size: 14px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    transition: background 0.2s, color 0.2s;
+  }
+
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  /* ============================================
+     MOODBOARD META LABEL
+     ============================================ */
+  .moodboard-label {
+    position: fixed;
+    top: var(--s3);
+    right: var(--s3);
+    background: var(--accent);
+    color: var(--bg-deep);
+    padding: var(--s1) var(--s3);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    border-radius: var(--radius-sm);
+    z-index: 100;
+  }
+
+  /* ============================================
+     LAYOUT
+     ============================================ */
+  .container {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 0 var(--s6);
+  }
+
+  section {
+    padding: var(--s10) 0;
+    border-bottom: 1px solid var(--border);
+  }
+  section:last-child { border-bottom: none; }
+
+  /* ============================================
+     SECTION: DESIGN NOTES (floating annotations)
+     ============================================ */
+  .design-note {
+    background: var(--accent-glow);
+    border-left: 2px solid var(--accent-dim);
+    padding: var(--s3) var(--s4);
+    margin: var(--s6) 0;
+    font-size: 12px;
+    color: var(--text-secondary);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  }
+  .design-note strong {
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  /* ============================================
+     NAVIGATION BAR
+     ============================================ */
+  .nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--s4) 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .nav-logo {
+    font-weight: 700;
+    font-size: 15px;
+    letter-spacing: -0.02em;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: var(--s2);
+  }
+
+  .nav-logo .prompt {
+    color: var(--accent);
+  }
+
+  .nav-links {
+    display: flex;
+    gap: var(--s6);
+    font-size: 13px;
+  }
+
+  .nav-links a {
+    color: var(--text-secondary);
+    transition: color 0.15s;
+  }
+  .nav-links a:hover {
+    color: var(--text-primary);
+    text-decoration: none;
+  }
+
+  /* ============================================
+     HERO SECTION
+     ============================================ */
+  .hero {
+    text-align: center;
+    padding: var(--s10) 0;
+  }
+
+  .ascii-logo {
+    color: var(--text-primary);
+    font-size: 11px;
+    line-height: 1.2;
+    letter-spacing: 0.05em;
+    white-space: pre;
+    margin-bottom: var(--s7);
+    opacity: 0.9;
+  }
+
+  .hero-tagline {
+    font-size: 13px;
+    font-weight: 400;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+    margin-bottom: var(--s8);
+  }
+
+  .hero-description {
+    font-size: 15px;
+    color: var(--text-secondary);
+    max-width: 600px;
+    margin: 0 auto var(--s7);
+    line-height: 1.7;
+  }
+
+  /* ============================================
+     INSTALL COMMAND
+     ============================================ */
+  .install-box {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--s3);
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: var(--s3) var(--s5);
+    font-size: 14px;
+    margin-bottom: var(--s6);
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .install-box:hover {
+    border-color: var(--border-light);
+    background: var(--bg-hover);
+  }
+
+  .install-box .dollar {
+    color: var(--green);
+    user-select: none;
+  }
+
+  .install-box .cmd {
+    color: var(--text-primary);
+  }
+
+  .install-box .copy-hint {
+    color: var(--text-muted);
+    font-size: 11px;
+    margin-left: var(--s3);
+  }
+
+  /* ============================================
+     HERO CTAs
+     ============================================ */
+  .hero-actions {
+    display: flex;
+    justify-content: center;
+    gap: var(--s4);
+    margin-top: var(--s6);
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--s2);
+    padding: var(--s2) var(--s5);
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-family: var(--font);
+    font-weight: 500;
+    border: 1px solid var(--border);
+    background: var(--bg-elevated);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn:hover {
+    color: var(--text-primary);
+    border-color: var(--border-light);
+    background: var(--bg-hover);
+    text-decoration: none;
+  }
+  .btn-primary {
+    background: var(--accent);
+    color: var(--bg-deep);
+    border-color: var(--accent);
+  }
+  .btn-primary:hover {
+    background: var(--accent-dim);
+    border-color: var(--accent-dim);
+    color: var(--bg-deep);
+  }
+
+  /* ============================================
+     FEATURES GRID
+     ============================================ */
+  .features-header {
+    text-align: center;
+    margin-bottom: var(--s8);
+  }
+  .features-header h2 {
+    font-size: 13px;
+    font-weight: 400;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--s4);
+  }
+
+  .feature-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: var(--s6);
+    transition: border-color 0.15s;
+  }
+  .feature-card:hover {
+    border-color: var(--border-light);
+  }
+
+  .feature-icon {
+    font-size: 18px;
+    margin-bottom: var(--s3);
+    color: var(--accent);
+    line-height: 1;
+  }
+
+  .feature-card h3 {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: var(--s2);
+    color: var(--text-primary);
+  }
+
+  .feature-card p {
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+  }
+
+  /* ============================================
+     CODE EXAMPLE SECTION
+     ============================================ */
+  .code-section {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--s7);
+    align-items: start;
+  }
+
+  .code-section-text h2 {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: var(--s3);
+    color: var(--text-primary);
+  }
+
+  .code-section-text p {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.7;
+  }
+
+  .code-block {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+  }
+
+  .code-block-header {
+    display: flex;
+    align-items: center;
+    gap: var(--s2);
+    padding: var(--s3) var(--s4);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .dot { width: 10px; height: 10px; border-radius: 50%; }
+  .dot-red { background: #ff5f57; }
+  .dot-yellow { background: #febc2e; }
+  .dot-green { background: #28c840; }
+
+  .code-block-title {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-left: var(--s2);
+  }
+
+  .code-block pre {
+    padding: var(--s4);
+    font-size: 12px;
+    line-height: 1.7;
+    overflow-x: auto;
+  }
+
+  .code-block .line-num {
+    color: var(--text-muted);
+    user-select: none;
+    display: inline-block;
+    width: 2.5ch;
+    text-align: right;
+    margin-right: var(--s3);
+  }
+
+  .code-block .dollar { color: var(--green); }
+  .code-block .kw { color: var(--blue); }
+  .code-block .str { color: var(--green); }
+  .code-block .comment { color: var(--text-muted); }
+  .code-block .flag { color: var(--accent); }
+  .code-block .output { color: var(--text-secondary); }
+
+  /* ============================================
+     COMMANDS TABLE
+     ============================================ */
+  .commands-table-wrapper {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+  }
+
+  .commands-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  .commands-table thead {
+    border-bottom: 1px solid var(--border);
+  }
+
+  .commands-table th {
+    text-align: left;
+    padding: var(--s3) var(--s4);
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  .commands-table td {
+    padding: var(--s3) var(--s4);
+    border-top: 1px solid var(--border);
+    vertical-align: top;
+  }
+
+  .commands-table tr:hover {
+    background: var(--bg-hover);
+  }
+
+  .commands-table .cmd-name {
+    color: var(--accent);
+    font-weight: 500;
+    white-space: nowrap;
+  }
+
+  .commands-table .cmd-desc {
+    color: var(--text-secondary);
+  }
+
+  /* ============================================
+     FOOTER
+     ============================================ */
+  .footer {
+    padding: var(--s8) 0;
+    text-align: center;
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  .footer-links {
+    display: flex;
+    justify-content: center;
+    gap: var(--s6);
+    margin-bottom: var(--s4);
+  }
+
+  .footer-links a {
+    color: var(--text-secondary);
+    font-size: 12px;
+  }
+  .footer-links a:hover { color: var(--text-primary); }
+
+  .footer-ascii {
+    font-size: 11px;
+    color: var(--text-muted);
+    opacity: 0.5;
+    margin-top: var(--s4);
+  }
+
+  /* ============================================
+     DOCS PAGE PREVIEW
+     ============================================ */
+  .docs-layout {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    gap: var(--s7);
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    min-height: 400px;
+  }
+
+  .docs-sidebar {
+    padding: var(--s5);
+    border-right: 1px solid var(--border);
+  }
+
+  .docs-sidebar h4 {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    margin-bottom: var(--s3);
+    margin-top: var(--s5);
+  }
+  .docs-sidebar h4:first-child { margin-top: 0; }
+
+  .docs-sidebar a {
+    display: block;
+    padding: var(--s1) 0;
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+  .docs-sidebar a:hover { color: var(--text-primary); text-decoration: none; }
+  .docs-sidebar a.active {
+    color: var(--accent);
+  }
+
+  .docs-content {
+    padding: var(--s5) var(--s6);
+  }
+
+  .docs-content h1 {
+    font-size: 22px;
+    font-weight: 600;
+    margin-bottom: var(--s3);
+  }
+
+  .docs-content p {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.7;
+    margin-bottom: var(--s4);
+  }
+
+  .docs-content code {
+    background: var(--bg-elevated);
+    padding: 2px 6px;
+    border-radius: var(--radius-sm);
+    font-size: 12px;
+    color: var(--accent);
+  }
+
+  /* ============================================
+     PALETTE SWATCHES (for moodboard)
+     ============================================ */
+  .palette {
+    display: flex;
+    gap: var(--s3);
+    flex-wrap: wrap;
+  }
+
+  .swatch {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--s1);
+  }
+
+  .swatch-color {
+    width: 64px;
+    height: 64px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border);
+  }
+
+  .swatch-label {
+    font-size: 10px;
+    color: var(--text-muted);
+  }
+
+  .swatch-hex {
+    font-size: 11px;
+    color: var(--text-secondary);
+  }
+
+  /* ============================================
+     LIGHT THEME OVERRIDES
+     ============================================ */
+  :root.light .code-block {
+    background: var(--bg-elevated);
+  }
+
+  :root.light .code-block .dollar { color: var(--green); }
+  :root.light .code-block .str { color: var(--green); }
+  :root.light .code-block .comment { color: var(--text-muted); }
+  :root.light .code-block .flag { color: var(--accent); }
+  :root.light .code-block .output { color: var(--text-secondary); }
+
+  :root.light .install-box {
+    background: var(--bg-surface);
+    border-color: var(--border);
+  }
+
+  :root.light .btn {
+    background: var(--bg-surface);
+  }
+  :root.light .btn-primary {
+    background: var(--accent);
+    color: #ffffff;
+    border-color: var(--accent);
+  }
+  :root.light .btn-primary:hover {
+    background: var(--accent-dim);
+    border-color: var(--accent-dim);
+    color: #ffffff;
+  }
+
+  :root.light .moodboard-label {
+    color: #ffffff;
+  }
+
+  :root.light .ascii-logo {
+    color: var(--text-primary);
+    opacity: 0.8;
+  }
+
+  /* Light palette swatches — hidden by default, shown in light mode */
+  .palette-light { display: none; }
+  :root.light .palette-dark { display: none; }
+  :root.light .palette-light { display: flex; }
+
+  /* ============================================
+     RESPONSIVE
+     ============================================ */
+  @media (max-width: 768px) {
+    .features-grid { grid-template-columns: 1fr; }
+    .code-section { grid-template-columns: 1fr; }
+    .docs-layout { grid-template-columns: 1fr; }
+    .docs-sidebar { border-right: none; border-bottom: 1px solid var(--border); }
+  }
+</style>
+</head>
+<body>
+
+<button class="theme-toggle" onclick="document.documentElement.classList.toggle('light'); this.textContent = document.documentElement.classList.contains('light') ? '◐ dark' : '◑ light'">◑ light</button>
+
+<div class="moodboard-label">Moodboard / Inspiration</div>
+
+<div class="container">
+
+  <!-- ==========================================
+       SECTION 0: DESIGN PHILOSOPHY
+       ========================================== -->
+  <section>
+    <h2 style="font-size: 20px; font-weight: 600; margin-bottom: var(--s4);">Website Design Direction</h2>
+    <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.7; max-width: 640px; margin-bottom: var(--s6);">
+      Inspired by skills.sh's monospace-forward, dark terminal aesthetic &mdash;
+      but warmer, calmer, and more approachable. Less "hacker" green-on-black,
+      more "well-crafted developer tool." The ASCII art is restrained: one logo
+      moment, then clean layout everywhere else. Feels like a tool you'd trust
+      in production.
+    </p>
+
+    <div class="design-note">
+      <strong>Key differences from skills.sh:</strong> Soft indigo accent (#818CF8) instead of terracotta/green.
+      Less dense tables, more breathing room. ASCII limited to the logo only &mdash;
+      the rest is clean monospace UI. No fake terminal emulator.
+    </div>
+
+    <div class="design-note">
+      <strong>Messaging hierarchy:</strong> Lead with the <em>problem</em> (tool sprawl,
+      token waste, accuracy collapse) backed by real numbers from Anthropic &amp; Cloudflare.
+      Then the five optimization pillars: fewer tokens, faster execution, better accuracy,
+      chaining/scripting, and skills priority. The B2B pitch (skills &gt; tools for agent
+      quality) gets its own dedicated section with a visual context-window comparison.
+    </div>
+
+    <h3 style="font-size: 13px; font-weight: 600; margin: var(--s7) 0 var(--s4); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em;">Color Palette</h3>
+
+    <!-- Dark palette -->
+    <div class="palette palette-dark">
+      <div class="swatch">
+        <div class="swatch-color" style="background: #0c0c0e;"></div>
+        <span class="swatch-label">Deep BG</span>
+        <span class="swatch-hex">#0c0c0e</span>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background: #141417;"></div>
+        <span class="swatch-label">Surface</span>
+        <span class="swatch-hex">#141417</span>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background: #1c1c21;"></div>
+        <span class="swatch-label">Elevated</span>
+        <span class="swatch-hex">#1c1c21</span>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background: #e8e8ec;"></div>
+        <span class="swatch-label">Primary</span>
+        <span class="swatch-hex">#e8e8ec</span>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background: #8e8e96;"></div>
+        <span class="swatch-label">Secondary</span>
+        <span class="swatch-hex">#8e8e96</span>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background: #818CF8;"></div>
+        <span class="swatch-label">Accent</span>
+        <span class="swatch-hex">#818CF8</span>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background: #6366F1;"></div>
+        <span class="swatch-label">Accent Dim</span>
+        <span class="swatch-hex">#6366F1</span>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background: #5ec269;"></div>
+        <span class="swatch-label">Green</span>
+        <span class="swatch-hex">#5ec269</span>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background: #d45e5e;"></div>
+        <span class="swatch-label">Red</span>
+        <span class="swatch-hex">#d45e5e</span>
+      </div>
+    </div>
+
+    <!-- Light palette -->
+    <div class="palette palette-light">
+      <div class="swatch">
+        <div class="swatch-color" style="background: #f5f5f3; border-color: #d8d8d2;"></div>
+        <span class="swatch-label">Deep BG</span>
+        <span class="swatch-hex">#f5f5f3</span>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background: #ffffff; border-color: #d8d8d2;"></div>
+        <span class="swatch-label">Surface</span>
+        <span class="swatch-hex">#ffffff</span>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background: #eeeee9; border-color: #d8d8d2;"></div>
+        <span class="swatch-label">Elevated</span>
+        <span class="swatch-hex">#eeeee9</span>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background: #1a1a1e;"></div>
+        <span class="swatch-label">Primary</span>
+        <span class="swatch-hex">#1a1a1e</span>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background: #5c5c66;"></div>
+        <span class="swatch-label">Secondary</span>
+        <span class="swatch-hex">#5c5c66</span>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background: #6366F1;"></div>
+        <span class="swatch-label">Accent</span>
+        <span class="swatch-hex">#6366F1</span>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background: #4F46E5;"></div>
+        <span class="swatch-label">Accent Dim</span>
+        <span class="swatch-hex">#4F46E5</span>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background: #3a8a44;"></div>
+        <span class="swatch-label">Green</span>
+        <span class="swatch-hex">#3a8a44</span>
+      </div>
+      <div class="swatch">
+        <div class="swatch-color" style="background: #c04444;"></div>
+        <span class="swatch-label">Red</span>
+        <span class="swatch-hex">#c04444</span>
+      </div>
+    </div>
+
+    <div class="design-note" style="margin-top: var(--s6);">
+      <strong>Typography:</strong> JetBrains Mono everywhere. Weights 300&ndash;700.
+      14px base, generous line-height (1.6). All-caps sparingly for section labels.
+    </div>
+
+    <div class="design-note">
+      <strong>Light theme:</strong> Warm off-white (#f5f5f3) instead of pure white &mdash;
+      keeps the monospace aesthetic from feeling clinical. Accent deepens to #6366F1 for
+      contrast on light backgrounds. Code blocks use the elevated surface (#eeeee9) so they
+      still feel distinct without the dark-on-dark layering. Toggle is in the top-left corner.
+      Respects <code style="color: var(--accent); background: var(--bg-elevated); padding: 1px 4px; border-radius: 3px; font-size: 11px;">prefers-color-scheme</code> by default.
+    </div>
+  </section>
+
+  <!-- ==========================================
+       SECTION 1: NAVIGATION
+       ========================================== -->
+  <section>
+    <div class="design-note">
+      <strong>Navigation:</strong> Minimal top bar. Logo left, links right.
+      No hamburger menu on desktop. The prompt symbol ($) nods to the CLI
+      without being cheesy.
+    </div>
+
+    <nav class="nav" style="margin-top: var(--s4);">
+      <div class="nav-logo">
+        <span class="prompt">$</span> mcpd
+      </div>
+      <div class="nav-links">
+        <a href="#">Docs</a>
+        <a href="#">GitHub</a>
+        <a href="#">npm</a>
+      </div>
+    </nav>
+  </section>
+
+  <!-- ==========================================
+       SECTION 2: HERO
+       ========================================== -->
+  <section>
+    <div class="design-note">
+      <strong>Hero:</strong> ASCII logo is the one moment of flourish. Centered.
+      Below it: a quiet tagline, one-line description, and the install command.
+      No gradients, no illustrations, no stock photos.
+    </div>
+
+    <div class="hero">
+      <pre class="ascii-logo">
+                            _
+  _ __ ___   ___ _ __   __| |
+ | '_ ` _ \ / __| '_ \ / _` |
+ | | | | | | (__| |_) | (_| |
+ |_| |_| |_|\___| .__/ \__,_|
+                 |_|
+      </pre>
+
+      <div class="hero-tagline">Fewer tokens. Faster tools. Better agents.</div>
+
+      <p class="hero-description">
+        The optimization layer for your MCP infrastructure.
+        Offload tool management from your model's context window
+        so agents run faster, pick the right tool, and give better results.
+      </p>
+
+      <div class="install-box">
+        <span class="dollar">$</span>
+        <span class="cmd">npx mcpd tools</span>
+        <span class="copy-hint">click to copy</span>
+      </div>
+
+      <div class="hero-actions">
+        <a href="#" class="btn btn-primary">Read the Docs</a>
+        <a href="#" class="btn">GitHub</a>
+        <a href="#" class="btn">npm</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================
+       SECTION 3: FEATURES
+       ========================================== -->
+  <!-- ==========================================
+       SECTION 2.5: THE PROBLEM (new)
+       ========================================== -->
+  <section>
+    <div class="design-note">
+      <strong>The Problem section:</strong> Lead with the pain. Use real numbers
+      from Anthropic and Cloudflare. Three stat callouts in a row, then a one-line
+      summary. This is the "why should I care" before the features grid.
+    </div>
+
+    <div class="features-header">
+      <h2>The problem with MCP at scale</h2>
+    </div>
+
+    <div style="text-align: center; max-width: 640px; margin: 0 auto var(--s7);">
+      <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.7; margin-bottom: var(--s6);">
+        Every MCP server you connect dumps its full tool schemas into the model's
+        context window. More tools means more tokens burned before work even starts &mdash;
+        and worse accuracy as the model struggles to pick the right one.
+      </p>
+    </div>
+
+    <!-- stat callouts -->
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s4); margin-bottom: var(--s7);">
+      <div class="feature-card" style="text-align: center;">
+        <div style="font-size: 28px; font-weight: 700; color: var(--accent); margin-bottom: var(--s1);">98.7%</div>
+        <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: var(--s2);">token overhead</div>
+        <p style="font-size: 12px; color: var(--text-secondary);">Anthropic found intermediate results flow through the model unnecessarily, wasting almost all tokens.</p>
+      </div>
+      <div class="feature-card" style="text-align: center;">
+        <div style="font-size: 28px; font-weight: 700; color: var(--accent); margin-bottom: var(--s1);">20-30%</div>
+        <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: var(--s2);">context consumed</div>
+        <p style="font-size: 12px; color: var(--text-secondary);">A standard 3-4 server setup fills a quarter of the context before the agent starts working.</p>
+      </div>
+      <div class="feature-card" style="text-align: center;">
+        <div style="font-size: 28px; font-weight: 700; color: var(--accent); margin-bottom: var(--s1);">3-4</div>
+        <div style="font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: var(--s2);">server limit</div>
+        <p style="font-size: 12px; color: var(--text-secondary);">Tool selection accuracy collapses after just a handful of connected MCP servers.</p>
+      </div>
+    </div>
+
+    <div style="text-align: center;">
+      <p style="font-size: 14px; color: var(--text-primary); font-weight: 500;">
+        More tools = worse results. Every token spent on tool schemas is a token
+        not spent on reasoning, skills, or your actual task.
+      </p>
+    </div>
+  </section>
+
+  <!-- ==========================================
+       SECTION 3: FEATURES (rewritten for optimization angle)
+       ========================================== -->
+  <section>
+    <div class="design-note">
+      <strong>Features grid:</strong> Now framed around the five optimization
+      pillars: fewer tokens, faster execution, better accuracy, chaining, and
+      skills priority. Each card ties back to the problem above.
+    </div>
+
+    <div class="features-header">
+      <h2>How mcpd fixes this</h2>
+    </div>
+
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon" style="font-size: 14px;">-98%</div>
+        <h3>Fewer tokens</h3>
+        <p>Tools stay in the daemon, not the prompt. Discover on-demand with <code style="color: var(--accent); background: var(--bg-elevated); padding: 1px 4px; border-radius: 3px; font-size: 11px;">mcpd grep</code> instead of loading every schema upfront.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">&#x26a1;</div>
+        <h3>Faster execution</h3>
+        <p>Background daemon keeps servers warm. No cold starts, no repeated handshakes. Call tools directly via CLI.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">&#x25ce;</div>
+        <h3>Better accuracy</h3>
+        <p>Fewer tools in context means the model picks the right one more often. Clean context = better reasoning.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">|&gt;</div>
+        <h3>Chain &amp; script</h3>
+        <p>Pipe <code style="color: var(--accent); background: var(--bg-elevated); padding: 1px 4px; border-radius: 3px; font-size: 11px;">mcpd call</code> through bash, jq, or any language. Intermediate results never re-enter the LLM.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">&#x2605;</div>
+        <h3>Skills get priority</h3>
+        <p>Offload tools to mcpd and your agent's context frees up for skills &mdash; the procedural knowledge that models execute with higher accuracy.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon">{}</div>
+        <h3>Zero config</h3>
+        <p>Reuse your claude_desktop_config.json. Or <code style="color: var(--accent); background: var(--bg-elevated); padding: 1px 4px; border-radius: 3px; font-size: 11px;">mcpd init</code> to auto-discover servers. Drop-in replacement for mcp-remote.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================
+       SECTION 4: CODE EXAMPLE
+       ========================================== -->
+  <!-- ==========================================
+       SECTION 4A: CODE EXAMPLE — Discovery
+       ========================================== -->
+  <section>
+    <div class="design-note">
+      <strong>Code blocks:</strong> Two side-by-side examples now. First shows
+      on-demand discovery (grep + info + call). Second shows chaining &mdash;
+      piping mcpd calls through scripts without the LLM seeing intermediates.
+    </div>
+
+    <div class="code-section">
+      <div class="code-section-text">
+        <h2>Discover, don't preload</h2>
+        <p>
+          Instead of dumping 30,000 tokens of tool schemas into every prompt,
+          agents search for what they need on demand. Find a tool, inspect its
+          schema, call it &mdash; only the result enters the model's context.
+        </p>
+      </div>
+
+      <div class="code-block">
+        <div class="code-block-header">
+          <div class="dot dot-red"></div>
+          <div class="dot dot-yellow"></div>
+          <div class="dot dot-green"></div>
+          <span class="code-block-title">terminal</span>
+        </div>
+        <pre><span class="line-num"> 1</span> <span class="comment"># discover — not preload</span>
+<span class="line-num"> 2</span> <span class="dollar">$</span> mcpd grep <span class="str">"read"</span>
+<span class="line-num"> 3</span> <span class="output">  filesystem/read_file      Read file contents</span>
+<span class="line-num"> 4</span> <span class="output">  postgres/query            Read data via SQL</span>
+<span class="line-num"> 5</span>
+<span class="line-num"> 6</span> <span class="comment"># inspect only the tool you need</span>
+<span class="line-num"> 7</span> <span class="dollar">$</span> mcpd info filesystem/read_file
+<span class="line-num"> 8</span> <span class="output">  path (string, required)   File path to read</span>
+<span class="line-num"> 9</span>
+<span class="line-num">10</span> <span class="comment"># call it — only the result enters the LLM</span>
+<span class="line-num">11</span> <span class="dollar">$</span> mcpd call filesystem/read_file \
+<span class="line-num">12</span>     <span class="str">'{"path": "/tmp/config.json"}'</span></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================
+       SECTION 4B: CODE EXAMPLE — Chaining
+       ========================================== -->
+  <section>
+    <div class="code-section">
+      <div class="code-section-text">
+        <h2>Chain outside the model</h2>
+        <p>
+          Pipe tool outputs through scripts, jq, or other mcpd calls.
+          Intermediate data stays in the shell &mdash; the LLM only sees
+          the final result. Same insight as Anthropic's code execution
+          approach and Cloudflare's Code Mode, but as a simple CLI.
+        </p>
+      </div>
+
+      <div class="code-block">
+        <div class="code-block-header">
+          <div class="dot dot-red"></div>
+          <div class="dot dot-yellow"></div>
+          <div class="dot dot-green"></div>
+          <span class="code-block-title">terminal — chaining</span>
+        </div>
+        <pre><span class="line-num">1</span> <span class="comment"># query DB, filter with jq, write to file</span>
+<span class="line-num">2</span> <span class="comment"># model never sees the raw 10k-row result</span>
+<span class="line-num">3</span> <span class="dollar">$</span> mcpd call postgres/query \
+<span class="line-num">4</span>     <span class="str">'{"sql":"SELECT * FROM users"}'</span> <span class="flag">--json</span> \
+<span class="line-num">5</span>   | jq <span class="str">'[.[] | select(.active)]'</span> \
+<span class="line-num">6</span>   | mcpd call filesystem/write_file \
+<span class="line-num">7</span>     <span class="str">'{"path":"/tmp/active.json"}'</span> <span class="flag">-</span>
+<span class="line-num">8</span>
+<span class="line-num">9</span> <span class="output">  Wrote 847 active users to /tmp/active.json</span></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================
+       SECTION 4C: REAL-WORLD SCRIPT — PostHog churn analysis
+       ========================================== -->
+  <section>
+    <div class="design-note">
+      <strong>Real-world script:</strong> This is the hero example. Shows a
+      complete workflow an agent would write: discover tools across PostHog and
+      Intercom servers, query churned customers, cross-reference with support
+      conversations, produce a summary &mdash; all in a bash script. The LLM
+      writes this script once, mcpd executes it, and only the final summary
+      enters the model's context. 50+ API calls, zero token waste.
+    </div>
+
+    <div style="margin-bottom: var(--s6);">
+      <h2 style="font-size: 20px; font-weight: 600; margin-bottom: var(--s3); text-align: center;">Real-world example: churn analysis</h2>
+      <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.7; text-align: center; max-width: 640px; margin: 0 auto var(--s6);">
+        Your agent writes a script that chains MCP calls across PostHog and Intercom.
+        It finds churned customers, pulls their support history, and produces a summary &mdash;
+        all without intermediate data flowing through the model.
+      </p>
+    </div>
+
+    <div class="code-block">
+      <div class="code-block-header">
+        <div class="dot dot-red"></div>
+        <div class="dot dot-yellow"></div>
+        <div class="dot dot-green"></div>
+        <span class="code-block-title">churn-analysis.sh — agent-generated script</span>
+      </div>
+      <pre><span class="line-num"> 1</span> <span class="comment">#!/bin/bash</span>
+<span class="line-num"> 2</span> <span class="comment"># Agent writes this script, mcpd executes it.</span>
+<span class="line-num"> 3</span> <span class="comment"># 50+ API calls across 2 servers. Zero tokens wasted.</span>
+<span class="line-num"> 4</span>
+<span class="line-num"> 5</span> <span class="comment"># Step 1: Find the right tool on PostHog</span>
+<span class="line-num"> 6</span> <span class="dollar">$</span> mcpd grep <span class="str">"query"</span> <span class="flag">--json</span> \
+<span class="line-num"> 7</span>   | jq -r <span class="str">'.[] | select(.server=="posthog") | .tool.name'</span>
+<span class="line-num"> 8</span> <span class="output">  query-run</span>
+<span class="line-num"> 9</span>
+<span class="line-num">10</span> <span class="comment"># Step 2: Query churned customers from PostHog (last 30 days)</span>
+<span class="line-num">11</span> <span class="dollar">$</span> mcpd call posthog/query-run <span class="str">'{
+<span class="line-num">12</span>   "query": {
+<span class="line-num">13</span>     "kind": "HogQLQuery",
+<span class="line-num">14</span>     "query": "SELECT person_id, person.properties.email,
+<span class="line-num">15</span>       person.properties.name, person.properties.company
+<span class="line-num">16</span>       FROM events WHERE event = '\''$churn'\''
+<span class="line-num">17</span>       AND timestamp &gt; now() - interval 30 day"
+<span class="line-num">18</span>   }
+<span class="line-num">19</span> }'</span> <span class="flag">--json</span> \
+<span class="line-num">20</span>   | jq <span class="str">'.content[0].text | fromjson | .results'</span> \
+<span class="line-num">21</span>   &gt; /tmp/churned.json
+<span class="line-num">22</span>
+<span class="line-num">23</span> <span class="comment"># Step 3: For each churned customer, pull their Intercom conversations</span>
+<span class="line-num">24</span> <span class="dollar">$</span> jq -r <span class="str">'.[].email'</span> /tmp/churned.json | while read email; do
+<span class="line-num">25</span>   mcpd call intercom/search-conversations \
+<span class="line-num">26</span>     <span class="str">"{\"query\":\"$email\",\"limit\":5}"</span> <span class="flag">--json</span> \
+<span class="line-num">27</span>     | jq <span class="str">'.content[0].text'</span> \
+<span class="line-num">28</span>     &gt;&gt; /tmp/churn_conversations.jsonl
+<span class="line-num">29</span> done
+<span class="line-num">30</span>
+<span class="line-num">31</span> <span class="comment"># Step 4: Combine into a single report for the LLM</span>
+<span class="line-num">32</span> <span class="dollar">$</span> jq -s <span class="str">'{
+<span class="line-num">33</span>   churned_count: (. | length),
+<span class="line-num">34</span>   customers: [.[] | {email, company, last_messages}]
+<span class="line-num">35</span> }'</span> /tmp/churn_conversations.jsonl \
+<span class="line-num">36</span>   &gt; /tmp/churn_report.json
+<span class="line-num">37</span>
+<span class="line-num">38</span> <span class="comment"># Only the final 2KB summary enters the model — not the</span>
+<span class="line-num">39</span> <span class="comment"># 500KB of raw PostHog events and Intercom transcripts.</span></pre>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s4); margin-top: var(--s6);">
+      <div class="feature-card" style="text-align: center;">
+        <div style="font-size: 22px; font-weight: 700; color: var(--accent); margin-bottom: var(--s1);">2</div>
+        <div style="font-size: 11px; color: var(--text-muted);">MCP servers used</div>
+      </div>
+      <div class="feature-card" style="text-align: center;">
+        <div style="font-size: 22px; font-weight: 700; color: var(--accent); margin-bottom: var(--s1);">~50</div>
+        <div style="font-size: 11px; color: var(--text-muted);">API calls executed</div>
+      </div>
+      <div class="feature-card" style="text-align: center;">
+        <div style="font-size: 22px; font-weight: 700; color: var(--accent); margin-bottom: var(--s1);">2KB</div>
+        <div style="font-size: 11px; color: var(--text-muted);">entered the model</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================
+       SECTION 4C-2: NODE.JS API — Programmatic usage
+       ========================================== -->
+  <section>
+    <div class="design-note">
+      <strong>Node.js API example:</strong> Shows the same workflow as the bash
+      script above, but using mcpd's programmatic client. Agents can
+      <code style="color: var(--accent); background: var(--bg-elevated); padding: 1px 4px; border-radius: 3px; font-size: 11px;">import { createClient } from 'mcpd'</code>
+      and write Node.js scripts instead of bash. This unlocks typed results,
+      async/await, error handling, and composition with any npm library &mdash;
+      perfect for agent-generated skills that need more than shell pipes.
+    </div>
+
+    <div style="margin-bottom: var(--s6);">
+      <h2 style="font-size: 20px; font-weight: 600; margin-bottom: var(--s3); text-align: center;">Or use the Node.js API</h2>
+      <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.7; text-align: center; max-width: 640px; margin: 0 auto var(--s6);">
+        mcpd is also an npm package. Agents can write Node.js scripts that import
+        <code style="color: var(--accent); background: var(--bg-elevated); padding: 1px 4px; border-radius: 3px; font-size: 11px;">mcpd</code>
+        and call tools programmatically &mdash; with typed results, async/await,
+        and the full npm ecosystem at their disposal.
+      </p>
+    </div>
+
+    <div class="code-block">
+      <div class="code-block-header">
+        <div class="dot dot-red"></div>
+        <div class="dot dot-yellow"></div>
+        <div class="dot dot-green"></div>
+        <span class="code-block-title">churn-analysis.mjs — agent-generated skill</span>
+      </div>
+      <pre><span class="line-num"> 1</span> <span class="kw">import</span> { createClient } <span class="kw">from</span> <span class="str">'mcpd'</span>;
+<span class="line-num"> 2</span>
+<span class="line-num"> 3</span> <span class="kw">const</span> client = <span class="kw">await</span> createClient();
+<span class="line-num"> 4</span>
+<span class="line-num"> 5</span> <span class="comment">// Step 1: Query churned customers from PostHog</span>
+<span class="line-num"> 6</span> <span class="kw">const</span> churn = <span class="kw">await</span> client.call(<span class="str">'posthog/query-run'</span>, {
+<span class="line-num"> 7</span>   query: {
+<span class="line-num"> 8</span>     kind: <span class="str">'HogQLQuery'</span>,
+<span class="line-num"> 9</span>     query: <span class="str">`SELECT person_id, person.properties.email,</span>
+<span class="line-num">10</span> <span class="str">      person.properties.name, person.properties.company</span>
+<span class="line-num">11</span> <span class="str">      FROM events WHERE event = '$churn'</span>
+<span class="line-num">12</span> <span class="str">      AND timestamp > now() - interval 30 day`</span>
+<span class="line-num">13</span>   }
+<span class="line-num">14</span> });
+<span class="line-num">15</span>
+<span class="line-num">16</span> <span class="kw">const</span> customers = JSON.parse(churn.content[0].text).results;
+<span class="line-num">17</span>
+<span class="line-num">18</span> <span class="comment">// Step 2: Pull support history from Intercom (in parallel)</span>
+<span class="line-num">19</span> <span class="kw">const</span> conversations = <span class="kw">await</span> Promise.all(
+<span class="line-num">20</span>   customers.map(c =&gt;
+<span class="line-num">21</span>     client.call(<span class="str">'intercom/search-conversations'</span>, {
+<span class="line-num">22</span>       query: c.email, limit: 5
+<span class="line-num">23</span>     })
+<span class="line-num">24</span>   )
+<span class="line-num">25</span> );
+<span class="line-num">26</span>
+<span class="line-num">27</span> <span class="comment">// Step 3: Build the summary — this is all the LLM sees</span>
+<span class="line-num">28</span> <span class="kw">const</span> report = customers.map((c, i) =&gt; ({
+<span class="line-num">29</span>   email: c.email,
+<span class="line-num">30</span>   company: c.company,
+<span class="line-num">31</span>   messages: JSON.parse(conversations[i].content[0].text)
+<span class="line-num">32</span> }));
+<span class="line-num">33</span>
+<span class="line-num">34</span> console.log(JSON.stringify({ churned: report.length, customers: report }));</pre>
+    </div>
+
+    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s4); margin-top: var(--s6);">
+      <div class="feature-card" style="text-align: center;">
+        <div style="font-size: 22px; font-weight: 700; color: var(--accent); margin-bottom: var(--s1);">async</div>
+        <div style="font-size: 11px; color: var(--text-muted);">parallel API calls</div>
+      </div>
+      <div class="feature-card" style="text-align: center;">
+        <div style="font-size: 22px; font-weight: 700; color: var(--accent); margin-bottom: var(--s1);">typed</div>
+        <div style="font-size: 11px; color: var(--text-muted);">results &amp; error handling</div>
+      </div>
+      <div class="feature-card" style="text-align: center;">
+        <div style="font-size: 22px; font-weight: 700; color: var(--accent); margin-bottom: var(--s1);">npm</div>
+        <div style="font-size: 11px; color: var(--text-muted);">full ecosystem available</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================
+       SECTION 4D: Skills priority
+       ========================================== -->
+  <section>
+    <div class="design-note">
+      <strong>For agents in production:</strong> Dedicated block explaining the
+      skills-over-tools advantage. Visual: a simple before/after comparison
+      showing context window allocation. This is the pitch for teams shipping real agents.
+    </div>
+
+    <div class="code-section">
+      <div class="code-section-text">
+        <h2>When tools leave, skills win</h2>
+        <p>
+          Models execute skills &mdash; procedural knowledge in the system prompt
+          &mdash; with significantly higher accuracy than raw tool calls.
+          By offloading tools to mcpd, your agent's context window reallocates
+          from tool schemas to the instructions that actually drive quality.
+        </p>
+        <p style="margin-top: var(--s3);">
+          For agents in production, this means measurably better
+          results on complex workflows without changing a single prompt.
+        </p>
+      </div>
+
+      <div class="code-block">
+        <div class="code-block-header">
+          <div class="dot dot-red"></div>
+          <div class="dot dot-yellow"></div>
+          <div class="dot dot-green"></div>
+          <span class="code-block-title">context window allocation</span>
+        </div>
+        <pre>
+<span class="line-num"> </span> <span class="comment">before mcpd:</span>
+<span class="line-num"> </span> <span class="output">  [##########                    ] tools  30%</span>
+<span class="line-num"> </span> <span class="output">  [####                          ] skills 12%</span>
+<span class="line-num"> </span> <span class="output">  [#################             ] task   58%</span>
+<span class="line-num"> </span>
+<span class="line-num"> </span> <span class="comment">after mcpd:</span>
+<span class="line-num"> </span> <span class="str">  [#                             ] tools   2%</span>
+<span class="line-num"> </span> <span class="str">  [############                  ] skills 38%</span>
+<span class="line-num"> </span> <span class="str">  [##################            ] task   60%</span>
+</pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================
+       SECTION 5: COMMANDS REFERENCE
+       ========================================== -->
+  <section>
+    <div class="design-note">
+      <strong>Commands table:</strong> Clean table inside a surface card. Hover
+      highlight on rows. Command names in accent color. Compact but readable.
+      This is the "leaderboard" equivalent from skills.sh.
+    </div>
+
+    <div class="features-header">
+      <h2>Commands</h2>
+    </div>
+
+    <div class="commands-table-wrapper">
+      <table class="commands-table">
+        <thead>
+          <tr>
+            <th>Command</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="cmd-name">mcpd servers</td>
+            <td class="cmd-desc">List servers with connection status</td>
+          </tr>
+          <tr>
+            <td class="cmd-name">mcpd tools [server]</td>
+            <td class="cmd-desc">List available tools with annotations</td>
+          </tr>
+          <tr>
+            <td class="cmd-name">mcpd call &lt;server/tool&gt;</td>
+            <td class="cmd-desc">Invoke a tool with JSON arguments</td>
+          </tr>
+          <tr>
+            <td class="cmd-name">mcpd grep &lt;pattern&gt;</td>
+            <td class="cmd-desc">Search tool names and descriptions</td>
+          </tr>
+          <tr>
+            <td class="cmd-name">mcpd resources</td>
+            <td class="cmd-desc">List resources across servers</td>
+          </tr>
+          <tr>
+            <td class="cmd-name">mcpd prompts</td>
+            <td class="cmd-desc">List prompt templates</td>
+          </tr>
+          <tr>
+            <td class="cmd-name">mcpd status</td>
+            <td class="cmd-desc">Daemon PID, uptime, connected servers</td>
+          </tr>
+          <tr>
+            <td class="cmd-name">mcpd init</td>
+            <td class="cmd-desc">Auto-discover and configure MCP servers</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ==========================================
+       SECTION 6: DOCS PAGE PREVIEW
+       ========================================== -->
+  <section>
+    <div class="design-note">
+      <strong>Docs page:</strong> Same dark theme. Left sidebar with section
+      navigation. Content area with generous whitespace. Inline code in accent
+      color. This is a separate page (/docs) but shares the same design system.
+    </div>
+
+    <div class="features-header">
+      <h2>Documentation layout</h2>
+    </div>
+
+    <div class="docs-layout">
+      <div class="docs-sidebar">
+        <h4>Getting Started</h4>
+        <a href="#" class="active">Installation</a>
+        <a href="#">Quick Start</a>
+        <a href="#">Configuration</a>
+
+        <h4>Guides</h4>
+        <a href="#">Claude Code</a>
+        <a href="#">Cursor</a>
+        <a href="#">Custom Agents</a>
+
+        <h4>Reference</h4>
+        <a href="#">CLI Commands</a>
+        <a href="#">Config Schema</a>
+        <a href="#">Architecture</a>
+
+        <h4>Links</h4>
+        <a href="#">GitHub</a>
+        <a href="#">npm</a>
+        <a href="#">MCP Spec</a>
+      </div>
+      <div class="docs-content">
+        <h1>Installation</h1>
+        <p>
+          Install mcpd globally via npm, or use it directly with <code>npx</code>.
+          Requires Node.js 20 or later.
+        </p>
+        <div class="code-block" style="margin-bottom: var(--s4);">
+          <div class="code-block-header">
+            <div class="dot dot-red"></div>
+            <div class="dot dot-yellow"></div>
+            <div class="dot dot-green"></div>
+            <span class="code-block-title">terminal</span>
+          </div>
+          <pre><span class="dollar">$</span> npm install -g mcpd</pre>
+        </div>
+        <p>
+          Once installed, any <code>mcpd</code> command will auto-start the background
+          daemon if it's not already running. The daemon shuts down automatically after
+          5 minutes of inactivity.
+        </p>
+        <p>
+          Create a <code>mcpd.config.json</code> in your project root to configure
+          which MCP servers to connect to. The format is compatible with the
+          <code>mcpServers</code> section of <code>claude_desktop_config.json</code>.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ==========================================
+       SECTION 7: FOOTER
+       ========================================== -->
+  <section style="border-bottom: none;">
+    <div class="design-note">
+      <strong>Footer:</strong> Minimal. Links centered. A quiet ASCII
+      separator. Copyright at the bottom. Same muted tones as the rest.
+    </div>
+
+    <footer class="footer">
+      <div class="footer-links">
+        <a href="#">Docs</a>
+        <a href="#">GitHub</a>
+        <a href="#">npm</a>
+        <a href="#">MCP Spec</a>
+      </div>
+      <div style="color: var(--text-muted); margin-bottom: var(--s3);">
+        ──────────────────────────────
+      </div>
+      <div>MIT License &middot; Built for the MCP ecosystem</div>
+      <div class="footer-ascii">$ exit 0</div>
+    </footer>
+  </section>
+
+</div>
+
+<script>
+  // Respect system preference on load
+  if (window.matchMedia('(prefers-color-scheme: light)').matches) {
+    document.documentElement.classList.add('light');
+    document.querySelector('.theme-toggle').textContent = '◐ dark';
+  }
+</script>
+</body>
+</html>
