@@ -8,7 +8,7 @@
 
 The MCP ecosystem has a scaling problem. Every tool you connect dumps its full schema into the model's context window. A standard setup with 3-4 MCP servers can consume 20-30% of the context before the agent even starts working. Anthropic's research shows this leads to a 98.7% token overhead on intermediate results. Cloudflare found that agents can't reliably handle more than a handful of servers before tool selection accuracy collapses.
 
-**More tools = worse results.** And every tool in the context window is a token that isn't being used for your actual task — or for skills that drive agent quality.
+**More tools = worse results.** Every token spent on MCP tool schemas is a token not spent on your actual task — or on the skills, prompts, and default tools that agents execute deterministically.
 
 ## How mcpd Fixes This
 
@@ -16,13 +16,13 @@ The MCP ecosystem has a scaling problem. Every tool you connect dumps its full s
 
 - **Fewer tokens in context** — Tools stay in the daemon, not in the prompt. Agents discover tools on-demand with `mcpd grep` and `mcpd info` instead of loading every schema upfront. Load only what you need, when you need it.
 - **Faster execution** — Servers stay warm in a background daemon. No cold starts, no repeated connection negotiation. Call tools directly via CLI without round-tripping through the model.
-- **More precise tool selection** — By offloading tool management to mcpd, your agent's context window stays clean for what actually matters: reasoning, skills, and the task at hand. Fewer tools in context means the model picks the right one more often.
+- **More precise tool selection** — By offloading tool management to mcpd, your agent's context window stays clean for what actually matters: reasoning, prompts, and the task at hand. Fewer tools in context means the model picks the right one more often.
 - **Chain calls outside the model** — Pipe tool results through scripts and chain `mcpd call` commands in bash without every intermediate result flowing through the LLM. This is the same insight behind Anthropic's code execution approach and Cloudflare's Code Mode — but available today as a simple CLI.
-- **Skills get priority** — When tools are offloaded to mcpd, skills (procedural knowledge in the system prompt) get more of the context window. Models execute skills with significantly higher accuracy than tools. Your agent becomes better at its actual job.
+- **Context engineering wins** — When MCP tools are offloaded to mcpd, your context window is freed for skills, prompts, and default tools — the things agents execute deterministically with higher priority. Context engineering beats tool bloat: fewer MCP schemas means your carefully crafted instructions actually get followed.
 
 ### For Agents in Production
 
-When you offload MCP tools to mcpd, your agents' context windows free up for skills — the procedural knowledge that drives quality. Research shows that skills loaded via progressive disclosure consistently outperform raw tool calls in accuracy. By moving tool management out of the model and into a daemon, your agents allocate more attention to the instructions that matter, producing measurably better results on complex workflows.
+When you offload MCP tools to mcpd, your agents' context windows free up for what actually gets executed reliably: skills, prompts, and default tools. These have deterministic priority — models always follow them. MCP tools, by contrast, compete for attention in a crowded context and get picked less reliably as you add more. By moving tool management out of the model and into a daemon, you're doing context engineering at the infrastructure level — your carefully crafted instructions get followed instead of being drowned out by 30,000 tokens of tool schemas.
 
 ## Quick Start
 

@@ -715,8 +715,8 @@
       <strong>Messaging hierarchy:</strong> Lead with the <em>problem</em> (tool sprawl,
       token waste, accuracy collapse) backed by real numbers from Anthropic &amp; Cloudflare.
       Then the five optimization pillars: fewer tokens, faster execution, better accuracy,
-      chaining/scripting, and skills priority. The B2B pitch (skills &gt; tools for agent
-      quality) gets its own dedicated section with a visual context-window comparison.
+      chaining/scripting, and context engineering. The production pitch (context &gt; tools
+      for agent quality) gets its own dedicated section with a visual context-window comparison.
     </div>
 
     <h3 style="font-size: 13px; font-weight: 600; margin: var(--s7) 0 var(--s4); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em;">Color Palette</h3>
@@ -956,7 +956,7 @@
     <div class="design-note">
       <strong>Features grid:</strong> Now framed around the five optimization
       pillars: fewer tokens, faster execution, better accuracy, chaining, and
-      skills priority. Each card ties back to the problem above.
+      context engineering. Each card ties back to the problem above.
     </div>
 
     <div class="features-header">
@@ -986,8 +986,8 @@
       </div>
       <div class="feature-card">
         <div class="feature-icon">&#x2605;</div>
-        <h3>Skills get priority</h3>
-        <p>Offload tools to mcpd and your agent's context frees up for skills &mdash; the procedural knowledge that models execute with higher accuracy.</p>
+        <h3>Context engineering wins</h3>
+        <p>Offload tools to mcpd and reclaim context for skills, prompts, and default tools &mdash; the things agents execute deterministically with higher priority than MCP tool calls.</p>
       </div>
       <div class="feature-card">
         <div class="feature-icon">{}</div>
@@ -1247,27 +1247,30 @@
   </section>
 
   <!-- ==========================================
-       SECTION 4D: Skills priority
+       SECTION 4D: Context engineering
        ========================================== -->
   <section>
     <div class="design-note">
-      <strong>For agents in production:</strong> Dedicated block explaining the
-      skills-over-tools advantage. Visual: a simple before/after comparison
-      showing context window allocation. This is the pitch for teams shipping real agents.
+      <strong>For agents in production:</strong> Dedicated block explaining why
+      context engineering beats tool bloat. Skills, prompts, and default tools
+      are deterministic &mdash; they always execute. MCP tools compete for attention.
+      Visual: a before/after comparison showing context window reallocation.
     </div>
 
     <div class="code-section">
       <div class="code-section-text">
-        <h2>When tools leave, skills win</h2>
+        <h2>When tools leave, context wins</h2>
         <p>
-          Models execute skills &mdash; procedural knowledge in the system prompt
-          &mdash; with significantly higher accuracy than raw tool calls.
-          By offloading tools to mcpd, your agent's context window reallocates
-          from tool schemas to the instructions that actually drive quality.
+          Skills, prompts, and default tools are deterministic &mdash;
+          models always use them. MCP tools compete for attention in a
+          crowded context window, and accuracy drops as you add more.
+          Offloading tools to mcpd frees context for the things agents
+          actually execute reliably.
         </p>
         <p style="margin-top: var(--s3);">
-          For agents in production, this means measurably better
-          results on complex workflows without changing a single prompt.
+          Context engineering &gt; tool bloat. Your prompts, skills, and
+          built-in tools get higher priority when they're not buried under
+          30,000 tokens of MCP schemas.
         </p>
       </div>
 
@@ -1280,14 +1283,16 @@
         </div>
         <pre>
 <span class="line-num"> </span> <span class="comment">before mcpd:</span>
-<span class="line-num"> </span> <span class="output">  [##########                    ] tools  30%</span>
-<span class="line-num"> </span> <span class="output">  [####                          ] skills 12%</span>
-<span class="line-num"> </span> <span class="output">  [#################             ] task   58%</span>
+<span class="line-num"> </span> <span class="output">  [##########                    ] mcp tools      30%</span>
+<span class="line-num"> </span> <span class="output">  [##                            ] skills          6%</span>
+<span class="line-num"> </span> <span class="output">  [##                            ] prompts         6%</span>
+<span class="line-num"> </span> <span class="output">  [#################             ] task           58%</span>
 <span class="line-num"> </span>
 <span class="line-num"> </span> <span class="comment">after mcpd:</span>
-<span class="line-num"> </span> <span class="str">  [#                             ] tools   2%</span>
-<span class="line-num"> </span> <span class="str">  [############                  ] skills 38%</span>
-<span class="line-num"> </span> <span class="str">  [##################            ] task   60%</span>
+<span class="line-num"> </span> <span class="str">  [#                             ] mcp tools       2%</span>
+<span class="line-num"> </span> <span class="str">  [########                      ] skills         24%</span>
+<span class="line-num"> </span> <span class="str">  [#####                         ] prompts        14%</span>
+<span class="line-num"> </span> <span class="str">  [##################            ] task           60%</span>
 </pre>
       </div>
     </div>
