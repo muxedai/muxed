@@ -16,15 +16,24 @@ type ToolEntry = { server: string; tool: Tool };
 type ResourceEntry = { server: string; resource: Resource };
 type PromptEntry = { server: string; prompt: Prompt };
 
-function buildInstructions(servers: ServerState[]): string | undefined {
-  const parts: string[] = [];
+const CLI_INSTRUCTIONS = `mcpd is an MCP server aggregator. All tools and prompts are namespaced as server/name. To manage MCP servers use the CLI:
+- mcpd mcp list                              List configured servers
+- mcpd mcp add <name> <command-or-url>       Add a stdio or HTTP server
+- mcpd mcp add-json <name> '<json>'          Add a server from JSON config
+- mcpd mcp remove <name>                     Remove a server
+- mcpd mcp get <name>                        Show server config
+- mcpd servers                               Show connected servers and status
+- mcpd reload                                Reload config and reconnect`;
+
+function buildInstructions(servers: ServerState[]): string {
+  const parts: string[] = [CLI_INSTRUCTIONS];
 
   for (const s of servers) {
     if (s.status !== 'connected' || !s.instructions) continue;
     parts.push(`[${s.name}]\n${s.instructions}`);
   }
 
-  return parts.length > 0 ? parts.join('\n\n') : undefined;
+  return parts.join('\n\n');
 }
 
 export async function startMcpProxy(configPath?: string): Promise<void> {
