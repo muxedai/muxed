@@ -11,12 +11,12 @@ const asciiLogo = `                        _
  |_| |_| |_|\\___| .__/ \\__,_|
                  |_|`;
 
-const codeDiscovery = `<span class="ln"> 1</span> <span class="comment"># discover — not preload</span>
+const codeDiscovery = `<span class="ln"> 1</span> <span class="comment"># find the tool you need — not all 200</span>
 <span class="ln"> 2</span> <span class="dollar">$</span> mcpd grep <span class="str">"read"</span>
 <span class="ln"> 3</span> <span class="output">  filesystem/read_file      Read file contents</span>
 <span class="ln"> 4</span> <span class="output">  postgres/query            Read data via SQL</span>
 <span class="ln"> 5</span>
-<span class="ln"> 6</span> <span class="comment"># inspect only the tool you need</span>
+<span class="ln"> 6</span> <span class="comment"># inspect its schema</span>
 <span class="ln"> 7</span> <span class="dollar">$</span> mcpd info filesystem/read_file
 <span class="ln"> 8</span> <span class="output">  path (string, required)   File path to read</span>
 <span class="ln"> 9</span>
@@ -24,90 +24,33 @@ const codeDiscovery = `<span class="ln"> 1</span> <span class="comment"># discov
 <span class="ln">11</span> <span class="dollar">$</span> mcpd call filesystem/read_file \\
 <span class="ln">12</span>     <span class="str">'{"path": "/tmp/config.json"}'</span>`;
 
-const codeChaining = `<span class="ln">1</span> <span class="comment"># query DB, filter with jq, write to file</span>
-<span class="ln">2</span> <span class="comment"># model never sees the raw 10k-row result</span>
-<span class="ln">3</span> <span class="dollar">$</span> mcpd call postgres/query \\
-<span class="ln">4</span>     <span class="str">'{"sql":"SELECT * FROM users"}'</span> <span class="flag">--json</span> \\
-<span class="ln">5</span>   | jq <span class="str">'[.[] | select(.active)]'</span> \\
-<span class="ln">6</span>   | mcpd call filesystem/write_file \\
-<span class="ln">7</span>     <span class="str">'{"path":"/tmp/active.json"}'</span> <span class="flag">-</span>
-<span class="ln">8</span>
-<span class="ln">9</span> <span class="output">  Wrote 847 active users to /tmp/active.json</span>`;
-
-const codeChurnBash = `<span class="ln"> 1</span> <span class="comment">#!/bin/bash</span>
-<span class="ln"> 2</span> <span class="comment"># Agent writes this script, mcpd executes it.</span>
-<span class="ln"> 3</span> <span class="comment"># 50+ API calls across 2 servers. Zero tokens wasted.</span>
-<span class="ln"> 4</span>
-<span class="ln"> 5</span> <span class="comment"># Step 1: Find the right tool on PostHog</span>
-<span class="ln"> 6</span> <span class="dollar">$</span> mcpd grep <span class="str">"query"</span> <span class="flag">--json</span> \\
-<span class="ln"> 7</span>   | jq -r <span class="str">'.[] | select(.server=="posthog") | .tool.name'</span>
-<span class="ln"> 8</span> <span class="output">  query-run</span>
-<span class="ln"> 9</span>
-<span class="ln">10</span> <span class="comment"># Step 2: Query churned customers from PostHog (last 30 days)</span>
-<span class="ln">11</span> <span class="dollar">$</span> mcpd call posthog/query-run <span class="str">'{
-<span class="ln">12</span>   "query": {
-<span class="ln">13</span>     "kind": "HogQLQuery",
-<span class="ln">14</span>     "query": "SELECT person_id, person.properties.email,
-<span class="ln">15</span>       person.properties.name, person.properties.company
-<span class="ln">16</span>       FROM events WHERE event = &apos;$churn&apos;
-<span class="ln">17</span>       AND timestamp &gt; now() - interval 30 day"
-<span class="ln">18</span>   }
-<span class="ln">19</span> }'</span> <span class="flag">--json</span> \\
-<span class="ln">20</span>   | jq <span class="str">'.content[0].text | fromjson | .results'</span> \\
-<span class="ln">21</span>   &gt; /tmp/churned.json
-<span class="ln">22</span>
-<span class="ln">23</span> <span class="comment"># Step 3: For each churned customer, pull Intercom conversations</span>
-<span class="ln">24</span> <span class="dollar">$</span> jq -r <span class="str">'.[].email'</span> /tmp/churned.json | while read email; do
-<span class="ln">25</span>   mcpd call intercom/search-conversations \\
-<span class="ln">26</span>     <span class="str">"{\\"query\\":\\"$email\\",\\"limit\\":5}"</span> <span class="flag">--json</span> \\
-<span class="ln">27</span>     | jq <span class="str">'.content[0].text'</span> \\
-<span class="ln">28</span>     &gt;&gt; /tmp/churn_conversations.jsonl
-<span class="ln">29</span> done
-<span class="ln">30</span>
-<span class="ln">31</span> <span class="comment"># Step 4: Combine into a single report for the LLM</span>
-<span class="ln">32</span> <span class="dollar">$</span> jq -s <span class="str">'{
-<span class="ln">33</span>   churned_count: (. | length),
-<span class="ln">34</span>   customers: [.[] | {email, company, last_messages}]
-<span class="ln">35</span> }'</span> /tmp/churn_conversations.jsonl \\
-<span class="ln">36</span>   &gt; /tmp/churn_report.json
-<span class="ln">37</span>
-<span class="ln">38</span> <span class="comment"># Only the final 2KB summary enters the model — not the</span>
-<span class="ln">39</span> <span class="comment"># 500KB of raw PostHog events and Intercom transcripts.</span>`;
+const codeChaining = `<span class="ln">1</span> <span class="comment"># query → filter → write. model never sees the raw 10k rows.</span>
+<span class="ln">2</span> <span class="dollar">$</span> mcpd call postgres/query \\
+<span class="ln">3</span>     <span class="str">'{"sql":"SELECT * FROM users"}'</span> <span class="flag">--json</span> \\
+<span class="ln">4</span>   | jq <span class="str">'[.[] | select(.active)]'</span> \\
+<span class="ln">5</span>   | mcpd call filesystem/write_file \\
+<span class="ln">6</span>     <span class="str">'{"path":"/tmp/active.json"}'</span> <span class="flag">-</span>`;
 
 const codeNodeApi = `<span class="ln"> 1</span> <span class="kw">import</span> { createClient } <span class="kw">from</span> <span class="str">'mcpd'</span>;
 <span class="ln"> 2</span>
 <span class="ln"> 3</span> <span class="kw">const</span> client = <span class="kw">await</span> createClient();
 <span class="ln"> 4</span>
-<span class="ln"> 5</span> <span class="comment">// Step 1: Query churned customers from PostHog</span>
+<span class="ln"> 5</span> <span class="comment">// query churned customers from PostHog</span>
 <span class="ln"> 6</span> <span class="kw">const</span> churn = <span class="kw">await</span> client.call(<span class="str">'posthog/query-run'</span>, {
-<span class="ln"> 7</span>   query: {
-<span class="ln"> 8</span>     kind: <span class="str">'HogQLQuery'</span>,
-<span class="ln"> 9</span>     query: <span class="str">\`SELECT person_id, person.properties.email,
-<span class="ln">10</span>       person.properties.name, person.properties.company
-<span class="ln">11</span>       FROM events WHERE event = '$churn'
-<span class="ln">12</span>       AND timestamp > now() - interval 30 day\`</span>
-<span class="ln">13</span>   }
-<span class="ln">14</span> });
-<span class="ln">15</span>
-<span class="ln">16</span> <span class="kw">const</span> customers = JSON.parse(churn.content[0].text).results;
-<span class="ln">17</span>
-<span class="ln">18</span> <span class="comment">// Step 2: Pull support history from Intercom (in parallel)</span>
-<span class="ln">19</span> <span class="kw">const</span> conversations = <span class="kw">await</span> Promise.all(
-<span class="ln">20</span>   customers.map(c =&gt;
-<span class="ln">21</span>     client.call(<span class="str">'intercom/search-conversations'</span>, {
-<span class="ln">22</span>       query: c.email, limit: 5
-<span class="ln">23</span>     })
-<span class="ln">24</span>   )
-<span class="ln">25</span> );
-<span class="ln">26</span>
-<span class="ln">27</span> <span class="comment">// Step 3: Build the summary — this is all the LLM sees</span>
-<span class="ln">28</span> <span class="kw">const</span> report = customers.map((c, i) =&gt; ({
-<span class="ln">29</span>   email: c.email,
-<span class="ln">30</span>   company: c.company,
-<span class="ln">31</span>   messages: JSON.parse(conversations[i].content[0].text)
-<span class="ln">32</span> }));
-<span class="ln">33</span>
-<span class="ln">34</span> console.log(JSON.stringify({ churned: report.length, customers: report }));`;
+<span class="ln"> 7</span>   query: { kind: <span class="str">'HogQLQuery'</span>, query: <span class="str">'SELECT email FROM persons'</span> }
+<span class="ln"> 8</span> });
+<span class="ln"> 9</span>
+<span class="ln">10</span> <span class="comment">// pull support history in parallel</span>
+<span class="ln">11</span> <span class="kw">const</span> history = <span class="kw">await</span> Promise.all(
+<span class="ln">12</span>   customers.map(c =&gt;
+<span class="ln">13</span>     client.call(<span class="str">'intercom/search-conversations'</span>, {
+<span class="ln">14</span>       query: c.email, limit: 5
+<span class="ln">15</span>     })
+<span class="ln">16</span>   )
+<span class="ln">17</span> );
+<span class="ln">18</span>
+<span class="ln">19</span> <span class="comment">// output the results</span>
+<span class="ln">20</span> console.log(history);`;
 
 const codeContext = `
  <span class="comment">before mcpd:</span>
@@ -115,12 +58,14 @@ const codeContext = `
  <span class="output">  [##                            ] skills          6%</span>
  <span class="output">  [##                            ] prompts         6%</span>
  <span class="output">  [#################             ] task           58%</span>
+ <span class="output">  [                              ] free            0%</span>
 
  <span class="comment">after mcpd:</span>
- <span class="str">  [#                             ] mcp tools       2%</span>
- <span class="str">  [########                      ] skills         24%</span>
- <span class="str">  [#####                         ] prompts        14%</span>
- <span class="str">  [##################            ] task           60%</span>
+ <span class="str">  [                              ] mcp tools       0%</span>
+ <span class="output">  [##                            ] skills          6%</span>
+ <span class="output">  [##                            ] prompts         6%</span>
+ <span class="output">  [#################             ] task           58%</span>
+ <span class="str">  [#########                     ] free           30%</span>
 `;
 ---
 
@@ -162,27 +107,26 @@ const codeContext = `
         <div class="hero-tagline">Fewer tokens. Faster tools. Better agents.</div>
 
         <p class="hero-description">
-          The optimization layer for your MCP infrastructure.
-          Offload tool management from your model's context window
-          so agents run faster, pick the right tool, and give better results.
+          Your coding agent gets dumber with every MCP you add.
+          mcpd offloads them to a daemon and discovers tools lazily —
+          via shell or Node.js API.
         </p>
 
         <div class="install-box" id="install-box">
           <span class="dollar">$</span>
-          <span class="cmd">npx mcpd tools</span>
+          <span class="cmd">npx mcpd init</span>
           <span class="copy-hint" id="copy-hint">click to copy</span>
         </div>
 
         <div class="hero-actions">
-          <a href="/getting-started/installation/" class="btn btn-primary">Read the Docs</a>
+          <a href="/getting-started/installation/" class="btn btn-primary">Get Started</a>
           <a href="https://github.com/skoob13/mcpd" class="btn">GitHub</a>
-          <a href="https://www.npmjs.com/package/mcpd" class="btn">npm</a>
         </div>
       </div>
     </section>
   </div>
 
-  <!-- Problem Section -->
+  <!-- The Problem -->
   <div class="container">
     <section>
       <div class="section-header">
@@ -190,23 +134,22 @@ const codeContext = `
       </div>
 
       <p class="problem-intro">
-        Every MCP server you connect dumps its full tool schemas into the model's
-        context window. More tools means more tokens burned before work even starts &mdash;
-        and worse accuracy as the model struggles to pick the right one.
+        Every MCP server dumps its full schema into the prompt.
+        One server is fine. Three is a problem. Ten breaks things.
       </p>
 
       <div class="stats-grid">
-        <div class="stat-card">
+        <div class="stat-card animate-in">
           <div class="stat-value">98.7%</div>
           <div class="stat-label">token overhead</div>
-          <p class="stat-desc">Anthropic found intermediate results flow through the model unnecessarily, wasting almost all tokens.</p>
+          <p class="stat-desc">Anthropic found that intermediate tool results waste almost all tokens flowing through the model.</p>
         </div>
-        <div class="stat-card">
+        <div class="stat-card animate-in">
           <div class="stat-value">20-30%</div>
           <div class="stat-label">context consumed</div>
-          <p class="stat-desc">A standard 3-4 server setup fills a quarter of the context before the agent starts working.</p>
+          <p class="stat-desc">A standard 3-4 server setup fills a quarter of the context window before the agent even starts.</p>
         </div>
-        <div class="stat-card">
+        <div class="stat-card animate-in">
           <div class="stat-value">3-4</div>
           <div class="stat-label">server limit</div>
           <p class="stat-desc">Tool selection accuracy collapses after just a handful of connected MCP servers.</p>
@@ -214,8 +157,8 @@ const codeContext = `
       </div>
 
       <p class="problem-summary">
-        More tools = worse results. Every token spent on tool schemas is a token
-        not spent on reasoning, skills, or your actual task.
+        More tools in context = worse results.
+        Every token spent on schemas is a token not spent on your task.
       </p>
     </section>
   </div>
@@ -228,35 +171,35 @@ const codeContext = `
       </div>
 
       <div class="features-grid">
-        <div class="feature-card">
+        <div class="feature-card animate-in">
           <div class="feature-icon" style="font-size: 14px;">-98%</div>
           <h3>Fewer tokens</h3>
-          <p>Tools stay in the daemon, not the prompt. Discover on-demand with <code>mcpd grep</code> instead of loading every schema upfront.</p>
+          <p>Tools live in the daemon, not the prompt. Agents discover what they need on demand with <code>mcpd grep</code>.</p>
         </div>
-        <div class="feature-card">
+        <div class="feature-card animate-in">
           <div class="feature-icon">&#x26a1;</div>
-          <h3>Faster execution</h3>
-          <p>Background daemon keeps servers warm. No cold starts, no repeated handshakes. Call tools directly via CLI.</p>
+          <h3>Always warm</h3>
+          <p>Background daemon keeps every server connected. No cold starts, no handshake delays. Tools respond in milliseconds.</p>
         </div>
-        <div class="feature-card">
+        <div class="feature-card animate-in">
           <div class="feature-icon">&#x25ce;</div>
           <h3>Better accuracy</h3>
-          <p>Fewer tools in context means the model picks the right one more often. Clean context = better reasoning.</p>
+          <p>Fewer schemas in context means the model picks the right tool more often. Clean context, better reasoning.</p>
         </div>
-        <div class="feature-card">
+        <div class="feature-card animate-in">
           <div class="feature-icon">|&gt;</div>
           <h3>Chain &amp; script</h3>
-          <p>Pipe <code>mcpd call</code> through bash, jq, or any language. Intermediate results never re-enter the LLM.</p>
+          <p>Pipe results through bash, jq, or Node.js. Intermediate data stays outside the model entirely.</p>
         </div>
-        <div class="feature-card">
+        <div class="feature-card animate-in">
           <div class="feature-icon">&#x2605;</div>
-          <h3>Context engineering wins</h3>
-          <p>Offload tools to mcpd and reclaim context for skills, prompts, and default tools &mdash; the things agents execute deterministically.</p>
+          <h3>Context engineering</h3>
+          <p>Reclaim context for skills, prompts, and default tools &mdash; the things models execute deterministically.</p>
         </div>
-        <div class="feature-card">
+        <div class="feature-card animate-in">
           <div class="feature-icon">&#123;&#125;</div>
           <h3>Zero config</h3>
-          <p>Reuse your claude_desktop_config.json. Or <code>mcpd init</code> to auto-discover servers. Drop-in replacement for mcp-remote.</p>
+          <p>Reads your existing agent configs. Or run <code>mcpd init</code> to auto-discover servers.</p>
         </div>
       </div>
     </section>
@@ -269,9 +212,9 @@ const codeContext = `
         <div class="code-section-text">
           <h2>Discover, don't preload</h2>
           <p>
-            Instead of dumping 30,000 tokens of tool schemas into every prompt,
-            agents search for what they need on demand. Find a tool, inspect its
-            schema, call it &mdash; only the result enters the model's context.
+            Instead of loading every schema into the prompt, agents search
+            for the tool they need, inspect it, and call it. The model's
+            context stays clean &mdash; only the final result goes in.
           </p>
         </div>
 
@@ -288,17 +231,20 @@ const codeContext = `
     </section>
   </div>
 
-  <!-- Code Example: Chaining -->
+  <!-- Code Example: Scripting -->
   <div class="container">
     <section>
       <div class="code-section">
         <div class="code-section-text">
-          <h2>Chain outside the model</h2>
+          <h2>Write scripts, not tool calls</h2>
           <p>
-            Pipe tool outputs through scripts, jq, or other mcpd calls.
-            Intermediate data stays in the shell &mdash; the LLM only sees
-            the final result. Same insight as Anthropic's code execution
-            approach and Cloudflare's Code Mode, but as a simple CLI.
+            Agents can chain MCP calls through bash pipes or write
+            Node.js scripts using the <code>mcpd</code> client library.
+            Either way, intermediate data never re-enters the model.
+          </p>
+          <p>
+            Same insight behind Anthropic's code execution and
+            Cloudflare's Code Mode &mdash; as a CLI and npm package.
           </p>
         </div>
 
@@ -307,94 +253,37 @@ const codeContext = `
             <div class="dot dot-red"></div>
             <div class="dot dot-yellow"></div>
             <div class="dot dot-green"></div>
-            <span class="code-block-title">terminal &mdash; chaining</span>
+            <span class="code-block-title">bash &mdash; pipe through jq</span>
           </div>
           <pre set:html={codeChaining} />
         </div>
       </div>
-    </section>
-  </div>
 
-  <!-- Real-world Script Example -->
-  <div class="container">
-    <section>
-      <div class="code-full-header">
-        <h2>Real-world example: churn analysis</h2>
-        <p>
-          Your agent writes a script that chains MCP calls across PostHog and Intercom.
-          It finds churned customers, pulls their support history, and produces a summary &mdash;
-          all without intermediate data flowing through the model.
-        </p>
-      </div>
+      <!-- Node.js example right below -->
+      <div class="code-section" style="margin-top: var(--s7);">
+        <div class="code-section-text">
+          <h2>Node.js API</h2>
+          <p>
+            mcpd is also an npm package. Agents write Node.js scripts with
+            typed results, <code>Promise.all</code> for parallel calls across
+            servers, and the full npm ecosystem.
+          </p>
+        </div>
 
-      <div class="code-block">
-        <div class="code-block-header">
-          <div class="dot dot-red"></div>
-          <div class="dot dot-yellow"></div>
-          <div class="dot dot-green"></div>
-          <span class="code-block-title">churn-analysis.sh &mdash; agent-generated script</span>
-        </div>
-        <pre set:html={codeChurnBash} />
-      </div>
-
-      <div class="stats-grid" style="margin-top: var(--s6); margin-bottom: 0;">
-        <div class="stat-card">
-          <div class="stat-value-sm">2</div>
-          <div class="stat-label">MCP servers used</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value-sm">~50</div>
-          <div class="stat-label">API calls executed</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value-sm">2KB</div>
-          <div class="stat-label">entered the model</div>
+        <div class="code-block">
+          <div class="code-block-header">
+            <div class="dot dot-red"></div>
+            <div class="dot dot-yellow"></div>
+            <div class="dot dot-green"></div>
+            <span class="code-block-title">churn-analysis.mjs</span>
+          </div>
+          <pre set:html={codeNodeApi} />
         </div>
       </div>
     </section>
   </div>
 
-  <!-- Node.js API Example -->
-  <div class="container">
-    <section>
-      <div class="code-full-header">
-        <h2>Or use the Node.js API</h2>
-        <p>
-          mcpd is also an npm package. Agents can write Node.js scripts that import
-          <code>mcpd</code>
-          and call tools programmatically &mdash; with typed results, async/await,
-          and the full npm ecosystem at their disposal.
-        </p>
-      </div>
-
-      <div class="code-block">
-        <div class="code-block-header">
-          <div class="dot dot-red"></div>
-          <div class="dot dot-yellow"></div>
-          <div class="dot dot-green"></div>
-          <span class="code-block-title">churn-analysis.mjs &mdash; agent-generated skill</span>
-        </div>
-        <pre set:html={codeNodeApi} />
-      </div>
-
-      <div class="stats-grid" style="margin-top: var(--s6); margin-bottom: 0;">
-        <div class="stat-card">
-          <div class="stat-value-sm">async</div>
-          <div class="stat-label">parallel API calls</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value-sm">typed</div>
-          <div class="stat-label">results &amp; error handling</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value-sm">npm</div>
-          <div class="stat-label">full ecosystem available</div>
-        </div>
-      </div>
-    </section>
-  </div>
-
-  <!-- Context Engineering Section -->
+  <!-- Context Engineering -->
   <div class="container">
     <section>
       <div class="code-section">
@@ -402,15 +291,13 @@ const codeContext = `
           <h2>When tools leave, context wins</h2>
           <p>
             Skills, prompts, and default tools are deterministic &mdash;
-            models always use them. MCP tools compete for attention in a
-            crowded context window, and accuracy drops as you add more.
-            Offloading tools to mcpd frees context for the things agents
-            actually execute reliably.
+            models always follow them. MCP tools compete for attention,
+            and accuracy drops as you add more.
           </p>
           <p>
-            Context engineering &gt; tool bloat. Your prompts, skills, and
-            built-in tools get higher priority when they're not buried under
-            30,000 tokens of MCP schemas.
+            Offloading tools to mcpd is context engineering at the
+            infrastructure level. Your instructions get followed instead
+            of being buried under thousands of tokens of schemas.
           </p>
         </div>
 
@@ -427,56 +314,44 @@ const codeContext = `
     </section>
   </div>
 
-  <!-- Commands Reference -->
+  <!-- Get Started CTA -->
   <div class="container">
-    <section>
-      <div class="section-header">
-        <h2>Commands</h2>
-      </div>
+    <section class="cta-section">
+      <div class="cta-content">
+        <h2>Get started in seconds</h2>
+        <p>
+          Auto-discover your MCP servers, start the daemon,
+          and run your first tool call.
+        </p>
 
-      <div class="commands-table-wrapper">
-        <table class="commands-table">
-          <thead>
-            <tr>
-              <th>Command</th>
-              <th>Description</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td class="cmd-name">mcpd servers</td>
-              <td class="cmd-desc">List servers with connection status</td>
-            </tr>
-            <tr>
-              <td class="cmd-name">mcpd tools [server]</td>
-              <td class="cmd-desc">List available tools with annotations</td>
-            </tr>
-            <tr>
-              <td class="cmd-name">mcpd call &lt;server/tool&gt;</td>
-              <td class="cmd-desc">Invoke a tool with JSON arguments</td>
-            </tr>
-            <tr>
-              <td class="cmd-name">mcpd grep &lt;pattern&gt;</td>
-              <td class="cmd-desc">Search tool names and descriptions</td>
-            </tr>
-            <tr>
-              <td class="cmd-name">mcpd resources</td>
-              <td class="cmd-desc">List resources across servers</td>
-            </tr>
-            <tr>
-              <td class="cmd-name">mcpd prompts</td>
-              <td class="cmd-desc">List prompt templates</td>
-            </tr>
-            <tr>
-              <td class="cmd-name">mcpd status</td>
-              <td class="cmd-desc">Daemon PID, uptime, connected servers</td>
-            </tr>
-            <tr>
-              <td class="cmd-name">mcpd init</td>
-              <td class="cmd-desc">Auto-discover and configure MCP servers</td>
-            </tr>
-          </tbody>
-        </table>
+        <div class="cta-steps">
+          <div class="cta-step">
+            <span class="cta-step-num">1</span>
+            <div>
+              <code>npx mcpd init</code>
+              <span class="cta-step-desc">generates config from your existing setup</span>
+            </div>
+          </div>
+          <div class="cta-step">
+            <span class="cta-step-num">2</span>
+            <div>
+              <code>mcpd tools</code>
+              <span class="cta-step-desc">lists every tool across all servers</span>
+            </div>
+          </div>
+          <div class="cta-step">
+            <span class="cta-step-num">3</span>
+            <div>
+              <code>mcpd call server/tool '{"{}"}'</code>
+              <span class="cta-step-desc">invoke any tool from the command line</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="hero-actions" style="margin-top: var(--s7);">
+          <a href="/getting-started/installation/" class="btn btn-primary">Read the Docs</a>
+          <a href="https://github.com/skoob13/mcpd" class="btn">View on GitHub</a>
+        </div>
       </div>
     </section>
   </div>
@@ -526,13 +401,26 @@ const codeContext = `
     var installBox = document.getElementById('install-box');
     var copyHint = document.getElementById('copy-hint');
     installBox.addEventListener('click', function() {
-      navigator.clipboard.writeText('npx mcpd tools').then(function() {
+      navigator.clipboard.writeText('npx mcpd init').then(function() {
         copyHint.textContent = 'copied!';
         setTimeout(function() { copyHint.textContent = 'click to copy'; }, 2000);
       }).catch(function() {
         copyHint.textContent = 'failed to copy';
         setTimeout(function() { copyHint.textContent = 'click to copy'; }, 2000);
       });
+    });
+
+    // Scroll-triggered entrance animations
+    var observer = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          observer.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.15 });
+    document.querySelectorAll('.animate-in').forEach(function(el) {
+      observer.observe(el);
     });
   </script>
 </body>

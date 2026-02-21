@@ -1044,17 +1044,29 @@
   </section>
 
   <!-- ==========================================
-       SECTION 4B: CODE EXAMPLE — Chaining
+       SECTION 4B: CODE EXAMPLE — Write scripts, not tool calls
+       (Merged: chaining + Node.js API into one section)
        ========================================== -->
   <section>
+    <div class="design-note">
+      <strong>Scripting section:</strong> Merges the old chaining, bash script,
+      and Node.js API sections into one. Two compact examples side-by-side:
+      a bash pipe (6 lines) and a Node.js script (17 lines). Shows both
+      interfaces without losing momentum. The 39-line churn script was
+      too long for a landing page &mdash; moved to docs.
+    </div>
+
     <div class="code-section">
       <div class="code-section-text">
-        <h2>Chain outside the model</h2>
+        <h2>Write scripts, not tool calls</h2>
         <p>
-          Pipe tool outputs through scripts, jq, or other mcpd calls.
-          Intermediate data stays in the shell &mdash; the LLM only sees
-          the final result. Same insight as Anthropic's code execution
-          approach and Cloudflare's Code Mode, but as a simple CLI.
+          Agents can chain MCP calls through bash pipes or write
+          Node.js scripts using the <code style="color: var(--accent); background: var(--bg-elevated); padding: 1px 4px; border-radius: 3px; font-size: 11px;">mcpd</code> client library.
+          Either way, intermediate data never re-enters the model.
+        </p>
+        <p style="margin-top: var(--s3);">
+          Same insight behind Anthropic's code execution and
+          Cloudflare's Code Mode &mdash; as a CLI and npm package.
         </p>
       </div>
 
@@ -1063,185 +1075,52 @@
           <div class="dot dot-red"></div>
           <div class="dot dot-yellow"></div>
           <div class="dot dot-green"></div>
-          <span class="code-block-title">terminal — chaining</span>
+          <span class="code-block-title">bash &mdash; pipe through jq</span>
         </div>
-        <pre><span class="line-num">1</span> <span class="comment"># query DB, filter with jq, write to file</span>
-<span class="line-num">2</span> <span class="comment"># model never sees the raw 10k-row result</span>
-<span class="line-num">3</span> <span class="dollar">$</span> mcpd call postgres/query \
-<span class="line-num">4</span>     <span class="str">'{"sql":"SELECT * FROM users"}'</span> <span class="flag">--json</span> \
-<span class="line-num">5</span>   | jq <span class="str">'[.[] | select(.active)]'</span> \
-<span class="line-num">6</span>   | mcpd call filesystem/write_file \
-<span class="line-num">7</span>     <span class="str">'{"path":"/tmp/active.json"}'</span> <span class="flag">-</span>
-<span class="line-num">8</span>
-<span class="line-num">9</span> <span class="output">  Wrote 847 active users to /tmp/active.json</span></pre>
+        <pre><span class="line-num">1</span> <span class="comment"># query &rarr; filter &rarr; write. model never sees the raw 10k rows.</span>
+<span class="line-num">2</span> <span class="dollar">$</span> mcpd call postgres/query \
+<span class="line-num">3</span>     <span class="str">'{"sql":"SELECT * FROM users"}'</span> <span class="flag">--json</span> \
+<span class="line-num">4</span>   | jq <span class="str">'[.[] | select(.active)]'</span> \
+<span class="line-num">5</span>   | mcpd call filesystem/write_file \
+<span class="line-num">6</span>     <span class="str">'{"path":"/tmp/active.json"}'</span> <span class="flag">-</span></pre>
       </div>
     </div>
-  </section>
 
-  <!-- ==========================================
-       SECTION 4C: REAL-WORLD SCRIPT — PostHog churn analysis
-       ========================================== -->
-  <section>
-    <div class="design-note">
-      <strong>Real-world script:</strong> This is the hero example. Shows a
-      complete workflow an agent would write: discover tools across PostHog and
-      Intercom servers, query churned customers, cross-reference with support
-      conversations, produce a summary &mdash; all in a bash script. The LLM
-      writes this script once, mcpd executes it, and only the final summary
-      enters the model's context. 50+ API calls, zero token waste.
-    </div>
-
-    <div style="margin-bottom: var(--s6);">
-      <h2 style="font-size: 20px; font-weight: 600; margin-bottom: var(--s3); text-align: center;">Real-world example: churn analysis</h2>
-      <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.7; text-align: center; max-width: 640px; margin: 0 auto var(--s6);">
-        Your agent writes a script that chains MCP calls across PostHog and Intercom.
-        It finds churned customers, pulls their support history, and produces a summary &mdash;
-        all without intermediate data flowing through the model.
-      </p>
-    </div>
-
-    <div class="code-block">
-      <div class="code-block-header">
-        <div class="dot dot-red"></div>
-        <div class="dot dot-yellow"></div>
-        <div class="dot dot-green"></div>
-        <span class="code-block-title">churn-analysis.sh — agent-generated script</span>
+    <!-- Node.js example below, same section -->
+    <div class="code-section" style="margin-top: var(--s7);">
+      <div class="code-section-text">
+        <h2>Node.js API</h2>
+        <p>
+          mcpd is also an npm package. Agents write Node.js scripts with
+          typed results, <code style="color: var(--accent); background: var(--bg-elevated); padding: 1px 4px; border-radius: 3px; font-size: 11px;">Promise.all</code> for parallel calls across
+          servers, and the full npm ecosystem.
+        </p>
       </div>
-      <pre><span class="line-num"> 1</span> <span class="comment">#!/bin/bash</span>
-<span class="line-num"> 2</span> <span class="comment"># Agent writes this script, mcpd executes it.</span>
-<span class="line-num"> 3</span> <span class="comment"># 50+ API calls across 2 servers. Zero tokens wasted.</span>
-<span class="line-num"> 4</span>
-<span class="line-num"> 5</span> <span class="comment"># Step 1: Find the right tool on PostHog</span>
-<span class="line-num"> 6</span> <span class="dollar">$</span> mcpd grep <span class="str">"query"</span> <span class="flag">--json</span> \
-<span class="line-num"> 7</span>   | jq -r <span class="str">'.[] | select(.server=="posthog") | .tool.name'</span>
-<span class="line-num"> 8</span> <span class="output">  query-run</span>
-<span class="line-num"> 9</span>
-<span class="line-num">10</span> <span class="comment"># Step 2: Query churned customers from PostHog (last 30 days)</span>
-<span class="line-num">11</span> <span class="dollar">$</span> mcpd call posthog/query-run <span class="str">'{
-<span class="line-num">12</span>   "query": {
-<span class="line-num">13</span>     "kind": "HogQLQuery",
-<span class="line-num">14</span>     "query": "SELECT person_id, person.properties.email,
-<span class="line-num">15</span>       person.properties.name, person.properties.company
-<span class="line-num">16</span>       FROM events WHERE event = '\''$churn'\''
-<span class="line-num">17</span>       AND timestamp &gt; now() - interval 30 day"
-<span class="line-num">18</span>   }
-<span class="line-num">19</span> }'</span> <span class="flag">--json</span> \
-<span class="line-num">20</span>   | jq <span class="str">'.content[0].text | fromjson | .results'</span> \
-<span class="line-num">21</span>   &gt; /tmp/churned.json
-<span class="line-num">22</span>
-<span class="line-num">23</span> <span class="comment"># Step 3: For each churned customer, pull their Intercom conversations</span>
-<span class="line-num">24</span> <span class="dollar">$</span> jq -r <span class="str">'.[].email'</span> /tmp/churned.json | while read email; do
-<span class="line-num">25</span>   mcpd call intercom/search-conversations \
-<span class="line-num">26</span>     <span class="str">"{\"query\":\"$email\",\"limit\":5}"</span> <span class="flag">--json</span> \
-<span class="line-num">27</span>     | jq <span class="str">'.content[0].text'</span> \
-<span class="line-num">28</span>     &gt;&gt; /tmp/churn_conversations.jsonl
-<span class="line-num">29</span> done
-<span class="line-num">30</span>
-<span class="line-num">31</span> <span class="comment"># Step 4: Combine into a single report for the LLM</span>
-<span class="line-num">32</span> <span class="dollar">$</span> jq -s <span class="str">'{
-<span class="line-num">33</span>   churned_count: (. | length),
-<span class="line-num">34</span>   customers: [.[] | {email, company, last_messages}]
-<span class="line-num">35</span> }'</span> /tmp/churn_conversations.jsonl \
-<span class="line-num">36</span>   &gt; /tmp/churn_report.json
-<span class="line-num">37</span>
-<span class="line-num">38</span> <span class="comment"># Only the final 2KB summary enters the model — not the</span>
-<span class="line-num">39</span> <span class="comment"># 500KB of raw PostHog events and Intercom transcripts.</span></pre>
-    </div>
 
-    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s4); margin-top: var(--s6);">
-      <div class="feature-card" style="text-align: center;">
-        <div style="font-size: 22px; font-weight: 700; color: var(--accent); margin-bottom: var(--s1);">2</div>
-        <div style="font-size: 11px; color: var(--text-muted);">MCP servers used</div>
-      </div>
-      <div class="feature-card" style="text-align: center;">
-        <div style="font-size: 22px; font-weight: 700; color: var(--accent); margin-bottom: var(--s1);">~50</div>
-        <div style="font-size: 11px; color: var(--text-muted);">API calls executed</div>
-      </div>
-      <div class="feature-card" style="text-align: center;">
-        <div style="font-size: 22px; font-weight: 700; color: var(--accent); margin-bottom: var(--s1);">2KB</div>
-        <div style="font-size: 11px; color: var(--text-muted);">entered the model</div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ==========================================
-       SECTION 4C-2: NODE.JS API — Programmatic usage
-       ========================================== -->
-  <section>
-    <div class="design-note">
-      <strong>Node.js API example:</strong> Shows the same workflow as the bash
-      script above, but using mcpd's programmatic client. Agents can
-      <code style="color: var(--accent); background: var(--bg-elevated); padding: 1px 4px; border-radius: 3px; font-size: 11px;">import { createClient } from 'mcpd'</code>
-      and write Node.js scripts instead of bash. This unlocks typed results,
-      async/await, error handling, and composition with any npm library &mdash;
-      perfect for agent-generated skills that need more than shell pipes.
-    </div>
-
-    <div style="margin-bottom: var(--s6);">
-      <h2 style="font-size: 20px; font-weight: 600; margin-bottom: var(--s3); text-align: center;">Or use the Node.js API</h2>
-      <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.7; text-align: center; max-width: 640px; margin: 0 auto var(--s6);">
-        mcpd is also an npm package. Agents can write Node.js scripts that import
-        <code style="color: var(--accent); background: var(--bg-elevated); padding: 1px 4px; border-radius: 3px; font-size: 11px;">mcpd</code>
-        and call tools programmatically &mdash; with typed results, async/await,
-        and the full npm ecosystem at their disposal.
-      </p>
-    </div>
-
-    <div class="code-block">
-      <div class="code-block-header">
-        <div class="dot dot-red"></div>
-        <div class="dot dot-yellow"></div>
-        <div class="dot dot-green"></div>
-        <span class="code-block-title">churn-analysis.mjs — agent-generated skill</span>
-      </div>
-      <pre><span class="line-num"> 1</span> <span class="kw">import</span> { createClient } <span class="kw">from</span> <span class="str">'mcpd'</span>;
+      <div class="code-block">
+        <div class="code-block-header">
+          <div class="dot dot-red"></div>
+          <div class="dot dot-yellow"></div>
+          <div class="dot dot-green"></div>
+          <span class="code-block-title">churn-analysis.mjs</span>
+        </div>
+        <pre><span class="line-num"> 1</span> <span class="kw">import</span> { createClient } <span class="kw">from</span> <span class="str">'mcpd'</span>;
 <span class="line-num"> 2</span>
 <span class="line-num"> 3</span> <span class="kw">const</span> client = <span class="kw">await</span> createClient();
 <span class="line-num"> 4</span>
-<span class="line-num"> 5</span> <span class="comment">// Step 1: Query churned customers from PostHog</span>
+<span class="line-num"> 5</span> <span class="comment">// query churned customers from PostHog</span>
 <span class="line-num"> 6</span> <span class="kw">const</span> churn = <span class="kw">await</span> client.call(<span class="str">'posthog/query-run'</span>, {
-<span class="line-num"> 7</span>   query: {
-<span class="line-num"> 8</span>     kind: <span class="str">'HogQLQuery'</span>,
-<span class="line-num"> 9</span>     query: <span class="str">`SELECT person_id, person.properties.email,</span>
-<span class="line-num">10</span> <span class="str">      person.properties.name, person.properties.company</span>
-<span class="line-num">11</span> <span class="str">      FROM events WHERE event = '$churn'</span>
-<span class="line-num">12</span> <span class="str">      AND timestamp > now() - interval 30 day`</span>
-<span class="line-num">13</span>   }
-<span class="line-num">14</span> });
-<span class="line-num">15</span>
-<span class="line-num">16</span> <span class="kw">const</span> customers = JSON.parse(churn.content[0].text).results;
-<span class="line-num">17</span>
-<span class="line-num">18</span> <span class="comment">// Step 2: Pull support history from Intercom (in parallel)</span>
-<span class="line-num">19</span> <span class="kw">const</span> conversations = <span class="kw">await</span> Promise.all(
-<span class="line-num">20</span>   customers.map(c =&gt;
-<span class="line-num">21</span>     client.call(<span class="str">'intercom/search-conversations'</span>, {
-<span class="line-num">22</span>       query: c.email, limit: 5
-<span class="line-num">23</span>     })
-<span class="line-num">24</span>   )
-<span class="line-num">25</span> );
-<span class="line-num">26</span>
-<span class="line-num">27</span> <span class="comment">// Step 3: Build the summary — this is all the LLM sees</span>
-<span class="line-num">28</span> <span class="kw">const</span> report = customers.map((c, i) =&gt; ({
-<span class="line-num">29</span>   email: c.email,
-<span class="line-num">30</span>   company: c.company,
-<span class="line-num">31</span>   messages: JSON.parse(conversations[i].content[0].text)
-<span class="line-num">32</span> }));
-<span class="line-num">33</span>
-<span class="line-num">34</span> console.log(JSON.stringify({ churned: report.length, customers: report }));</pre>
-    </div>
-
-    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s4); margin-top: var(--s6);">
-      <div class="feature-card" style="text-align: center;">
-        <div style="font-size: 22px; font-weight: 700; color: var(--accent); margin-bottom: var(--s1);">async</div>
-        <div style="font-size: 11px; color: var(--text-muted);">parallel API calls</div>
-      </div>
-      <div class="feature-card" style="text-align: center;">
-        <div style="font-size: 22px; font-weight: 700; color: var(--accent); margin-bottom: var(--s1);">typed</div>
-        <div style="font-size: 11px; color: var(--text-muted);">results &amp; error handling</div>
-      </div>
-      <div class="feature-card" style="text-align: center;">
-        <div style="font-size: 22px; font-weight: 700; color: var(--accent); margin-bottom: var(--s1);">npm</div>
-        <div style="font-size: 11px; color: var(--text-muted);">full ecosystem available</div>
+<span class="line-num"> 7</span>   query: { kind: <span class="str">'HogQLQuery'</span>, query: <span class="str">'SELECT ...'</span> }
+<span class="line-num"> 8</span> });
+<span class="line-num"> 9</span>
+<span class="line-num">10</span> <span class="comment">// pull support history in parallel</span>
+<span class="line-num">11</span> <span class="kw">const</span> history = <span class="kw">await</span> Promise.all(
+<span class="line-num">12</span>   customers.map(c =&gt;
+<span class="line-num">13</span>     client.call(<span class="str">'intercom/search-conversations'</span>, {
+<span class="line-num">14</span>       query: c.email, limit: 5
+<span class="line-num">15</span>     })
+<span class="line-num">16</span>   )
+<span class="line-num">17</span> );</pre>
       </div>
     </div>
   </section>
@@ -1299,62 +1178,52 @@
   </section>
 
   <!-- ==========================================
-       SECTION 5: COMMANDS REFERENCE
+       SECTION 5: GET STARTED CTA
        ========================================== -->
   <section>
     <div class="design-note">
-      <strong>Commands table:</strong> Clean table inside a surface card. Hover
-      highlight on rows. Command names in accent color. Compact but readable.
-      This is the "leaderboard" equivalent from skills.sh.
+      <strong>Closing CTA:</strong> Every dev tool landing page (bun.sh,
+      linear.app, warp.dev, zed.dev) ends with a clear call to action
+      before the footer. Three numbered steps with code snippets. Two
+      buttons: docs (primary) and GitHub (secondary). Replaces the old
+      commands table, which belongs in docs.
     </div>
 
-    <div class="features-header">
-      <h2>Commands</h2>
-    </div>
+    <div style="text-align: center; max-width: 560px; margin: 0 auto;">
+      <h2 style="font-size: 20px; font-weight: 600; margin-bottom: var(--s3);">Get started in seconds</h2>
+      <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.7; margin-bottom: var(--s7);">
+        Auto-discover your MCP servers, start the daemon,
+        and run your first tool call.
+      </p>
 
-    <div class="commands-table-wrapper">
-      <table class="commands-table">
-        <thead>
-          <tr>
-            <th>Command</th>
-            <th>Description</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td class="cmd-name">mcpd servers</td>
-            <td class="cmd-desc">List servers with connection status</td>
-          </tr>
-          <tr>
-            <td class="cmd-name">mcpd tools [server]</td>
-            <td class="cmd-desc">List available tools with annotations</td>
-          </tr>
-          <tr>
-            <td class="cmd-name">mcpd call &lt;server/tool&gt;</td>
-            <td class="cmd-desc">Invoke a tool with JSON arguments</td>
-          </tr>
-          <tr>
-            <td class="cmd-name">mcpd grep &lt;pattern&gt;</td>
-            <td class="cmd-desc">Search tool names and descriptions</td>
-          </tr>
-          <tr>
-            <td class="cmd-name">mcpd resources</td>
-            <td class="cmd-desc">List resources across servers</td>
-          </tr>
-          <tr>
-            <td class="cmd-name">mcpd prompts</td>
-            <td class="cmd-desc">List prompt templates</td>
-          </tr>
-          <tr>
-            <td class="cmd-name">mcpd status</td>
-            <td class="cmd-desc">Daemon PID, uptime, connected servers</td>
-          </tr>
-          <tr>
-            <td class="cmd-name">mcpd init</td>
-            <td class="cmd-desc">Auto-discover and configure MCP servers</td>
-          </tr>
-        </tbody>
-      </table>
+      <div style="display: flex; flex-direction: column; gap: var(--s4); text-align: left; margin-bottom: var(--s7);">
+        <div class="feature-card" style="display: flex; align-items: baseline; gap: var(--s4); padding: var(--s4) var(--s5);">
+          <span style="color: var(--accent); font-weight: 700; font-size: 14px;">1</span>
+          <div>
+            <code style="color: var(--accent); background: var(--bg-elevated); padding: 1px 6px; border-radius: 3px; font-size: 13px;">npx mcpd init</code>
+            <span style="color: var(--text-muted); font-size: 12px; margin-left: var(--s3);">generates config from your existing setup</span>
+          </div>
+        </div>
+        <div class="feature-card" style="display: flex; align-items: baseline; gap: var(--s4); padding: var(--s4) var(--s5);">
+          <span style="color: var(--accent); font-weight: 700; font-size: 14px;">2</span>
+          <div>
+            <code style="color: var(--accent); background: var(--bg-elevated); padding: 1px 6px; border-radius: 3px; font-size: 13px;">mcpd tools</code>
+            <span style="color: var(--text-muted); font-size: 12px; margin-left: var(--s3);">lists every tool across all servers</span>
+          </div>
+        </div>
+        <div class="feature-card" style="display: flex; align-items: baseline; gap: var(--s4); padding: var(--s4) var(--s5);">
+          <span style="color: var(--accent); font-weight: 700; font-size: 14px;">3</span>
+          <div>
+            <code style="color: var(--accent); background: var(--bg-elevated); padding: 1px 6px; border-radius: 3px; font-size: 13px;">mcpd call server/tool '{}'</code>
+            <span style="color: var(--text-muted); font-size: 12px; margin-left: var(--s3);">invoke any tool from the command line</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: center; gap: var(--s4);">
+        <a href="#" class="btn btn-primary">Read the Docs</a>
+        <a href="#" class="btn">View on GitHub</a>
+      </div>
     </div>
   </section>
 

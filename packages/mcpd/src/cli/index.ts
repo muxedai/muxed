@@ -20,7 +20,7 @@ import { typegenCommand } from './commands/typegen.js';
 
 export function runCli(): void {
   const program = new Command();
-  program.name('mcpd').description('MCP Server Proxy/Aggregator').version('0.1.0');
+  program.name('mcpd').description('The optimization layer for MCP').version('0.1.0');
   program.enablePositionalOptions();
   program.option('--config <path>', 'Path to config file');
 

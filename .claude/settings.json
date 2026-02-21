@@ -2,18 +2,6 @@
   "env": {
     "ENABLE_EXPERIMENTAL_MCP_CLI": "true"
   },
-  "hooks": {
-    "SessionStart": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/setup-cloud.sh"
-          }
-        ]
-      }
-    ]
-  },
   "permissions": {
     "allow": [
       "Bash(pnpm install:*)",
@@ -26,5 +14,20 @@
       "Bash(node src/cli.ts:*)",
       "Bash(node bin/cli.mjs:*)"
     ]
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/setup-cloud.sh"
+          }
+        ]
+      }
+    ]
+  },
+  "enabledPlugins": {
+    "frontend-design@claude-plugins-official": true
   }
 }
