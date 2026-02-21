@@ -52,21 +52,11 @@ const codeNodeApi = `<span class="ln"> 1</span> <span class="kw">import</span> {
 <span class="ln">19</span> <span class="comment">// output the results</span>
 <span class="ln">20</span> console.log(history);`;
 
-const codeContext = `
- <span class="comment">before mcpd:</span>
- <span class="output">  [##########                    ] mcp tools      30%</span>
- <span class="output">  [##                            ] skills          6%</span>
- <span class="output">  [##                            ] prompts         6%</span>
- <span class="output">  [#################             ] task           58%</span>
- <span class="output">  [                              ] free            0%</span>
+const codeBefore = `<span class="output">⛁ ⛁ ⛁ ⛁ ⛁ ⛁ </span><span class="kw">⛁ </span><span class="flag">⛁ </span><span class="str">⛁ ⛁</span>
+<span class="str">⛁ ⛁ ⛁ ⛁ ⛁ ⛁ ⛁ ⛁ ⛁ ⛁</span>`;
 
- <span class="comment">after mcpd:</span>
- <span class="str">  [                              ] mcp tools       0%</span>
- <span class="output">  [##                            ] skills          6%</span>
- <span class="output">  [##                            ] prompts         6%</span>
- <span class="output">  [#################             ] task           58%</span>
- <span class="str">  [#########                     ] free           30%</span>
-`;
+const codeAfter = `<span class="kw">⛁ </span><span class="flag">⛁ </span><span class="str">⛁ ⛁ ⛁ ⛁ ⛁ ⛁ ⛁ ⛁</span>
+<span class="str">⛁ ⛁ ⛁ ⛁ </span><span class="comment">⛶ ⛶ ⛶ ⛶ ⛶ ⛶</span>`;
 ---
 
 <html lang="en">
@@ -308,7 +298,28 @@ const codeContext = `
             <div class="dot dot-green"></div>
             <span class="code-block-title">context window allocation</span>
           </div>
-          <pre set:html={codeContext} />
+          <div class="context-viz">
+            <div class="context-label">before mcpd:</div>
+            <div class="context-row">
+              <pre class="context-grid" set:html={codeBefore} />
+              <div class="context-legend">
+                <div><span class="output">⛁</span> mcp tools 30%</div>
+                <div><span class="kw">⛁</span> skills 6%</div>
+                <div><span class="flag">⛁</span> prompts 6%</div>
+                <div><span class="str">⛁</span> task 58%</div>
+              </div>
+            </div>
+            <div class="context-label">after mcpd:</div>
+            <div class="context-row">
+              <pre class="context-grid" set:html={codeAfter} />
+              <div class="context-legend">
+                <div><span class="kw">⛁</span> skills 6%</div>
+                <div><span class="flag">⛁</span> prompts 6%</div>
+                <div><span class="str">⛁</span> task 58%</div>
+                <div><span class="comment">⛶</span> free 30%</div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </section>

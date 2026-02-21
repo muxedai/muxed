@@ -92,7 +92,7 @@ a:hover { text-decoration: underline; }
 }
 
 section {
-  padding: var(--s10) 0;
+  padding: var(--s9) 0;
   border-bottom: 1px solid transparent;
   border-image: linear-gradient(to right, transparent, var(--border), transparent) 1;
 }
@@ -150,7 +150,7 @@ section:last-of-type { border-bottom: none; border-image: none; }
 /* Hero */
 .hero {
   text-align: center;
-  padding: var(--s10) 0;
+  padding: var(--s7) 0 0;
   position: relative;
 }
 .hero::before {
@@ -183,7 +183,7 @@ section:last-of-type { border-bottom: none; border-image: none; }
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--text-secondary);
-  margin-bottom: var(--s8);
+  margin-bottom: var(--s7);
 }
 .hero-description {
   font-size: 15px;
@@ -291,7 +291,7 @@ section:last-of-type { border-bottom: none; border-image: none; }
 /* Section headers */
 .section-header {
   text-align: center;
-  margin-bottom: var(--s8);
+  margin-bottom: var(--s7);
 }
 .section-header h2 {
   font-size: 13px;
@@ -454,6 +454,55 @@ section:last-of-type { border-bottom: none; border-image: none; }
 .code-block .flag { color: var(--accent); }
 .code-block .output { color: var(--text-secondary); }
 
+/* Context visualization */
+.context-viz {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  padding: var(--s4);
+}
+.context-viz > .context-label:nth-of-type(2) {
+  margin-top: var(--s3);
+  padding-top: var(--s3);
+  border-top: 1px solid var(--border);
+}
+.context-row {
+  display: flex;
+  gap: var(--s6);
+  align-items: center;
+}
+.context-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-family: var(--font);
+}
+.context-grid {
+  font-family: var(--font);
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-primary);
+}
+.context-grid .output { color: var(--text-secondary); }
+.context-grid .kw { color: var(--blue); }
+.context-grid .flag { color: var(--accent); }
+.context-grid .str { color: var(--green); }
+.context-grid .comment { color: var(--text-muted); }
+.context-legend {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s1);
+  font-size: 11px;
+  font-family: var(--font);
+  color: var(--text-secondary);
+}
+.context-legend .output { color: var(--text-secondary); }
+.context-legend .kw { color: var(--blue); }
+.context-legend .flag { color: var(--accent); }
+.context-legend .str { color: var(--green); }
+.context-legend .comment { color: var(--text-muted); }
+
 /* Full-width code header */
 .code-full-header {
   margin-bottom: var(--s6);
@@ -540,19 +589,25 @@ section:last-of-type { border-bottom: none; border-image: none; }
 .cta-section {
   border-bottom: none;
   position: relative;
+  isolation: isolate;
 }
 .cta-section::before {
   content: '';
   position: absolute;
-  inset: 0;
-  background: radial-gradient(ellipse at center top, rgba(129, 140, 248, 0.06) 0%, transparent 60%);
-  opacity: 1;
+  top: -120px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(ellipse at center top, rgba(129, 140, 248, 0.15) 0%, transparent 60%);
   pointer-events: none;
   z-index: -1;
 }
+:root.light .cta-section::before {
+  background: radial-gradient(ellipse at center top, rgba(99, 102, 241, 0.06) 0%, transparent 60%);
+}
 .cta-content {
   text-align: center;
-  max-width: 560px;
+  max-width: 640px;
   margin: 0 auto;
 }
 .cta-content h2 {
@@ -604,6 +659,7 @@ section:last-of-type { border-bottom: none; border-image: none; }
   color: var(--text-muted);
   font-size: 12px;
   margin-left: var(--s3);
+  display: inline;
 }
 
 /* Footer */
@@ -670,14 +726,15 @@ section:last-of-type { border-bottom: none; border-image: none; }
 
 /* Responsive */
 @media (max-width: 768px) {
-  section { padding: var(--s8) 0; }
-  .hero { padding: var(--s7) 0; }
+  section { padding: var(--s7) 0; }
+  .hero { padding: var(--s7) 0 var(--s6); }
   .section-header { margin-bottom: var(--s6); }
   .features-grid { grid-template-columns: 1fr; }
   .stats-grid { grid-template-columns: 1fr; }
   .code-section { grid-template-columns: 1fr; }
   .hero-actions { flex-direction: column; align-items: center; }
   .nav-links { gap: var(--s4); }
+  .context-row { flex-direction: column; gap: var(--s3); }
 
   @keyframes fade-up {
     from { opacity: 0; transform: translateY(8px); }
