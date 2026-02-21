@@ -3,7 +3,7 @@ import { ensureDaemon, sendRequest } from '../client.js';
 import { formatReadResource, formatJson } from '../formatter.js';
 
 export const readCommand = new Command('read')
-  .description('Read a resource')
+  .description('Fetch and display the contents of a resource by server/resource')
   .argument('<server/resource>', 'Resource identifier (e.g. myserver/myresource)')
   .argument('[uri]', 'Resource URI (optional, uses resource name as URI if not provided)')
   .option('--json', 'Output as JSON')

@@ -3,7 +3,7 @@ import { ensureDaemon, sendRequest } from '../client.js';
 import { formatTasks, formatJson } from '../formatter.js';
 
 export const tasksCommand = new Command('tasks')
-  .description('List active tasks')
+  .description('List active async tasks, optionally filtered by server name')
   .argument('[server]', 'Filter by server name')
   .option('--json', 'Output as JSON')
   .action(async (server: string | undefined, opts: { json?: boolean }) => {

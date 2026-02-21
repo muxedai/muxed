@@ -6,7 +6,7 @@ import { ensureDaemon, sendRequest } from '../client.js';
 import { generateTypes, type ToolEntry } from '../../codegen/typegen.js';
 
 export const typegenCommand = new Command('typegen')
-  .description('Generate TypeScript types from tool schemas')
+  .description('Generate TypeScript types from tool schemas for type-safe tool calls')
   .option('-c, --config <path>', 'Path to mcpd.config.json')
   .action(async (opts: { config?: string }) => {
     const configPath = typegenCommand.parent?.opts().config ?? opts.config;

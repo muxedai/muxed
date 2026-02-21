@@ -182,7 +182,7 @@ async function tryReloadDaemon(): Promise<void> {
 // ─── mcp command group ───
 
 export const mcpCommand = new Command('mcp')
-  .description('Manage individual MCP server entries')
+  .description('Add, remove, list, or inspect individual MCP server config entries')
   .enablePositionalOptions();
 
 // ─── mcp add ───

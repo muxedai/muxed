@@ -3,7 +3,7 @@ import { ensureDaemon, sendRequest } from '../client.js';
 import { formatCallResult, formatJson } from '../formatter.js';
 
 export const taskResultCommand = new Command('task-result')
-  .description('Get completed task result')
+  .description('Retrieve the output of a completed async task')
   .argument('<server/taskId>', 'Task identifier (e.g. myserver/task-123)')
   .option('--json', 'Output as JSON')
   .action(async (serverTaskId: string, opts: { json?: boolean }) => {

@@ -4,7 +4,7 @@ import { ensureDaemon, sendRequest } from '../client.js';
 import { formatPrompts, formatJson } from '../formatter.js';
 
 export const promptsCommand = new Command('prompts')
-  .description('List prompt templates')
+  .description('List available prompt templates, optionally filtered by server name')
   .argument('[server]', 'Filter by server name')
   .option('--json', 'Output as JSON')
   .action(async (server: string | undefined, opts: { json?: boolean }) => {
