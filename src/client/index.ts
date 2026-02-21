@@ -1,3 +1,5 @@
+/// <reference path="../../mcpd.generated.d.ts" />
+
 import type {
   Tool,
   Resource,
@@ -25,6 +27,11 @@ export type {
   DaemonConfig,
 } from '../core/types.js';
 export { McpdError } from './socket.js';
+
+/** Tool type map — empty by default, populated by `mcpd typegen`. */
+export interface McpdToolMap {}
+
+type HasTools = keyof McpdToolMap extends never ? false : true;
 
 // --- Client-specific types ---
 
@@ -113,16 +120,16 @@ export class McpdClient {
     }>;
   }
 
-  async call(
-    name: string,
-    args?: Record<string, unknown>,
+  async call<K extends string>(
+    name: HasTools extends true ? (K extends keyof McpdToolMap ? K : K & {}) : string,
+    args?: K extends keyof McpdToolMap ? McpdToolMap[K]['input'] : Record<string, unknown>,
     options?: CallOptions
-  ): Promise<CallResult> {
+  ): Promise<K extends keyof McpdToolMap ? McpdToolMap[K]['output'] : CallResult> {
     return (await this.#send('tools/call', {
       name,
       arguments: args ?? {},
       ...(options?.timeout ? { timeout: options.timeout } : {}),
-    })) as CallResult;
+    })) as K extends keyof McpdToolMap ? McpdToolMap[K]['output'] : CallResult;
   }
 
   async callAsync(name: string, args?: Record<string, unknown>): Promise<TaskHandle> {
