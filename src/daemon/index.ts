@@ -1,10 +1,34 @@
 import fs from 'node:fs';
+import path from 'node:path';
+import { createRequire } from 'node:module';
 import { loadConfig } from '../core/config.js';
 import { ServerPool } from '../core/server-pool.js';
+import { generateTypes, type ToolEntry } from '../codegen/typegen.js';
 import { ensureMcpdDir, getPidPath } from '../utils/paths.js';
-import { initLogger } from '../utils/logger.js';
+import { initLogger, type Logger } from '../utils/logger.js';
 import { createDaemonServer } from './server.js';
 import { createHttpListener } from './http-server.js';
+
+async function runAutoTypegen(serverPool: ServerPool, logger: Logger): Promise<void> {
+  try {
+    const require = createRequire(path.resolve('package.json'));
+    const mcpdPkgDir = path.dirname(require.resolve('mcpd/package.json'));
+    const outputPath = path.join(mcpdPkgDir, 'mcpd.generated.d.ts');
+
+    const tools = serverPool.listAllTools() as ToolEntry[];
+    if (tools.length === 0) {
+      logger.debug('No tools available, skipping typegen');
+      return;
+    }
+
+    const content = await generateTypes(tools);
+    fs.writeFileSync(outputPath, content, 'utf-8');
+    logger.info(`Auto-generated ${tools.length} tool types → ${outputPath}`);
+  } catch {
+    // Not installed as a dependency or no node_modules — skip silently
+    logger.debug('Skipping auto-typegen (mcpd not resolvable as a dependency)');
+  }
+}
 
 export async function startDaemon(configPath?: string): Promise<void> {
   const config = loadConfig(configPath);
@@ -25,6 +49,9 @@ export async function startDaemon(configPath?: string): Promise<void> {
   const connectedCount = serverPool.listServers().filter((s) => s.status === 'connected').length;
   const totalCount = serverPool.listServers().length;
   logger.info(`Connected ${connectedCount}/${totalCount} servers`);
+
+  // Auto-generate types after all servers are connected
+  await runAutoTypegen(serverPool, logger);
 
   const { server, shutdown, handleRequest } = createDaemonServer(serverPool, config);
 
