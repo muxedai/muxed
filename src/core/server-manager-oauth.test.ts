@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
 import { UnauthorizedError } from '@modelcontextprotocol/sdk/client/auth.js';
 import { StreamableHTTPError } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
 import { SseError } from '@modelcontextprotocol/sdk/client/sse.js';
@@ -6,13 +6,13 @@ import type { HttpServerConfig } from './types.js';
 
 // ---- Shared mock state ----
 
-let mockClientConnect: ReturnType<typeof vi.fn>;
-let mockTransportFinishAuth: ReturnType<typeof vi.fn>;
-let mockCallbackServerStart: ReturnType<typeof vi.fn>;
-let mockCallbackServerWaitForPort: ReturnType<typeof vi.fn>;
-let mockCallbackServerClose: ReturnType<typeof vi.fn>;
-let mockAuthProviderSetRedirectUrl: ReturnType<typeof vi.fn>;
-let mockTokenStoreHasTokens: ReturnType<typeof vi.fn>;
+let mockClientConnect: Mock;
+let mockTransportFinishAuth: Mock;
+let mockCallbackServerStart: Mock;
+let mockCallbackServerWaitForPort: Mock;
+let mockCallbackServerClose: Mock;
+let mockAuthProviderSetRedirectUrl: Mock;
+let mockTokenStoreHasTokens: Mock;
 
 // ---- Module mocks (use `function` for constructable mocks) ----
 
@@ -156,7 +156,9 @@ describe('auto-OAuth for HTTP servers', () => {
     });
 
     mockClientConnect
-      .mockRejectedValueOnce(new SseError(401, 'Unauthorized'))
+      .mockRejectedValueOnce(
+        new SseError(401, 'Unauthorized', { type: 'error' } as unknown as Event)
+      )
       .mockRejectedValueOnce(new UnauthorizedError())
       .mockResolvedValueOnce(undefined);
 

@@ -23,6 +23,7 @@ import { isStdioConfig, isHttpConfig } from '../../core/types.js';
 import { formatJson, formatMcpServer, formatMcpServerList } from '../formatter.js';
 import { isDaemonRunning } from '../../daemon/process.js';
 import { sendRequest } from '../client.js';
+import { startMcpProxy } from '../../mcp-proxy.js';
 import * as readline from 'node:readline/promises';
 import fs from 'node:fs';
 
@@ -183,7 +184,12 @@ async function tryReloadDaemon(): Promise<void> {
 
 export const mcpCommand = new Command('mcp')
   .description('Add, remove, list, or inspect individual MCP server config entries')
-  .enablePositionalOptions();
+  .enablePositionalOptions()
+  .action(async (_opts: unknown, cmd: Command) => {
+    // When called without a subcommand, start the MCP proxy server over stdio
+    const explicitConfig = cmd.parent?.opts().config as string | undefined;
+    await startMcpProxy(explicitConfig);
+  });
 
 // ─── mcp add ───
 
