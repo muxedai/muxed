@@ -1,8 +1,9 @@
 ---
-import '../styles/landing.css';
+import "../styles/landing.css";
 
-const title = 'mcpd — The optimization layer for MCP';
-const description = 'One daemon to manage them all. Fewer tokens, faster tools, better agents.';
+const title = "mcpd — The optimization layer for MCP";
+const description =
+  "One daemon to manage them all. Fewer tokens, faster tools, better agents.";
 
 const asciiLogo = `                        _
   _ __ ___   ___ _ __   __| |
@@ -60,379 +61,434 @@ const codeAfter = `<span class="kw">⛁ </span><span class="flag">⛁ </span><sp
 ---
 
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>{title}</title>
-  <meta name="description" content={description} />
-  <link rel="canonical" href="https://mcpd.dev" />
-  <link rel="sitemap" href="/sitemap-index.xml" />
-  <meta property="og:title" content={title} />
-  <meta property="og:description" content={description} />
-  <meta property="og:type" content="website" />
-  <meta property="og:url" content="https://mcpd.dev" />
-</head>
-<body>
-  <!-- Navigation -->
-  <div class="container">
-    <nav class="nav">
-      <div class="nav-logo">
-        <span class="prompt">$</span> mcpd
-      </div>
-      <div class="nav-links">
-        <a href="/getting-started/installation/">Docs</a>
-        <a href="https://github.com/skoob13/mcpd">GitHub</a>
-        <a href="https://www.npmjs.com/package/mcpd">npm</a>
-        <button class="theme-toggle" id="theme-toggle">&#9681; light</button>
-      </div>
-    </nav>
-  </div>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href="https://mcpd.dev" />
+    <link rel="sitemap" href="/sitemap-index.xml" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://mcpd.dev" />
+  </head>
+  <body>
+    <!-- Navigation -->
+    <div class="container">
+      <nav class="nav">
+        <div class="nav-logo">
+          <span class="prompt">$</span> mcpd
+        </div>
+        <div class="nav-links">
+          <a href="/getting-started/installation/">Docs</a>
+          <a href="https://github.com/skoob13/mcpd">GitHub</a>
+          <a href="https://www.npmjs.com/package/mcpd">npm</a>
+          <button class="theme-toggle" id="theme-toggle">&#9681; light</button>
+        </div>
+      </nav>
+    </div>
 
-  <!-- Hero -->
-  <div class="container">
-    <section>
-      <div class="hero">
-        <pre class="ascii-logo">{asciiLogo}</pre>
+    <!-- Hero -->
+    <div class="container">
+      <section>
+        <div class="hero">
+          <pre class="ascii-logo">{asciiLogo}</pre>
 
-        <div class="hero-tagline">Fewer tokens. Faster tools. Better agents.</div>
+          <div class="hero-tagline">
+            Fewer tokens. Faster tools. Better agents.
+          </div>
 
-        <p class="hero-description">
-          Your coding agent gets dumber with every MCP you add.
-          mcpd offloads them to a daemon and discovers tools lazily —
-          via shell or Node.js API.
+          <p class="hero-description">
+            Your coding agent gets dumber with every MCP you add. mcpd offloads
+            them to a daemon and discovers tools lazily — via shell or Node.js
+            API.
+          </p>
+
+          <div class="install-box" id="install-box">
+            <span class="dollar">$</span>
+            <span class="cmd">npx mcpd init</span>
+            <span class="copy-hint" id="copy-hint">click to copy</span>
+          </div>
+
+          <div class="hero-actions">
+            <a href="/getting-started/installation/" class="btn btn-primary"
+              >Get Started</a
+            >
+            <a href="https://github.com/skoob13/mcpd" class="btn">GitHub</a>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- The Problem -->
+    <div class="container">
+      <section>
+        <div class="section-header">
+          <h2>The problem with MCP at scale</h2>
+        </div>
+
+        <p class="problem-intro">
+          Every MCP server dumps its full schema into the prompt. One server is
+          fine. Three is a problem. Ten breaks things.
         </p>
 
-        <div class="install-box" id="install-box">
-          <span class="dollar">$</span>
-          <span class="cmd">npx mcpd init</span>
-          <span class="copy-hint" id="copy-hint">click to copy</span>
-        </div>
-
-        <div class="hero-actions">
-          <a href="/getting-started/installation/" class="btn btn-primary">Get Started</a>
-          <a href="https://github.com/skoob13/mcpd" class="btn">GitHub</a>
-        </div>
-      </div>
-    </section>
-  </div>
-
-  <!-- The Problem -->
-  <div class="container">
-    <section>
-      <div class="section-header">
-        <h2>The problem with MCP at scale</h2>
-      </div>
-
-      <p class="problem-intro">
-        Every MCP server dumps its full schema into the prompt.
-        One server is fine. Three is a problem. Ten breaks things.
-      </p>
-
-      <div class="stats-grid">
-        <div class="stat-card animate-in">
-          <div class="stat-value">98.7%</div>
-          <div class="stat-label">token overhead</div>
-          <p class="stat-desc">Anthropic found that intermediate tool results waste almost all tokens flowing through the model.</p>
-        </div>
-        <div class="stat-card animate-in">
-          <div class="stat-value">20-30%</div>
-          <div class="stat-label">context consumed</div>
-          <p class="stat-desc">A standard 3-4 server setup fills a quarter of the context window before the agent even starts.</p>
-        </div>
-        <div class="stat-card animate-in">
-          <div class="stat-value">3-4</div>
-          <div class="stat-label">server limit</div>
-          <p class="stat-desc">Tool selection accuracy collapses after just a handful of connected MCP servers.</p>
-        </div>
-      </div>
-
-      <p class="problem-summary">
-        More tools in context = worse results.
-        Every token spent on schemas is a token not spent on your task.
-      </p>
-    </section>
-  </div>
-
-  <!-- Features Grid -->
-  <div class="container">
-    <section>
-      <div class="section-header">
-        <h2>How mcpd fixes this</h2>
-      </div>
-
-      <div class="features-grid">
-        <div class="feature-card animate-in">
-          <div class="feature-icon" style="font-size: 14px;">-98%</div>
-          <h3>Fewer tokens</h3>
-          <p>Tools live in the daemon, not the prompt. Agents discover what they need on demand with <code>mcpd grep</code>.</p>
-        </div>
-        <div class="feature-card animate-in">
-          <div class="feature-icon">&#x26a1;</div>
-          <h3>Always warm</h3>
-          <p>Background daemon keeps every server connected. No cold starts, no handshake delays. Tools respond in milliseconds.</p>
-        </div>
-        <div class="feature-card animate-in">
-          <div class="feature-icon">&#x25ce;</div>
-          <h3>Better accuracy</h3>
-          <p>Fewer schemas in context means the model picks the right tool more often. Clean context, better reasoning.</p>
-        </div>
-        <div class="feature-card animate-in">
-          <div class="feature-icon">|&gt;</div>
-          <h3>Chain &amp; script</h3>
-          <p>Pipe results through bash, jq, or Node.js. Intermediate data stays outside the model entirely.</p>
-        </div>
-        <div class="feature-card animate-in">
-          <div class="feature-icon">&#x2605;</div>
-          <h3>Context engineering</h3>
-          <p>Reclaim context for skills, prompts, and default tools &mdash; the things models execute deterministically.</p>
-        </div>
-        <div class="feature-card animate-in">
-          <div class="feature-icon">&#123;&#125;</div>
-          <h3>Zero config</h3>
-          <p>Reads your existing agent configs. Or run <code>mcpd init</code> to auto-discover servers.</p>
-        </div>
-      </div>
-    </section>
-  </div>
-
-  <!-- Code Example: Discovery -->
-  <div class="container">
-    <section>
-      <div class="code-section">
-        <div class="code-section-text">
-          <h2>Discover, don't preload</h2>
-          <p>
-            Instead of loading every schema into the prompt, agents search
-            for the tool they need, inspect it, and call it. The model's
-            context stays clean &mdash; only the final result goes in.
-          </p>
-        </div>
-
-        <div class="code-block">
-          <div class="code-block-header">
-            <div class="dot dot-red"></div>
-            <div class="dot dot-yellow"></div>
-            <div class="dot dot-green"></div>
-            <span class="code-block-title">terminal</span>
+        <div class="stats-grid">
+          <div class="stat-card animate-in">
+            <div class="stat-value">98.7%</div>
+            <div class="stat-label">token overhead</div>
+            <p class="stat-desc">
+              Anthropic found that intermediate tool results waste almost all
+              tokens flowing through the model.
+            </p>
           </div>
-          <pre set:html={codeDiscovery} />
-        </div>
-      </div>
-    </section>
-  </div>
-
-  <!-- Code Example: Scripting -->
-  <div class="container">
-    <section>
-      <div class="code-section">
-        <div class="code-section-text">
-          <h2>Write scripts, not tool calls</h2>
-          <p>
-            Agents can chain MCP calls through bash pipes or write
-            Node.js scripts using the <code>mcpd</code> client library.
-            Either way, intermediate data never re-enters the model.
-          </p>
-          <p>
-            Same insight behind Anthropic's code execution and
-            Cloudflare's Code Mode &mdash; as a CLI and npm package.
-          </p>
-        </div>
-
-        <div class="code-block">
-          <div class="code-block-header">
-            <div class="dot dot-red"></div>
-            <div class="dot dot-yellow"></div>
-            <div class="dot dot-green"></div>
-            <span class="code-block-title">bash &mdash; pipe through jq</span>
+          <div class="stat-card animate-in">
+            <div class="stat-value">20-30%</div>
+            <div class="stat-label">context consumed</div>
+            <p class="stat-desc">
+              A standard 3-4 server setup fills a quarter of the context window
+              before the agent even starts.
+            </p>
           </div>
-          <pre set:html={codeChaining} />
-        </div>
-      </div>
-
-      <!-- Node.js example right below -->
-      <div class="code-section" style="margin-top: var(--s7);">
-        <div class="code-section-text">
-          <h2>Node.js API</h2>
-          <p>
-            mcpd is also an npm package. Agents write Node.js scripts with
-            typed results, <code>Promise.all</code> for parallel calls across
-            servers, and the full npm ecosystem.
-          </p>
-        </div>
-
-        <div class="code-block">
-          <div class="code-block-header">
-            <div class="dot dot-red"></div>
-            <div class="dot dot-yellow"></div>
-            <div class="dot dot-green"></div>
-            <span class="code-block-title">churn-analysis.mjs</span>
-          </div>
-          <pre set:html={codeNodeApi} />
-        </div>
-      </div>
-    </section>
-  </div>
-
-  <!-- Context Engineering -->
-  <div class="container">
-    <section>
-      <div class="code-section">
-        <div class="code-section-text">
-          <h2>When tools leave, context wins</h2>
-          <p>
-            Skills, prompts, and default tools are deterministic &mdash;
-            models always follow them. MCP tools compete for attention,
-            and accuracy drops as you add more.
-          </p>
-          <p>
-            Offloading tools to mcpd is context engineering at the
-            infrastructure level. Your instructions get followed instead
-            of being buried under thousands of tokens of schemas.
-          </p>
-        </div>
-
-        <div class="code-block">
-          <div class="code-block-header">
-            <div class="dot dot-red"></div>
-            <div class="dot dot-yellow"></div>
-            <div class="dot dot-green"></div>
-            <span class="code-block-title">context window allocation</span>
-          </div>
-          <div class="context-viz">
-            <div class="context-label">before mcpd:</div>
-            <div class="context-row">
-              <pre class="context-grid" set:html={codeBefore} />
-              <div class="context-legend">
-                <div><span class="output">⛁</span> mcp tools 30%</div>
-                <div><span class="kw">⛁</span> skills 6%</div>
-                <div><span class="flag">⛁</span> prompts 6%</div>
-                <div><span class="str">⛁</span> task 58%</div>
-              </div>
-            </div>
-            <div class="context-label">after mcpd:</div>
-            <div class="context-row">
-              <pre class="context-grid" set:html={codeAfter} />
-              <div class="context-legend">
-                <div><span class="kw">⛁</span> skills 6%</div>
-                <div><span class="flag">⛁</span> prompts 6%</div>
-                <div><span class="str">⛁</span> task 58%</div>
-                <div><span class="comment">⛶</span> free 30%</div>
-              </div>
-            </div>
+          <div class="stat-card animate-in">
+            <div class="stat-value">3-4</div>
+            <div class="stat-label">server limit</div>
+            <p class="stat-desc">
+              Tool selection accuracy collapses after just a handful of
+              connected MCP servers.
+            </p>
           </div>
         </div>
-      </div>
-    </section>
-  </div>
 
-  <!-- Get Started CTA -->
-  <div class="container">
-    <section class="cta-section">
-      <div class="cta-content">
-        <h2>Get started in seconds</h2>
-        <p>
-          Auto-discover your MCP servers, start the daemon,
-          and run your first tool call.
+        <p class="problem-summary">
+          More tools in context = worse results. Every token spent on schemas is
+          a token not spent on your task.
         </p>
+      </section>
+    </div>
 
-        <div class="cta-steps">
-          <div class="cta-step">
-            <span class="cta-step-num">1</span>
-            <div>
-              <code>npx mcpd init</code>
-              <span class="cta-step-desc">generates config from your existing setup</span>
-            </div>
+    <!-- Features Grid -->
+    <div class="container">
+      <section>
+        <div class="section-header">
+          <h2>How mcpd fixes this</h2>
+        </div>
+
+        <div class="features-grid">
+          <div class="feature-card animate-in">
+            <div class="feature-icon" style="font-size: 14px;">-98%</div>
+            <h3>Fewer tokens</h3>
+            <p>
+              Tools live in the daemon, not the prompt. Agents discover what
+              they need on demand with <code>mcpd grep</code>.
+            </p>
           </div>
-          <div class="cta-step">
-            <span class="cta-step-num">2</span>
-            <div>
-              <code>mcpd tools</code>
-              <span class="cta-step-desc">lists every tool across all servers</span>
-            </div>
+          <div class="feature-card animate-in">
+            <div class="feature-icon">&#x26a1;</div>
+            <h3>Always warm</h3>
+            <p>
+              Background daemon keeps every server connected. No cold starts, no
+              handshake delays. Tools respond in milliseconds.
+            </p>
           </div>
-          <div class="cta-step">
-            <span class="cta-step-num">3</span>
-            <div>
-              <code>mcpd call server/tool '{"{}"}'</code>
-              <span class="cta-step-desc">invoke any tool from the command line</span>
+          <div class="feature-card animate-in">
+            <div class="feature-icon">&#x25ce;</div>
+            <h3>Better accuracy</h3>
+            <p>
+              Fewer schemas in context means the model picks the right tool more
+              often. Clean context, better reasoning.
+            </p>
+          </div>
+          <div class="feature-card animate-in">
+            <div class="feature-icon">|&gt;</div>
+            <h3>Chain &amp; script</h3>
+            <p>
+              Pipe results through bash, jq, or Node.js. Intermediate data stays
+              outside the model entirely.
+            </p>
+          </div>
+          <div class="feature-card animate-in">
+            <div class="feature-icon">&#x2605;</div>
+            <h3>Context engineering</h3>
+            <p>
+              Reclaim context for skills, prompts, and default tools &mdash; the
+              things models execute deterministically.
+            </p>
+          </div>
+          <div class="feature-card animate-in">
+            <div class="feature-icon">&#123;&#125;</div>
+            <h3>Zero config</h3>
+            <p>
+              Reads your existing agent configs. Or run <code>mcpd init</code> to
+              auto-discover servers.
+            </p>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- Code Example: Discovery -->
+    <div class="container">
+      <section>
+        <div class="code-section">
+          <div class="code-section-text">
+            <h2>Discover, don't preload</h2>
+            <p>
+              Instead of loading every schema into the prompt, agents search for
+              the tool they need, inspect it, and call it. The model's context
+              stays clean &mdash; only the final result goes in.
+            </p>
+          </div>
+
+          <div class="code-block">
+            <div class="code-block-header">
+              <div class="dot dot-red"></div>
+              <div class="dot dot-yellow"></div>
+              <div class="dot dot-green"></div>
+              <span class="code-block-title">terminal</span>
             </div>
+            <pre set:html={codeDiscovery} />
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- Code Example: Scripting -->
+    <div class="container">
+      <section>
+        <div class="code-section">
+          <div class="code-section-text">
+            <h2>Write scripts, not tool calls</h2>
+            <p>
+              Agents can chain MCP calls through bash pipes or write Node.js
+              scripts using the <code>mcpd</code> client library. Either way, intermediate
+              data never re-enters the model.
+            </p>
+            <p>
+              Same insight behind Anthropic's code execution and Cloudflare's
+              Code Mode &mdash; as a CLI and npm package.
+            </p>
+          </div>
+
+          <div class="code-block">
+            <div class="code-block-header">
+              <div class="dot dot-red"></div>
+              <div class="dot dot-yellow"></div>
+              <div class="dot dot-green"></div>
+              <span class="code-block-title">bash &mdash; pipe through jq</span>
+            </div>
+            <pre set:html={codeChaining} />
           </div>
         </div>
 
-        <div class="hero-actions" style="margin-top: var(--s7);">
-          <a href="/getting-started/installation/" class="btn btn-primary">Read the Docs</a>
-          <a href="https://github.com/skoob13/mcpd" class="btn">View on GitHub</a>
+        <!-- Node.js example right below -->
+        <div class="code-section" style="margin-top: var(--s7);">
+          <div class="code-section-text">
+            <h2>Node.js API</h2>
+            <p>
+              mcpd is also an npm package. Agents write Node.js scripts with
+              typed results, <code>Promise.all</code> for parallel calls across servers,
+              and the full npm ecosystem.
+            </p>
+          </div>
+
+          <div class="code-block">
+            <div class="code-block-header">
+              <div class="dot dot-red"></div>
+              <div class="dot dot-yellow"></div>
+              <div class="dot dot-green"></div>
+              <span class="code-block-title">churn-analysis.mjs</span>
+            </div>
+            <pre set:html={codeNodeApi} />
+          </div>
         </div>
-      </div>
-    </section>
-  </div>
+      </section>
+    </div>
 
-  <!-- Footer -->
-  <div class="container">
-    <footer class="footer">
-      <div class="footer-links">
-        <a href="/getting-started/installation/">Docs</a>
-        <a href="https://github.com/skoob13/mcpd">GitHub</a>
-        <a href="https://www.npmjs.com/package/mcpd">npm</a>
-        <a href="https://modelcontextprotocol.io">MCP Spec</a>
-      </div>
-      <div class="footer-separator">
-        &#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;
-      </div>
-      <div>MIT License &middot; Built for the MCP ecosystem</div>
-      <div class="footer-ascii">$ exit 0</div>
-    </footer>
-  </div>
+    <!-- Context Engineering -->
+    <div class="container">
+      <section>
+        <div class="code-section">
+          <div class="code-section-text">
+            <h2>When tools leave, context wins</h2>
+            <p>
+              Skills, prompts, and default tools are deterministic &mdash;
+              models always follow them. MCP tools compete for attention, and
+              accuracy drops as you add more.
+            </p>
+            <p>
+              Offloading tools to mcpd is context engineering at the
+              infrastructure level. Your instructions get followed instead of
+              being buried under thousands of tokens of schemas.
+            </p>
+          </div>
 
-  <script is:inline>
-    const toggle = document.getElementById('theme-toggle');
-    function setTheme(light) {
-      if (light) {
-        document.documentElement.classList.add('light');
-        toggle.innerHTML = '\u25D0 dark';
-      } else {
-        document.documentElement.classList.remove('light');
-        toggle.innerHTML = '\u25D1 light';
-      }
-      try { localStorage.setItem('theme', light ? 'light' : 'dark'); } catch(e) {}
-    }
-    var saved = null;
-    try { saved = localStorage.getItem('theme'); } catch(e) {}
-    if (saved === 'light') {
-      setTheme(true);
-    } else if (saved === 'dark') {
-      setTheme(false);
-    } else if (window.matchMedia('(prefers-color-scheme: light)').matches) {
-      setTheme(true);
-    }
-    toggle.addEventListener('click', function() {
-      setTheme(!document.documentElement.classList.contains('light'));
-    });
+          <div class="code-block">
+            <div class="code-block-header">
+              <div class="dot dot-red"></div>
+              <div class="dot dot-yellow"></div>
+              <div class="dot dot-green"></div>
+              <span class="code-block-title">context window allocation</span>
+            </div>
+            <div class="context-viz">
+              <div class="context-label">before mcpd:</div>
+              <div class="context-row">
+                <pre class="context-grid" set:html={codeBefore} />
+                <div class="context-legend">
+                  <div><span class="output">⛁</span> mcp tools 30%</div>
+                  <div><span class="kw">⛁</span> skills 6%</div>
+                  <div><span class="flag">⛁</span> prompts 6%</div>
+                  <div><span class="str">⛁</span> task 58%</div>
+                </div>
+              </div>
+              <div class="context-label">after mcpd:</div>
+              <div class="context-row">
+                <pre class="context-grid" set:html={codeAfter} />
+                <div class="context-legend">
+                  <div><span class="kw">⛁</span> skills 6%</div>
+                  <div><span class="flag">⛁</span> prompts 6%</div>
+                  <div><span class="str">⛁</span> task 58%</div>
+                  <div><span class="comment">⛶</span> free 30%</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
 
-    var installBox = document.getElementById('install-box');
-    var copyHint = document.getElementById('copy-hint');
-    installBox.addEventListener('click', function() {
-      navigator.clipboard.writeText('npx mcpd init').then(function() {
-        copyHint.textContent = 'copied!';
-        setTimeout(function() { copyHint.textContent = 'click to copy'; }, 2000);
-      }).catch(function() {
-        copyHint.textContent = 'failed to copy';
-        setTimeout(function() { copyHint.textContent = 'click to copy'; }, 2000);
-      });
-    });
+    <!-- Get Started CTA -->
+    <div class="container">
+      <section class="cta-section">
+        <div class="cta-content">
+          <h2>Get started in seconds</h2>
+          <p>
+            Auto-discover your MCP servers, start the daemon, and run your first
+            tool call.
+          </p>
 
-    // Scroll-triggered entrance animations
-    var observer = new IntersectionObserver(function(entries) {
-      entries.forEach(function(entry) {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('visible');
-          observer.unobserve(entry.target);
+          <div class="cta-steps">
+            <div class="cta-step">
+              <span class="cta-step-num">1</span>
+              <div>
+                <code>npx mcpd init</code>
+                <span class="cta-step-desc"
+                  >generates config from your existing setup</span
+                >
+              </div>
+            </div>
+            <div class="cta-step">
+              <span class="cta-step-num">2</span>
+              <div>
+                <code>mcpd tools</code>
+                <span class="cta-step-desc"
+                  >lists every tool across all servers</span
+                >
+              </div>
+            </div>
+            <div class="cta-step">
+              <span class="cta-step-num">3</span>
+              <div>
+                <code>mcpd call server/tool '{"{}"}'</code>
+                <span class="cta-step-desc"
+                  >invoke any tool from the command line</span
+                >
+              </div>
+            </div>
+          </div>
+
+          <div class="hero-actions" style="margin-top: var(--s7);">
+            <a href="/getting-started/installation/" class="btn btn-primary"
+              >Read the Docs</a
+            >
+            <a href="https://github.com/skoob13/mcpd" class="btn"
+              >View on GitHub</a
+            >
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- Footer -->
+    <div class="container">
+      <footer class="footer">
+        <div class="footer-links">
+          <a href="/getting-started/installation/">Docs</a>
+          <a href="https://github.com/skoob13/mcpd">GitHub</a>
+          <a href="https://www.npmjs.com/package/mcpd">npm</a>
+          <a href="https://modelcontextprotocol.io">MCP Spec</a>
+        </div>
+        <div class="footer-separator">
+          &#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;
+        </div>
+        <div>MIT License &middot; Built for the MCP ecosystem</div>
+        <div class="footer-ascii">$ exit 0</div>
+      </footer>
+    </div>
+
+    <script is:inline>
+      const toggle = document.getElementById("theme-toggle");
+      function setTheme(light) {
+        if (light) {
+          document.documentElement.classList.add("light");
+          toggle.innerHTML = "\u25D0 dark";
+        } else {
+          document.documentElement.classList.remove("light");
+          toggle.innerHTML = "\u25D1 light";
         }
+        try {
+          localStorage.setItem("theme", light ? "light" : "dark");
+        } catch (e) {}
+      }
+      var saved = null;
+      try {
+        saved = localStorage.getItem("theme");
+      } catch (e) {}
+      if (saved === "light") {
+        setTheme(true);
+      } else if (saved === "dark") {
+        setTheme(false);
+      } else if (window.matchMedia("(prefers-color-scheme: light)").matches) {
+        setTheme(true);
+      }
+      toggle.addEventListener("click", function () {
+        setTheme(!document.documentElement.classList.contains("light"));
       });
-    }, { threshold: 0.15 });
-    document.querySelectorAll('.animate-in').forEach(function(el) {
-      observer.observe(el);
-    });
-  </script>
-</body>
+
+      var installBox = document.getElementById("install-box");
+      var copyHint = document.getElementById("copy-hint");
+      installBox.addEventListener("click", function () {
+        navigator.clipboard
+          .writeText("npx mcpd init")
+          .then(function () {
+            copyHint.textContent = "copied!";
+            setTimeout(function () {
+              copyHint.textContent = "click to copy";
+            }, 2000);
+          })
+          .catch(function () {
+            copyHint.textContent = "failed to copy";
+            setTimeout(function () {
+              copyHint.textContent = "click to copy";
+            }, 2000);
+          });
+      });
+
+      // Scroll-triggered entrance animations
+      var observer = new IntersectionObserver(
+        function (entries) {
+          entries.forEach(function (entry) {
+            if (entry.isIntersecting) {
+              entry.target.classList.add("visible");
+              observer.unobserve(entry.target);
+            }
+          });
+        },
+        { threshold: 0.15 },
+      );
+      document.querySelectorAll(".animate-in").forEach(function (el) {
+        observer.observe(el);
+      });
+    </script>
+  </body>
 </html>
