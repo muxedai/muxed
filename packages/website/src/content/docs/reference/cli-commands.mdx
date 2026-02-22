@@ -2,3 +2,316 @@
 title: CLI Commands
 description: Complete reference for all muxed CLI commands.
 ---
+
+All commands support `--config <path>` to specify a custom config file path. Most commands auto-start the daemon if it is not already running. All read commands support `--json` for machine-readable output.
+
+## Servers
+
+### `muxed servers`
+
+```
+muxed servers [--json]
+```
+
+List all configured servers with their connection status, server info, and capabilities.
+
+Shows the following for each server:
+
+- **name** — the server identifier from your config
+- **title** — the server's display name
+- **status** — connection state: `connected`, `error`, or `closed`
+- **protocol version** — the MCP protocol version the server supports
+
+## Tools
+
+### `muxed tools`
+
+```
+muxed tools [server] [--json]
+```
+
+List all available tools across all servers. Optionally pass a `server` name to filter results to a single server.
+
+Shows the following for each tool:
+
+- **tool name** — fully qualified as `server/tool`
+- **title** — the tool's display name
+- **description** — what the tool does
+- **annotation hints** — metadata hints such as read-only, destructive, etc.
+
+### `muxed info`
+
+```
+muxed info <server/tool> [--json]
+```
+
+Show the detailed schema for a specific tool, including:
+
+- `inputSchema` — the JSON Schema for the tool's arguments
+- `outputSchema` — the JSON Schema for the tool's return value (if defined)
+- `annotations` — metadata hints about the tool's behavior
+- Task support — whether the tool supports async task execution
+
+### `muxed call`
+
+```
+muxed call <server/tool> [json] [--timeout <ms>] [--async] [--json]
+```
+
+Invoke a tool with optional JSON arguments.
+
+| Argument / Flag | Description |
+|---|---|
+| `json` | JSON string with tool arguments, e.g. `'{"path": "/tmp/file"}'` |
+| `-` | Read JSON arguments from stdin (useful for piping) |
+| `--timeout <ms>` | Override the default request timeout |
+| `--async` | Return a task handle instead of blocking (for async-capable tools) |
+| `--json` | Output result as JSON (useful for piping to `jq` or other tools) |
+
+**Examples:**
+
+```bash
+# Call a tool with inline arguments
+muxed call filesystem/read_file '{"path": "/tmp/file.txt"}'
+
+# Pipe arguments from stdin
+echo '{"query": "SELECT 1"}' | muxed call db/query -
+
+# Async invocation
+muxed call analytics/export '{"range": "30d"}' --async
+
+# With a custom timeout
+muxed call slow-server/generate '{}' --timeout 120000
+```
+
+### `muxed grep`
+
+```
+muxed grep <pattern> [--json]
+```
+
+Search tool names, titles, and descriptions across all servers. The pattern is matched against the tool name, title, and description text.
+
+## Resources
+
+### `muxed resources`
+
+```
+muxed resources [server] [--json]
+```
+
+List resources from all servers. Optionally pass a `server` name to filter results to a specific server.
+
+### `muxed read`
+
+```
+muxed read <server/resource> [uri] [--json]
+```
+
+Read a resource by server name and URI.
+
+## Prompts
+
+### `muxed prompts`
+
+```
+muxed prompts [server] [--json]
+```
+
+List prompt templates from all servers. Optionally pass a `server` name to filter results to a specific server.
+
+### `muxed prompt`
+
+```
+muxed prompt <server/prompt> [args-json] [--json]
+```
+
+Render a prompt template with optional arguments. Pass arguments as a JSON string.
+
+### `muxed completions`
+
+```
+muxed completions <type> <name> <arg> <value> [--json]
+```
+
+Get argument auto-completions for prompts or resources. This is used for interactive shell completion and editor integrations.
+
+## Tasks
+
+### `muxed tasks`
+
+```
+muxed tasks [server] [--json]
+```
+
+List active tasks across all servers. Optionally pass a `server` name to filter results to a specific server.
+
+### `muxed task`
+
+```
+muxed task <server/taskId> [--json]
+```
+
+Get the status of a specific task.
+
+### `muxed task-result`
+
+```
+muxed task-result <server/taskId> [--json]
+```
+
+Get the result of a completed task.
+
+### `muxed task-cancel`
+
+```
+muxed task-cancel <server/taskId> [--json]
+```
+
+Cancel a running task.
+
+## Configuration
+
+### `muxed init`
+
+```
+muxed init [--dry-run] [--json] [-y/--yes] [--no-delete] [--no-replace]
+```
+
+Auto-discover MCP servers from agent configs (Claude Desktop, Cursor, etc.) and generate a muxed config file.
+
+| Flag | Description |
+|---|---|
+| `--dry-run` | Show what would be done without writing files |
+| `--no-delete` | Copy servers into muxed config but don't remove originals from agent configs |
+| `--no-replace` | Don't inject muxed as a replacement in agent configs |
+| `-y` / `--yes` | Skip confirmation prompts |
+
+### `muxed mcp`
+
+```
+muxed mcp
+```
+
+Without a subcommand, starts the stdio MCP proxy. This is the entry point used by editors connecting to muxed as an MCP server.
+
+### `muxed mcp add`
+
+```
+muxed mcp add <name> <commandOrUrl> [args...] [-e KEY=val] [-H Key:val] [-s scope] [-t transport] [--client-id] [--client-secret] [--callback-port] [--oauth-scope]
+```
+
+Add a server to the config.
+
+| Flag | Description |
+|---|---|
+| `-e KEY=val` | Set environment variables for the server |
+| `-H Key:val` | Set HTTP headers for the server |
+| `-s scope` | Scope: `local` (project) or `global` |
+| `-t transport` | Transport type: `streamable-http` or `sse` |
+| `--client-id` | OAuth client ID |
+| `--client-secret` | OAuth client secret |
+| `--callback-port` | OAuth callback port |
+| `--oauth-scope` | OAuth scope |
+
+**Examples:**
+
+```bash
+# Add a stdio server
+muxed mcp add filesystem npx -y @modelcontextprotocol/server-filesystem /home/user
+
+# Add an HTTP server
+muxed mcp add remote-api https://mcp.example.com/mcp -t streamable-http -H "Authorization:Bearer tok123"
+
+# Add to global config
+muxed mcp add shared-server npx some-server -s global
+```
+
+### `muxed mcp add-json`
+
+```
+muxed mcp add-json <name> <json> [-s scope]
+```
+
+Add a server from a raw JSON config string.
+
+### `muxed mcp add-from-claude-desktop`
+
+```
+muxed mcp add-from-claude-desktop [-s scope]
+```
+
+Import servers from your Claude Desktop config file.
+
+### `muxed mcp get`
+
+```
+muxed mcp get <name> [--json]
+```
+
+Get a server's configuration.
+
+### `muxed mcp list`
+
+```
+muxed mcp list [--json]
+```
+
+List all configured servers.
+
+### `muxed mcp remove`
+
+```
+muxed mcp remove <name> [-s scope]
+```
+
+Remove a server from the config.
+
+### `muxed typegen`
+
+```
+muxed typegen [-c/--config <path>]
+```
+
+Generate TypeScript types from live tool schemas. Writes output to `node_modules/muxed/muxed.generated.d.ts`. See the [Programmatic API](/guides/programmatic-api/#type-generation-with-muxed-typegen) guide for details on how generated types integrate with the client.
+
+## Daemon
+
+### `muxed daemon start`
+
+```
+muxed daemon start [--json]
+```
+
+Explicitly start the daemon. This is usually not needed since most commands auto-start the daemon.
+
+### `muxed daemon stop`
+
+```
+muxed daemon stop
+```
+
+Stop the daemon manually.
+
+### `muxed daemon reload`
+
+```
+muxed daemon reload [--json]
+```
+
+Reload config and reconnect any changed servers. Returns a summary of what was added, removed, or changed.
+
+### `muxed daemon status`
+
+```
+muxed daemon status [--json]
+```
+
+Show daemon status including PID, uptime, server count, and per-server connection details.
+
+## Notes
+
+- All commands except `daemon stop` auto-start the daemon if it is not running.
+- `--json` is available on all read commands for machine-readable output.
+- **stdin support:** pass `-` as the `json` argument to `call` to read arguments from stdin.
+- The daemon auto-exits after an idle timeout (default 5 minutes, configurable via `daemon.idleTimeout` in config).

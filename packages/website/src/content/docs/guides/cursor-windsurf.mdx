@@ -2,3 +2,89 @@
 title: Cursor & Windsurf
 description: Integrate muxed with Cursor and Windsurf editors.
 ---
+
+Both Cursor and Windsurf support MCP servers through their configuration files. Adding muxed as a single MCP entry gives both editors access to all your configured servers through one daemon.
+
+## Cursor setup
+
+Create or edit `.cursor/mcp.json` in your project root to add muxed as an MCP server:
+
+```json
+{
+  "mcpServers": {
+    "muxed": {
+      "command": "npx",
+      "args": ["muxed@latest", "mcp"]
+    }
+  }
+}
+```
+
+For a global configuration that applies to all projects, use `~/.cursor/mcp.json` instead.
+
+Running `muxed mcp` without a subcommand starts the stdio MCP proxy — Cursor connects to this process and communicates via the MCP protocol.
+
+## Windsurf setup
+
+Add muxed as an MCP server in Windsurf's config at `~/.codeium/windsurf/mcp_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "muxed": {
+      "command": "npx",
+      "args": ["muxed@latest", "mcp"]
+    }
+  }
+}
+```
+
+## Alternative: HTTP listener
+
+Instead of stdio, you can use muxed's HTTP listener. This is useful when multiple editors or agents need to connect to the same daemon simultaneously.
+
+1. Enable the HTTP listener in your `muxed.config.json`:
+
+```json
+{
+  "daemon": {
+    "http": {
+      "enabled": true,
+      "port": 3100,
+      "host": "127.0.0.1"
+    }
+  }
+}
+```
+
+2. Point your editor to `http://127.0.0.1:3100` for JSON-RPC requests.
+
+The HTTP listener accepts POST requests with JSON-RPC payloads. Origin validation restricts access to localhost only (127.0.0.1 and localhost origins).
+
+## Multi-editor usage
+
+muxed runs a single daemon process that serves all connected editors simultaneously:
+
+- All editors share the same daemon and server connections
+- Same config file, same tools available everywhere
+- One daemon manages server health, reconnection, and lifecycle
+- No duplicate server processes — each MCP server runs once
+
+## Importing existing servers
+
+If you already have MCP servers configured in Cursor or Windsurf, run `muxed init` to automatically discover and import them:
+
+```bash
+muxed init
+```
+
+This scans your editor configs, copies server definitions to `muxed.config.json`, and optionally replaces the originals with a single muxed entry.
+
+## Config management shortcuts
+
+You can manage servers from the command line without editing JSON by hand:
+
+- `muxed mcp add <name> <command> [args...]` — add a server to your config
+- `muxed mcp add-from-claude-desktop` — import servers from Claude Desktop config
+- `muxed mcp remove <name>` — remove a server
+- `muxed mcp list` — list configured servers
