@@ -1,0 +1,7 @@
+When I use MCP servers in my app, I see that performance of the agent drops, and I feel frustrated that the agent spends more time and tokens on figuring out the task, I want to get my job done, so I don't spend time on my own figuring out the task and feel more productive.
+
+When I use MCP servers in production agents with custom tooling (skills, prompts, tools, etc.) and I see that the agent spends too much tokens and time on figuring out the task and eventually can't do the task correctly because it doesn't follow the trajectory that I expect (e.g. load skills into the context window first and then execute MCP tools that were referenced there), I want to the agent to follow correct trajectories, so I can ship much more reliable production agents, my job is secured, and the company's agents are better than the competitors, so I can get more recognition and improve my financial situation.
+
+When I use many MCP servers in my agents and I feel annoyed that I have to spend time on setting up every new agent and their MCP servers, I want to have a single MCP server that I can use to manage all my MCP servers, so I have more time to focus on tasks and I feel superior to the industry that is still using the old way of doing things.
+
+When I use many MCP servers in my agents and I do some routine tasks that I want to automate eventually with skills and scripts and I currently spend more time and tokens on repeating tasks, I want to have a way to call MCP commands from my scripts, so I can automate my tasks and feel more productive.
