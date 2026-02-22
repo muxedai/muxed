@@ -1,0 +1,79 @@
+{
+  "name": "muxed",
+  "version": "0.1.0",
+  "description": "MCP server daemon and aggregator CLI – aggregate all your Model Context Protocol servers behind a single background daemon with lazy start, auto-reconnect, and idle shutdown",
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": "./dist/client/index.mjs",
+      "types": "./dist/client/index.d.mts"
+    },
+    "./client": {
+      "import": "./dist/client/index.mjs",
+      "types": "./dist/client/index.d.mts"
+    }
+  },
+  "bin": {
+    "muxed": "./bin/cli.mjs"
+  },
+  "files": [
+    "dist",
+    "bin",
+    "muxed.generated.d.ts"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "mcp-server",
+    "mcp-proxy",
+    "mcp-aggregator",
+    "mcp-daemon",
+    "mcp-cli",
+    "mcp-tools",
+    "ai-coding",
+    "claude-code",
+    "cursor",
+    "windsurf",
+    "ai-agent",
+    "tool-server",
+    "daemon",
+    "cli"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/skoob13/muxed.git",
+    "directory": "packages/muxed"
+  },
+  "homepage": "https://github.com/skoob13/muxed#readme",
+  "bugs": {
+    "url": "https://github.com/skoob13/muxed/issues"
+  },
+  "author": "Georgiy Tarasov",
+  "license": "MIT",
+  "scripts": {
+    "build": "obuild",
+    "dev": "node src/cli.ts",
+    "format": "prettier --write 'src/**/*.ts'",
+    "format:check": "prettier --check 'src/**/*.ts'",
+    "publish": "tsc --noEmit && prettier --check 'src/**/*.ts' && pnpm build && npm publish",
+    "test": "vitest",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.26.0",
+    "commander": "^14.0.0",
+    "json-schema-to-typescript": "^15.0.4",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@modelcontextprotocol/server-everything": "^2026.1.26",
+    "@types/node": "^22.0.0",
+    "obuild": "^0.4.22",
+    "prettier": "^3.8.1",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.17"
+  }
+}

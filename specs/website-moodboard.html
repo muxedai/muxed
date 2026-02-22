@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>toold – Website Moodboard</title>
+    <title>muxed – Website Moodboard</title>
     <style>
       @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap');
 
@@ -959,7 +959,7 @@
         </div>
 
         <nav class="nav" style="margin-top: var(--s4)">
-          <div class="nav-logo"><span class="prompt">$</span> toold</div>
+          <div class="nav-logo"><span class="prompt">$</span> muxed</div>
           <div class="nav-links">
             <a href="#">Docs</a>
             <a href="#">GitHub</a>
@@ -999,7 +999,7 @@
 
           <div class="install-box">
             <span class="dollar">$</span>
-            <span class="cmd">npx toold tools</span>
+            <span class="cmd">npx muxed tools</span>
             <span class="copy-hint">click to copy</span>
           </div>
 
@@ -1153,7 +1153,7 @@
         </div>
 
         <div class="features-header">
-          <h2>How toold fixes this</h2>
+          <h2>How muxed fixes this</h2>
         </div>
 
         <div class="features-grid">
@@ -1170,7 +1170,7 @@
                   border-radius: 3px;
                   font-size: 11px;
                 "
-                >toold grep</code
+                >muxed grep</code
               >
               instead of loading every schema upfront.
             </p>
@@ -1204,7 +1204,7 @@
                   border-radius: 3px;
                   font-size: 11px;
                 "
-                >toold call</code
+                >muxed call</code
               >
               through bash, jq, or any language. Intermediate results never re-enter the LLM.
             </p>
@@ -1213,7 +1213,7 @@
             <div class="feature-icon">&#x2605;</div>
             <h3>Context engineering wins</h3>
             <p>
-              Offload tools to toold and reclaim context for skills, prompts, and default tools
+              Offload tools to muxed and reclaim context for skills, prompts, and default tools
               &mdash; the things agents execute deterministically with higher priority than MCP tool
               calls.
             </p>
@@ -1231,7 +1231,7 @@
                   border-radius: 3px;
                   font-size: 11px;
                 "
-                >toold init</code
+                >muxed init</code
               >
               to auto-discover servers. Drop-in replacement for mcp-remote.
             </p>
@@ -1248,7 +1248,7 @@
       <section>
         <div class="design-note">
           <strong>Code blocks:</strong> Two side-by-side examples now. First shows on-demand
-          discovery (grep + info + call). Second shows chaining &mdash; piping toold calls through
+          discovery (grep + info + call). Second shows chaining &mdash; piping muxed calls through
           scripts without the LLM seeing intermediates.
         </div>
 
@@ -1270,16 +1270,16 @@
               <span class="code-block-title">terminal</span>
             </div>
             <pre><span class="line-num"> 1</span> <span class="comment"># discover – not preload</span>
-<span class="line-num"> 2</span> <span class="dollar">$</span> toold grep <span class="str">"read"</span>
+<span class="line-num"> 2</span> <span class="dollar">$</span> muxed grep <span class="str">"read"</span>
 <span class="line-num"> 3</span> <span class="output">  filesystem/read_file      Read file contents</span>
 <span class="line-num"> 4</span> <span class="output">  postgres/query            Read data via SQL</span>
 <span class="line-num"> 5</span>
 <span class="line-num"> 6</span> <span class="comment"># inspect only the tool you need</span>
-<span class="line-num"> 7</span> <span class="dollar">$</span> toold info filesystem/read_file
+<span class="line-num"> 7</span> <span class="dollar">$</span> muxed info filesystem/read_file
 <span class="line-num"> 8</span> <span class="output">  path (string, required)   File path to read</span>
 <span class="line-num"> 9</span>
 <span class="line-num">10</span> <span class="comment"># call it – only the result enters the LLM</span>
-<span class="line-num">11</span> <span class="dollar">$</span> toold call filesystem/read_file \
+<span class="line-num">11</span> <span class="dollar">$</span> muxed call filesystem/read_file \
 <span class="line-num">12</span>     <span class="str">'{"path": "/tmp/config.json"}'</span></pre>
           </div>
         </div>
@@ -1310,7 +1310,7 @@
                   border-radius: 3px;
                   font-size: 11px;
                 "
-                >toold</code
+                >muxed</code
               >
               client library. Either way, intermediate data never re-enters the model.
             </p>
@@ -1328,10 +1328,10 @@
               <span class="code-block-title">bash &mdash; pipe through jq</span>
             </div>
             <pre><span class="line-num">1</span> <span class="comment"># query &rarr; filter &rarr; write. model never sees the raw 10k rows.</span>
-<span class="line-num">2</span> <span class="dollar">$</span> toold call postgres/query \
+<span class="line-num">2</span> <span class="dollar">$</span> muxed call postgres/query \
 <span class="line-num">3</span>     <span class="str">'{"sql":"SELECT * FROM users"}'</span> <span class="flag">--json</span> \
 <span class="line-num">4</span>   | jq <span class="str">'[.[] | select(.active)]'</span> \
-<span class="line-num">5</span>   | toold call filesystem/write_file \
+<span class="line-num">5</span>   | muxed call filesystem/write_file \
 <span class="line-num">6</span>     <span class="str">'{"path":"/tmp/active.json"}'</span> <span class="flag">-</span></pre>
           </div>
         </div>
@@ -1341,7 +1341,7 @@
           <div class="code-section-text">
             <h2>Node.js API</h2>
             <p>
-              toold is also an npm package. Agents write Node.js scripts with typed results,
+              muxed is also an npm package. Agents write Node.js scripts with typed results,
               <code
                 style="
                   color: var(--accent);
@@ -1363,7 +1363,7 @@
               <div class="dot dot-green"></div>
               <span class="code-block-title">churn-analysis.mjs</span>
             </div>
-            <pre><span class="line-num"> 1</span> <span class="kw">import</span> { createClient } <span class="kw">from</span> <span class="str">'toold'</span>;
+            <pre><span class="line-num"> 1</span> <span class="kw">import</span> { createClient } <span class="kw">from</span> <span class="str">'muxed'</span>;
 <span class="line-num"> 2</span>
 <span class="line-num"> 3</span> <span class="kw">const</span> client = <span class="kw">await</span> createClient();
 <span class="line-num"> 4</span>
@@ -1401,7 +1401,7 @@
             <p>
               Skills, prompts, and default tools are deterministic &mdash; models always use them.
               MCP tools compete for attention in a crowded context window, and accuracy drops as you
-              add more. Offloading tools to toold frees context for the things agents actually
+              add more. Offloading tools to muxed frees context for the things agents actually
               execute reliably.
             </p>
             <p style="margin-top: var(--s3)">
@@ -1418,13 +1418,13 @@
               <span class="code-block-title">context window allocation</span>
             </div>
             <pre>
-<span class="line-num"> </span> <span class="comment">before toold:</span>
+<span class="line-num"> </span> <span class="comment">before muxed:</span>
 <span class="line-num"> </span> <span class="output">  [##########                    ] mcp tools      30%</span>
 <span class="line-num"> </span> <span class="output">  [##                            ] skills          6%</span>
 <span class="line-num"> </span> <span class="output">  [##                            ] prompts         6%</span>
 <span class="line-num"> </span> <span class="output">  [#################             ] task           58%</span>
 <span class="line-num"> </span>
-<span class="line-num"> </span> <span class="comment">after toold:</span>
+<span class="line-num"> </span> <span class="comment">after muxed:</span>
 <span class="line-num"> </span> <span class="str">  [#                             ] mcp tools       2%</span>
 <span class="line-num"> </span> <span class="str">  [########                      ] skills         24%</span>
 <span class="line-num"> </span> <span class="str">  [#####                         ] prompts        14%</span>
@@ -1488,7 +1488,7 @@
                     border-radius: 3px;
                     font-size: 13px;
                   "
-                  >npx toold init</code
+                  >npx muxed init</code
                 >
                 <span style="color: var(--text-muted); font-size: 12px; margin-left: var(--s3)"
                   >generates config from your existing setup</span
@@ -1514,7 +1514,7 @@
                     border-radius: 3px;
                     font-size: 13px;
                   "
-                  >toold tools</code
+                  >muxed tools</code
                 >
                 <span style="color: var(--text-muted); font-size: 12px; margin-left: var(--s3)"
                   >lists every tool across all servers</span
@@ -1540,7 +1540,7 @@
                     border-radius: 3px;
                     font-size: 13px;
                   "
-                  >toold call server/tool '{}'</code
+                  >muxed call server/tool '{}'</code
                 >
                 <span style="color: var(--text-muted); font-size: 12px; margin-left: var(--s3)"
                   >invoke any tool from the command line</span
@@ -1595,7 +1595,7 @@
           <div class="docs-content">
             <h1>Installation</h1>
             <p>
-              Install toold globally via npm, or use it directly with <code>npx</code>. Requires
+              Install muxed globally via npm, or use it directly with <code>npx</code>. Requires
               Node.js 20 or later.
             </p>
             <div class="code-block" style="margin-bottom: var(--s4)">
@@ -1605,15 +1605,15 @@
                 <div class="dot dot-green"></div>
                 <span class="code-block-title">terminal</span>
               </div>
-              <pre><span class="dollar">$</span> npm install -g toold</pre>
+              <pre><span class="dollar">$</span> npm install -g muxed</pre>
             </div>
             <p>
-              Once installed, any <code>toold</code> command will auto-start the background daemon
+              Once installed, any <code>muxed</code> command will auto-start the background daemon
               if it's not already running. The daemon shuts down automatically after 5 minutes of
               inactivity.
             </p>
             <p>
-              Create a <code>toold.config.json</code> in your project root to configure which MCP
+              Create a <code>muxed.config.json</code> in your project root to configure which MCP
               servers to connect to. The format is compatible with the
               <code>mcpServers</code> section of <code>claude_desktop_config.json</code>.
             </p>

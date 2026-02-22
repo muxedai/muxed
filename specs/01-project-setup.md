@@ -11,10 +11,10 @@ Initialize the project with all tooling, configure Claude Code hooks for the san
 Create `package.json`:
 ```json
 {
-  "name": "toold",
+  "name": "muxed",
   "version": "0.1.0",
   "type": "module",
-  "bin": { "toold": "./bin/cli.mjs" },
+  "bin": { "muxed": "./bin/cli.mjs" },
   "files": ["dist", "bin"],
   "engines": { "node": ">=20" },
   "packageManager": "pnpm@10.17.1",
@@ -136,7 +136,7 @@ Create `src/cli.ts` with a placeholder:
 import { Command } from 'commander';
 
 const program = new Command();
-program.name('toold').version('0.1.0').description('MCP server proxy/aggregator');
+program.name('muxed').version('0.1.0').description('MCP server proxy/aggregator');
 program.parse();
 ```
 
@@ -144,7 +144,7 @@ program.parse();
 
 Configure `.claude/settings.json` with permissions for the sandboxed environment:
 - Allow `pnpm install`, `pnpm build`, `pnpm test`, `pnpm format`
-- Allow running the CLI via `node src/cli.ts` and `npx toold`
+- Allow running the CLI via `node src/cli.ts` and `npx muxed`
 
 ### 10. Install dependencies
 

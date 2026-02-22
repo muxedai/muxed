@@ -1,8 +1,8 @@
 {
   "mcpServers": {
-    "toold": {
+    "muxed": {
       "command": "npx",
-      "args": ["toold", "mcp"]
+      "args": ["muxed", "mcp"]
     }
   }
 }

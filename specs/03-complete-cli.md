@@ -178,6 +178,6 @@ Update `src/core/server-manager.ts`:
 11. `node bin/cli.mjs task <taskId>` → shows task status with progress message
 12. `node bin/cli.mjs task-result <taskId>` → shows completed task result
 13. `node bin/cli.mjs task-cancel <taskId>` → cancels task
-14. Modify `toold.config.json`, run `node bin/cli.mjs reload` → picks up changes
+14. Modify `muxed.config.json`, run `node bin/cli.mjs reload` → picks up changes
 15. `pnpm type-check` passes
 16. `pnpm test` passes

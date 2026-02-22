@@ -38,7 +38,7 @@ Iteration 3 (complete CLI) complete.
 ### 4. Logger (`src/utils/logger.ts`)
 
 - Structured logging with levels: debug, info, warn, error
-- Write to stderr (foreground mode) and log file (`~/.toold/toold.log`)
+- Write to stderr (foreground mode) and log file (`~/.muxed/muxed.log`)
 - Include timestamp, level, server name (when relevant)
 - Log rotation: truncate when file exceeds 10MB
 - Configurable log level
@@ -49,7 +49,7 @@ Iteration 3 (complete CLI) complete.
 Improve `src/daemon/process.ts`:
 
 - On startup, check for stale socket files (socket exists but no process at PID)
-- Verify PID is actually an toold process (check process name or command)
+- Verify PID is actually an muxed process (check process name or command)
 - Clean up and proceed if stale
 - Handle race conditions (lock file during startup)
 
@@ -92,9 +92,9 @@ For HTTP-connected upstream servers:
 2. `node bin/cli.mjs status` → shows health status per server
 3. Send SIGTERM to daemon → shuts down cleanly, socket + PID removed
 4. Start daemon with a misconfigured server → other servers still work, error shown in status
-5. Check `~/.toold/toold.log` → structured log entries with progress messages
+5. Check `~/.muxed/muxed.log` → structured log entries with progress messages
 6. Start daemon twice → second instance detects first and reports it
 7. Kill daemon ungracefully (`kill -9`) → next CLI command cleans up stale files and starts fresh
-8. Kill server mid-task → `toold task <id>` reports task as unreachable
+8. Kill server mid-task → `muxed task <id>` reports task as unreachable
 9. Test HTTP server reconnection → session ID preserved across reconnects
 10. `pnpm test` passes

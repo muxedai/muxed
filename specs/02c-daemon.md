@@ -88,7 +88,7 @@ The entry point when the process runs in daemon mode.
 **`startDaemon(configPath?: string): Promise<void>`**
 
 1. Load config via `loadConfig(configPath)`
-2. Ensure toold directory exists via `ensureMcpdDir()`
+2. Ensure muxed directory exists via `ensureMcpdDir()`
 3. Create `ServerPool`, call `connectAll(config)`
 4. Create daemon server via `createDaemonServer(serverPool, config)`
 5. Start listening on socket
@@ -107,11 +107,11 @@ The entry point when the process runs in daemon mode.
 1. `pnpm type-check` passes
 2. `pnpm build` succeeds
 3. Manual test: start daemon directly with `node bin/cli.mjs --daemon`
-   - Verify socket file created at `~/.toold/toold.sock`
-   - Verify PID file created at `~/.toold/toold.pid`
+   - Verify socket file created at `~/.muxed/muxed.sock`
+   - Verify PID file created at `~/.muxed/muxed.pid`
 4. Manual test: send JSON-RPC request to socket (using `nc` or a test script):
    ```
-   echo '{"jsonrpc":"2.0","id":1,"method":"servers/list","params":{}}' | nc -U ~/.toold/toold.sock
+   echo '{"jsonrpc":"2.0","id":1,"method":"servers/list","params":{}}' | nc -U ~/.muxed/muxed.sock
    ```
    - Verify response contains server list
 5. Manual test: send `tools/list` → verify tools returned

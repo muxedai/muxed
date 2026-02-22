@@ -1,12 +1,12 @@
-# Contributing to toold
+# Contributing to muxed
 
-Thanks for your interest in contributing to toold! This document covers the basics for getting started.
+Thanks for your interest in contributing to muxed! This document covers the basics for getting started.
 
 ## Development Setup
 
 ```bash
-git clone https://github.com/skoob13/toold.git
-cd toold
+git clone https://github.com/skoob13/muxed.git
+cd muxed
 pnpm install
 ```
 
@@ -53,7 +53,7 @@ Before making significant changes, review the relevant spec in `specs/`. The spe
 
 Please include:
 
-- toold version (`toold --version`)
+- muxed version (`muxed --version`)
 - Node.js version (`node --version`)
 - OS and architecture
 - Steps to reproduce

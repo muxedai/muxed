@@ -1,10 +1,10 @@
 # JS/TS API
 
-> Make `toold` consumable as a library from JavaScript/TypeScript scripts, not just the CLI.
+> Make `muxed` consumable as a library from JavaScript/TypeScript scripts, not just the CLI.
 
 ## Motivation
 
-The CLI is great for agents and shell scripts, but JS/TS users need a programmatic interface. They shouldn't have to shell out to `toold call` or speak JSON-RPC over a Unix socket manually. A proper API lets them:
+The CLI is great for agents and shell scripts, but JS/TS users need a programmatic interface. They shouldn't have to shell out to `muxed call` or speak JSON-RPC over a Unix socket manually. A proper API lets them:
 
 - Call MCP tools from Node.js scripts, test suites, and servers
 - Get typed results without JSON parsing
@@ -17,18 +17,18 @@ The CLI is great for agents and shell scripts, but JS/TS users need a programmat
 2. **Auto-start** – calling `connect()` lazily starts the daemon if not running, same as the CLI.
 3. **1:1 with daemon methods** – every JSON-RPC method the daemon exposes gets a corresponding typed method. No hidden magic.
 4. **Zero new dependencies** – the client uses `node:net` (already used by `cli/client.ts`). Types come from `@modelcontextprotocol/sdk/types.js` which is already a dependency.
-5. **Separate entry point** – the API ships as `toold/client` (or `toold`), distinct from the CLI bundle. The CLI remains the `toold` bin; the library is an importable module.
+5. **Separate entry point** – the API ships as `muxed/client` (or `muxed`), distinct from the CLI bundle. The CLI remains the `muxed` bin; the library is an importable module.
 
 ## Public API
 
 ### Entry Point
 
 ```ts
-import { createClient } from 'toold';
+import { createClient } from 'muxed';
 
 const client = await createClient();
 // or with options:
-const client = await createClient({ configPath: './toold.config.json' });
+const client = await createClient({ configPath: './muxed.config.json' });
 ```
 
 `createClient` ensures the daemon is running (auto-starts if needed), connects to the Unix socket, and returns a `McpdClient` instance.
@@ -37,7 +37,7 @@ const client = await createClient({ configPath: './toold.config.json' });
 
 ```ts
 type CreateClientOptions = {
-  /** Path to toold.config.json. Uses default resolution if omitted. */
+  /** Path to muxed.config.json. Uses default resolution if omitted. */
   configPath?: string;
 
   /** Skip auto-starting the daemon. Throws if daemon is not running. */
@@ -150,27 +150,27 @@ type ReloadResult = {
 ### List tools and call one
 
 ```ts
-import { createClient } from 'toold';
+import { createClient } from 'muxed';
 
-const toold = await createClient();
+const muxed = await createClient();
 
-const tools = await toold.tools();
+const tools = await muxed.tools();
 console.log(`Found ${tools.length} tools`);
 
-const result = await toold.call('filesystem/read_file', {
+const result = await muxed.call('filesystem/read_file', {
   path: '/etc/hostname',
 });
 
 console.log(result.content[0]?.text);
-toold.close();
+muxed.close();
 ```
 
 ### Search and invoke
 
 ```ts
-const toold = await createClient();
+const muxed = await createClient();
 
-const matches = await toold.grep('search');
+const matches = await muxed.grep('search');
 for (const { server, tool } of matches) {
   console.log(`${server}/${tool.name}: ${tool.description}`);
 }
@@ -179,29 +179,29 @@ for (const { server, tool } of matches) {
 ### Async tasks
 
 ```ts
-const toold = await createClient();
+const muxed = await createClient();
 
-const handle = await toold.callAsync('server/long-running-tool', { input: 'data' });
+const handle = await muxed.callAsync('server/long-running-tool', { input: 'data' });
 console.log(`Task started: ${handle.taskId}`);
 
 // Poll for completion
-let status = await toold.task(handle.server, handle.taskId);
+let status = await muxed.task(handle.server, handle.taskId);
 while (status.status !== 'completed' && status.status !== 'failed') {
   await new Promise((r) => setTimeout(r, 1000));
-  status = await toold.task(handle.server, handle.taskId);
+  status = await muxed.task(handle.server, handle.taskId);
 }
 
-const result = await toold.taskResult(handle.server, handle.taskId);
+const result = await muxed.taskResult(handle.server, handle.taskId);
 ```
 
 ### Error handling
 
 ```ts
-import { createClient, McpdError } from 'toold';
+import { createClient, McpdError } from 'muxed';
 
-const toold = await createClient();
+const muxed = await createClient();
 try {
-  await toold.call('server/nonexistent-tool');
+  await muxed.call('server/nonexistent-tool');
 } catch (err) {
   if (err instanceof McpdError) {
     console.error(`RPC error ${err.code}: ${err.message}`);

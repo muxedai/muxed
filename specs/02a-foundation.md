@@ -85,8 +85,8 @@ Note: The SDK's `Tool` type already includes `title`, `icons`, `outputSchema`, `
 
 - Search for config file in order:
   1. Explicit path (if passed via `--config` flag)
-  2. `toold.config.json` in CWD
-  3. `~/.config/toold/config.json`
+  2. `muxed.config.json` in CWD
+  3. `~/.config/muxed/config.json`
 - Validate with Zod schema matching the `McpdConfig` type
 - Validate each server config: `StdioServerConfig` must have `command`, `HttpServerConfig` must have `url`
 - Apply defaults for `DaemonConfig` fields
@@ -95,18 +95,18 @@ Note: The SDK's `Tool` type already includes `title`, `icons`, `outputSchema`, `
 
 ### 3. Paths utility (`src/utils/paths.ts`)
 
-- `getSocketPath()` → `~/.toold/toold.sock`
-- `getPidPath()` → `~/.toold/toold.pid`
-- `getLogPath()` → `~/.toold/toold.log`
-- `getMcpdDir()` → `~/.toold/`
-- `ensureMcpdDir()` → create `~/.toold/` if it doesn't exist (use `fs.mkdirSync` with `recursive: true`)
+- `getSocketPath()` → `~/.muxed/muxed.sock`
+- `getPidPath()` → `~/.muxed/muxed.pid`
+- `getLogPath()` → `~/.muxed/muxed.log`
+- `getMcpdDir()` → `~/.muxed/`
+- `ensureMcpdDir()` → create `~/.muxed/` if it doesn't exist (use `fs.mkdirSync` with `recursive: true`)
 
 All paths use `os.homedir()` to resolve `~`.
 
 ## Verification
 
 1. `pnpm type-check` passes
-2. Unit test: `loadConfig()` loads a valid `toold.config.json` and returns parsed config
+2. Unit test: `loadConfig()` loads a valid `muxed.config.json` and returns parsed config
 3. Unit test: `loadConfig()` throws on missing config file
 4. Unit test: `loadConfig()` throws on invalid config (missing `command` for stdio server, missing `url` for HTTP server)
 5. Unit test: `loadConfig()` applies daemon defaults
