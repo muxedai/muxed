@@ -8,6 +8,7 @@ The muxed website (`packages/website`) uses **Astro Starlight** with MDX. The si
 
 | Source | Location | Use For |
 |--------|----------|---------|
+| Landing page | `/packages/website/src/pages/index.astro` | Problem framing (stats, context engineering), feature descriptions, code examples (discovery, chaining, Node.js API), before/after context visualization, 3-step getting started flow |
 | Project README | `/README.md` | Quick start, config, CLI table, architecture diagram, comparison |
 | Architecture spec | `/specs/architecture.md` | Architecture page, daemon lifecycle, IPC protocol |
 | CLI spec | `/specs/02d-cli.md` | CLI commands reference |
@@ -24,10 +25,12 @@ The muxed website (`packages/website`) uses **Astro Starlight** with MDX. The si
 
 Expand the existing one-liner into a proper docs landing page:
 - Brief explanation of what muxed is and the problem it solves
+- The problem stats from the landing page (98.7% token overhead, 20-30% context consumed, 2-3 server limit before accuracy collapses)
 - Key features list (lazy discovery, daemon, CLI + API, context reclamation)
+- Context engineering framing: skills and prompts get followed when MCP schemas are offloaded
 - "Where to go next" links to Getting Started, Guides, and Reference sections
 
-**Source**: README.md intro sections, `specs/jtbd.md`
+**Source**: Landing page (problem stats, feature cards, context engineering narrative), README.md intro sections, `specs/jtbd.md`
 
 ---
 
@@ -47,13 +50,13 @@ Content:
 ### Step 3: `getting-started/quick-start.mdx`
 
 Content:
-- Step-by-step walkthrough: install → create config → list servers → discover tools → call a tool
+- Follow the landing page's 3-step flow: `npx muxed init` → `muxed tools` → `muxed call server/tool '{}'`
 - Minimal `muxed.config.json` example with one server (filesystem)
-- Show the discovery flow: `muxed servers` → `muxed tools` → `muxed grep` → `muxed info` → `muxed call`
+- Show the discovery flow from the landing page code example: `muxed grep "read"` → `muxed info filesystem/read_file` → `muxed call filesystem/read_file '{"path": "..."}'`
 - Explain what happened (daemon started, server connected, tool invoked)
 - "Next steps" pointing to Configuration and Guides
 
-**Source**: README.md Quick Start + Configuration sections
+**Source**: Landing page (3-step CTA, discovery code example), README.md Quick Start + Configuration sections
 
 ---
 
@@ -79,6 +82,8 @@ Content:
 
 Content:
 - Why muxed matters for Claude Code (context window optimization)
+- Reuse the landing page's context engineering framing: skills and prompts are deterministic, MCP tools compete for attention — offloading tools to muxed means trajectories hold
+- Reference the landing page's before/after trajectory comparison (without muxed: wrong tools, skill never loaded; with muxed: skill loads, grep finds tool, done)
 - Setup flow:
   1. Install muxed
   2. Run `muxed init` to auto-discover servers from Claude Desktop config
@@ -86,9 +91,9 @@ Content:
 - The `muxed init` workflow: discovery → deduplication → conflict resolution → config generation
 - Show the Claude Code MCP config snippet pointing to muxed
 - Explain the agent instructions injected by muxed (grep → info → call pattern)
-- Before/after comparison: N separate MCP servers vs one muxed daemon
+- Before/after context window comparison from landing page (30% MCP schemas → 30% free)
 
-**Source**: `specs/06-init-command.md`, README.md "Use with AI Coding Agents" section
+**Source**: Landing page (trajectory comparison, context before/after visualization, context engineering narrative), `specs/06-init-command.md`, README.md "Use with AI Coding Agents" section
 
 ---
 
@@ -110,13 +115,13 @@ Content:
 Content:
 - Why build agents with muxed (tool chaining, bash scripting, Node.js automation)
 - CLI-based agents: chain `muxed call` commands in shell scripts
+- Adapt the landing page's bash chaining example: postgres/query → jq → filesystem/write_file piped with `--json` and stdin `-`
 - Node.js agents: use `createClient()` API for typed tool access
+- Adapt the landing page's Node.js example: posthog/query-run → parallel intercom/search-conversations calls
 - Pattern: discover → filter → call → process → chain
-- Example: bash script that queries one MCP tool and feeds results to another
-- Example: Node.js script with parallel tool calls across servers
 - Async tasks for long-running operations
 
-**Source**: `specs/07-js-api.md`, README.md Node.js API section, `specs/jtbd.md` automation section
+**Source**: Landing page (bash chaining code example, Node.js API code example), `specs/07-js-api.md`, README.md Node.js API section, `specs/jtbd.md` automation section
 
 ---
 
