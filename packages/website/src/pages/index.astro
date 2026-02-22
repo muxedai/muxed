@@ -3,7 +3,7 @@ import "../styles/landing.css";
 
 const title = "mcpd — Your agent wastes tokens on tools. Fix it.";
 const description =
-  "mcpd moves MCP tools to a background daemon and discovers them lazily. Fewer tokens, better trajectories, reliable agents.";
+  "mcpd moves MCP tools to a background daemon so your agent's context stays clean and instructions get followed.";
 
 const asciiLogo = `                        _
   _ __ ___   ___ _ __   __| |
@@ -73,7 +73,9 @@ const codeAfter = `<span class="kw">⛁ </span><span class="flag">⛁ </span><sp
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://mcpd.dev" />
   </head>
-  <body class="font-mono bg-page text-fg text-sm leading-[1.6] antialiased overflow-x-hidden">
+  <body
+    class="font-mono bg-page text-fg text-sm leading-[1.6] antialiased overflow-x-hidden"
+  >
     <!-- Navigation -->
     <div class="max-w-[960px] mx-auto px-6">
       <nav class="flex items-center justify-between py-4 border-b border-edge">
@@ -280,7 +282,8 @@ const codeAfter = `<span class="kw">⛁ </span><span class="flag">⛁ </span><sp
                   <span class="text-red ml-2 text-[10px]">wrong tool</span>
                 </div>
                 <div class="cc-tool py-1.5 pl-4 border-l-2 border-red/30 ml-1">
-                  <span class="text-fg-faint italic">...38 more tool calls</span>
+                  <span class="text-fg-faint italic">...38 more tool calls</span
+                  >
                   <span class="text-red ml-2 text-[10px]">no result</span>
                 </div>
                 <div class="cc-agent py-1.5 pl-4 border-l-2 border-red/30 ml-1">
@@ -360,7 +363,7 @@ const codeAfter = `<span class="kw">⛁ </span><span class="flag">⛁ </span><sp
           <div
             class="feature-card bg-surface border border-edge rounded-lg p-6 hover:border-edge-light transition-all animate-in"
           >
-            <div class="text-sm mb-3 text-brand leading-none">-98%</div>
+            <div class="text-sm mb-3 text-brand leading-none">98% fewer tokens</div>
             <h3 class="text-[13px] font-semibold mb-2 text-fg">
               Lazy discovery
             </h3>
