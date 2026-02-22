@@ -73,48 +73,48 @@ const codeAfter = `<span class="kw">⛁ </span><span class="flag">⛁ </span><sp
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://mcpd.dev" />
   </head>
-  <body>
+  <body class="font-mono bg-page text-fg text-sm leading-[1.6] antialiased">
     <!-- Navigation -->
-    <div class="container">
-      <nav class="nav">
-        <div class="nav-logo">
-          <span class="prompt">$</span> mcpd
+    <div class="max-w-[960px] mx-auto px-6">
+      <nav class="flex items-center justify-between py-4 border-b border-edge">
+        <div class="font-bold text-[15px] -tracking-wide text-fg flex items-center gap-2">
+          <span class="text-brand">$</span> mcpd
         </div>
-        <div class="nav-links">
-          <a href="/getting-started/installation/">Docs</a>
-          <a href="https://github.com/skoob13/mcpd">GitHub</a>
-          <a href="https://www.npmjs.com/package/mcpd">npm</a>
-          <button class="theme-toggle" id="theme-toggle">&#9681; light</button>
+        <div class="flex items-center gap-4 md:gap-6 text-[13px]">
+          <a href="/getting-started/installation/" class="text-fg-muted hover:text-fg transition-colors !no-underline">Docs</a>
+          <a href="https://github.com/skoob13/mcpd" class="text-fg-muted hover:text-fg transition-colors !no-underline">GitHub</a>
+          <a href="https://www.npmjs.com/package/mcpd" class="text-fg-muted hover:text-fg transition-colors !no-underline">npm</a>
         </div>
       </nav>
     </div>
 
     <!-- Hero -->
-    <div class="container">
-      <section>
-        <div class="hero">
-          <pre class="ascii-logo">{asciiLogo}</pre>
+    <div class="max-w-[960px] mx-auto px-6">
+      <section class="py-8 md:py-16 section-divided">
+        <div class="text-center pt-8 relative hero-glow">
+          <pre class="ascii-logo text-fg text-[11px] leading-tight tracking-wider whitespace-pre mb-8 opacity-90">{asciiLogo}</pre>
 
-          <div class="hero-tagline">
+          <div class="text-[13px] font-normal tracking-[0.2em] uppercase text-fg-muted mb-8">
             Fewer tokens. Faster tools. Better agents.
           </div>
 
-          <p class="hero-description">
+          <p class="text-[15px] text-fg-muted max-w-[600px] mx-auto mb-8 leading-relaxed">
             Your coding agent gets dumber with every MCP you add. mcpd offloads
             them to a daemon and discovers tools lazily — via shell or Node.js
             API.
           </p>
 
-          <div class="install-box" id="install-box">
-            <span class="dollar">$</span>
-            <span class="cmd">npx mcpd init</span>
-            <span class="copy-hint" id="copy-hint">click to copy</span>
+          <div
+            class="shimmer-border inline-flex items-center gap-3 bg-raised border border-edge rounded-lg px-5 py-3 text-sm mb-6 cursor-pointer hover:border-edge-light hover:bg-hover transition relative overflow-hidden"
+            id="install-box"
+          >
+            <span class="text-green select-none">$</span>
+            <span class="text-fg">npx mcpd init</span>
+            <span class="text-fg-faint text-[11px] ml-3 transition-colors" id="copy-hint">click to copy</span>
           </div>
 
-          <div class="hero-actions">
-            <a href="/getting-started/installation/" class="btn btn-primary"
-              >Get Started</a
-            >
+          <div class="flex flex-col md:flex-row justify-center items-center gap-4 mt-6">
+            <a href="/getting-started/installation/" class="btn btn-primary">Get Started</a>
             <a href="https://github.com/skoob13/mcpd" class="btn">GitHub</a>
           </div>
         </div>
@@ -122,45 +122,45 @@ const codeAfter = `<span class="kw">⛁ </span><span class="flag">⛁ </span><sp
     </div>
 
     <!-- The Problem -->
-    <div class="container">
-      <section>
-        <div class="section-header">
-          <h2>The problem with MCP at scale</h2>
+    <div class="max-w-[960px] mx-auto px-6">
+      <section class="py-8 md:py-16 section-divided">
+        <div class="text-center mb-6 md:mb-8">
+          <h2 class="text-[13px] font-normal tracking-[0.2em] uppercase text-fg-faint">The problem with MCP at scale</h2>
         </div>
 
-        <p class="problem-intro">
+        <p class="text-[13px] text-fg-muted leading-relaxed text-center max-w-[640px] mx-auto mb-8">
           Every MCP server dumps its full schema into the prompt. One server is
           fine. Three is a problem. Ten breaks things.
         </p>
 
-        <div class="stats-grid">
-          <div class="stat-card animate-in">
-            <div class="stat-value">98.7%</div>
-            <div class="stat-label">token overhead</div>
-            <p class="stat-desc">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 stats-stagger">
+          <div class="bg-surface border border-edge rounded-lg p-6 text-center hover:border-edge-light transition animate-in">
+            <div class="text-[28px] font-bold text-brand mb-1 stat-glow">98.7%</div>
+            <div class="text-[11px] text-fg-faint uppercase tracking-wide mb-2">token overhead</div>
+            <p class="text-xs text-fg-muted">
               Anthropic found that intermediate tool results waste almost all
               tokens flowing through the model.
             </p>
           </div>
-          <div class="stat-card animate-in">
-            <div class="stat-value">20-30%</div>
-            <div class="stat-label">context consumed</div>
-            <p class="stat-desc">
+          <div class="bg-surface border border-edge rounded-lg p-6 text-center hover:border-edge-light transition animate-in">
+            <div class="text-[28px] font-bold text-brand mb-1 stat-glow">20-30%</div>
+            <div class="text-[11px] text-fg-faint uppercase tracking-wide mb-2">context consumed</div>
+            <p class="text-xs text-fg-muted">
               A standard 3-4 server setup fills a quarter of the context window
               before the agent even starts.
             </p>
           </div>
-          <div class="stat-card animate-in">
-            <div class="stat-value">3-4</div>
-            <div class="stat-label">server limit</div>
-            <p class="stat-desc">
+          <div class="bg-surface border border-edge rounded-lg p-6 text-center hover:border-edge-light transition animate-in">
+            <div class="text-[28px] font-bold text-brand mb-1 stat-glow">3-4</div>
+            <div class="text-[11px] text-fg-faint uppercase tracking-wide mb-2">server limit</div>
+            <p class="text-xs text-fg-muted">
               Tool selection accuracy collapses after just a handful of
               connected MCP servers.
             </p>
           </div>
         </div>
 
-        <p class="problem-summary">
+        <p class="text-sm text-fg font-medium text-center">
           More tools in context = worse results. Every token spent on schemas is
           a token not spent on your task.
         </p>
@@ -168,58 +168,58 @@ const codeAfter = `<span class="kw">⛁ </span><span class="flag">⛁ </span><sp
     </div>
 
     <!-- Features Grid -->
-    <div class="container">
-      <section>
-        <div class="section-header">
-          <h2>How mcpd fixes this</h2>
+    <div class="max-w-[960px] mx-auto px-6">
+      <section class="py-8 md:py-16 section-divided">
+        <div class="text-center mb-6 md:mb-8">
+          <h2 class="text-[13px] font-normal tracking-[0.2em] uppercase text-fg-faint">How mcpd fixes this</h2>
         </div>
 
-        <div class="features-grid">
-          <div class="feature-card animate-in">
-            <div class="feature-icon" style="font-size: 14px;">-98%</div>
-            <h3>Fewer tokens</h3>
-            <p>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 features-stagger">
+          <div class="bg-surface border border-edge border-l-2 border-l-brand rounded-lg p-6 hover:border-edge-light hover:border-l-brand hover:-translate-y-0.5 hover:shadow-[0_4px_20px_rgba(129,140,248,0.08)] transition-all animate-in">
+            <div class="text-sm mb-3 text-brand leading-none">-98%</div>
+            <h3 class="text-[13px] font-semibold mb-2 text-fg">Fewer tokens</h3>
+            <p class="text-xs text-fg-muted leading-relaxed">
               Tools live in the daemon, not the prompt. Agents discover what
-              they need on demand with <code>mcpd grep</code>.
+              they need on demand with <code class="text-brand bg-raised px-1 py-px rounded text-[11px]">mcpd grep</code>.
             </p>
           </div>
-          <div class="feature-card animate-in">
-            <div class="feature-icon">&#x26a1;</div>
-            <h3>Always warm</h3>
-            <p>
+          <div class="bg-surface border border-edge border-l-2 border-l-brand rounded-lg p-6 hover:border-edge-light hover:border-l-brand hover:-translate-y-0.5 hover:shadow-[0_4px_20px_rgba(129,140,248,0.08)] transition-all animate-in">
+            <div class="text-lg mb-3 text-brand leading-none">&#x26a1;</div>
+            <h3 class="text-[13px] font-semibold mb-2 text-fg">Always warm</h3>
+            <p class="text-xs text-fg-muted leading-relaxed">
               Background daemon keeps every server connected. No cold starts, no
               handshake delays. Tools respond in milliseconds.
             </p>
           </div>
-          <div class="feature-card animate-in">
-            <div class="feature-icon">&#x25ce;</div>
-            <h3>Better accuracy</h3>
-            <p>
+          <div class="bg-surface border border-edge border-l-2 border-l-brand rounded-lg p-6 hover:border-edge-light hover:border-l-brand hover:-translate-y-0.5 hover:shadow-[0_4px_20px_rgba(129,140,248,0.08)] transition-all animate-in">
+            <div class="text-lg mb-3 text-brand leading-none">&#x25ce;</div>
+            <h3 class="text-[13px] font-semibold mb-2 text-fg">Better accuracy</h3>
+            <p class="text-xs text-fg-muted leading-relaxed">
               Fewer schemas in context means the model picks the right tool more
               often. Clean context, better reasoning.
             </p>
           </div>
-          <div class="feature-card animate-in">
-            <div class="feature-icon">|&gt;</div>
-            <h3>Chain &amp; script</h3>
-            <p>
+          <div class="bg-surface border border-edge border-l-2 border-l-brand rounded-lg p-6 hover:border-edge-light hover:border-l-brand hover:-translate-y-0.5 hover:shadow-[0_4px_20px_rgba(129,140,248,0.08)] transition-all animate-in">
+            <div class="text-lg mb-3 text-brand leading-none">|&gt;</div>
+            <h3 class="text-[13px] font-semibold mb-2 text-fg">Chain &amp; script</h3>
+            <p class="text-xs text-fg-muted leading-relaxed">
               Pipe results through bash, jq, or Node.js. Intermediate data stays
               outside the model entirely.
             </p>
           </div>
-          <div class="feature-card animate-in">
-            <div class="feature-icon">&#x2605;</div>
-            <h3>Context engineering</h3>
-            <p>
+          <div class="bg-surface border border-edge border-l-2 border-l-brand rounded-lg p-6 hover:border-edge-light hover:border-l-brand hover:-translate-y-0.5 hover:shadow-[0_4px_20px_rgba(129,140,248,0.08)] transition-all animate-in">
+            <div class="text-lg mb-3 text-brand leading-none">&#x2605;</div>
+            <h3 class="text-[13px] font-semibold mb-2 text-fg">Context engineering</h3>
+            <p class="text-xs text-fg-muted leading-relaxed">
               Reclaim context for skills, prompts, and default tools &mdash; the
               things models execute deterministically.
             </p>
           </div>
-          <div class="feature-card animate-in">
-            <div class="feature-icon">&#123;&#125;</div>
-            <h3>Zero config</h3>
-            <p>
-              Reads your existing agent configs. Or run <code>mcpd init</code> to
+          <div class="bg-surface border border-edge border-l-2 border-l-brand rounded-lg p-6 hover:border-edge-light hover:border-l-brand hover:-translate-y-0.5 hover:shadow-[0_4px_20px_rgba(129,140,248,0.08)] transition-all animate-in">
+            <div class="text-lg mb-3 text-brand leading-none">&#123;&#125;</div>
+            <h3 class="text-[13px] font-semibold mb-2 text-fg">Zero config</h3>
+            <p class="text-xs text-fg-muted leading-relaxed">
+              Reads your existing agent configs. Or run <code class="text-brand bg-raised px-1 py-px rounded text-[11px]">mcpd init</code> to
               auto-discover servers.
             </p>
           </div>
@@ -228,123 +228,123 @@ const codeAfter = `<span class="kw">⛁ </span><span class="flag">⛁ </span><sp
     </div>
 
     <!-- Code Example: Discovery -->
-    <div class="container">
-      <section>
-        <div class="code-section">
-          <div class="code-section-text">
-            <h2>Discover, don't preload</h2>
-            <p>
+    <div class="max-w-[960px] mx-auto px-6">
+      <section class="py-8 md:py-16 section-divided">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+          <div>
+            <h2 class="text-xl font-semibold mb-3 text-fg">Discover, don't preload</h2>
+            <p class="text-[13px] text-fg-muted leading-relaxed">
               Instead of loading every schema into the prompt, agents search for
               the tool they need, inspect it, and call it. The model's context
               stays clean &mdash; only the final result goes in.
             </p>
           </div>
 
-          <div class="code-block">
-            <div class="code-block-header">
-              <div class="dot dot-red"></div>
-              <div class="dot dot-yellow"></div>
-              <div class="dot dot-green"></div>
-              <span class="code-block-title">terminal</span>
+          <div class="code-block bg-surface border border-edge rounded-lg overflow-hidden">
+            <div class="code-header flex items-center gap-2 px-4 py-3 border-b border-edge">
+              <div class="w-2.5 h-2.5 rounded-full bg-[#ff5f57]"></div>
+              <div class="w-2.5 h-2.5 rounded-full bg-[#febc2e]"></div>
+              <div class="w-2.5 h-2.5 rounded-full bg-[#28c840]"></div>
+              <span class="text-[11px] text-fg-faint ml-2">terminal</span>
             </div>
-            <pre set:html={codeDiscovery} />
+            <pre class="p-4 text-xs leading-relaxed overflow-x-auto" set:html={codeDiscovery} />
           </div>
         </div>
       </section>
     </div>
 
     <!-- Code Example: Scripting -->
-    <div class="container">
-      <section>
-        <div class="code-section">
-          <div class="code-section-text">
-            <h2>Write scripts, not tool calls</h2>
-            <p>
+    <div class="max-w-[960px] mx-auto px-6">
+      <section class="py-8 md:py-16 section-divided">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+          <div>
+            <h2 class="text-xl font-semibold mb-3 text-fg">Write scripts, not tool calls</h2>
+            <p class="text-[13px] text-fg-muted leading-relaxed">
               Agents can chain MCP calls through bash pipes or write Node.js
-              scripts using the <code>mcpd</code> client library. Either way, intermediate
+              scripts using the <code class="text-brand bg-raised px-1 py-px rounded text-[11px]">mcpd</code> client library. Either way, intermediate
               data never re-enters the model.
             </p>
-            <p>
+            <p class="text-[13px] text-fg-muted leading-relaxed mt-3">
               Same insight behind Anthropic's code execution and Cloudflare's
               Code Mode &mdash; as a CLI and npm package.
             </p>
           </div>
 
-          <div class="code-block">
-            <div class="code-block-header">
-              <div class="dot dot-red"></div>
-              <div class="dot dot-yellow"></div>
-              <div class="dot dot-green"></div>
-              <span class="code-block-title">bash &mdash; pipe through jq</span>
+          <div class="code-block bg-surface border border-edge rounded-lg overflow-hidden">
+            <div class="code-header flex items-center gap-2 px-4 py-3 border-b border-edge">
+              <div class="w-2.5 h-2.5 rounded-full bg-[#ff5f57]"></div>
+              <div class="w-2.5 h-2.5 rounded-full bg-[#febc2e]"></div>
+              <div class="w-2.5 h-2.5 rounded-full bg-[#28c840]"></div>
+              <span class="text-[11px] text-fg-faint ml-2">bash &mdash; pipe through jq</span>
             </div>
-            <pre set:html={codeChaining} />
+            <pre class="p-4 text-xs leading-relaxed overflow-x-auto" set:html={codeChaining} />
           </div>
         </div>
 
-        <!-- Node.js example right below -->
-        <div class="code-section" style="margin-top: var(--s7);">
-          <div class="code-section-text">
-            <h2>Node.js API</h2>
-            <p>
+        <!-- Node.js example -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-start mt-8">
+          <div>
+            <h2 class="text-xl font-semibold mb-3 text-fg">Node.js API</h2>
+            <p class="text-[13px] text-fg-muted leading-relaxed">
               mcpd is also an npm package. Agents write Node.js scripts with
-              typed results, <code>Promise.all</code> for parallel calls across servers,
+              typed results, <code class="text-brand bg-raised px-1 py-px rounded text-[11px]">Promise.all</code> for parallel calls across servers,
               and the full npm ecosystem.
             </p>
           </div>
 
-          <div class="code-block">
-            <div class="code-block-header">
-              <div class="dot dot-red"></div>
-              <div class="dot dot-yellow"></div>
-              <div class="dot dot-green"></div>
-              <span class="code-block-title">churn-analysis.mjs</span>
+          <div class="code-block bg-surface border border-edge rounded-lg overflow-hidden">
+            <div class="code-header flex items-center gap-2 px-4 py-3 border-b border-edge">
+              <div class="w-2.5 h-2.5 rounded-full bg-[#ff5f57]"></div>
+              <div class="w-2.5 h-2.5 rounded-full bg-[#febc2e]"></div>
+              <div class="w-2.5 h-2.5 rounded-full bg-[#28c840]"></div>
+              <span class="text-[11px] text-fg-faint ml-2">churn-analysis.mjs</span>
             </div>
-            <pre set:html={codeNodeApi} />
+            <pre class="p-4 text-xs leading-relaxed overflow-x-auto" set:html={codeNodeApi} />
           </div>
         </div>
       </section>
     </div>
 
     <!-- Context Engineering -->
-    <div class="container">
-      <section>
-        <div class="code-section">
-          <div class="code-section-text">
-            <h2>When tools leave, context wins</h2>
-            <p>
+    <div class="max-w-[960px] mx-auto px-6">
+      <section class="py-8 md:py-16 section-divided">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+          <div>
+            <h2 class="text-xl font-semibold mb-3 text-fg">When tools leave, context wins</h2>
+            <p class="text-[13px] text-fg-muted leading-relaxed">
               Skills, prompts, and default tools are deterministic &mdash;
               models always follow them. MCP tools compete for attention, and
               accuracy drops as you add more.
             </p>
-            <p>
+            <p class="text-[13px] text-fg-muted leading-relaxed mt-3">
               Offloading tools to mcpd is context engineering at the
               infrastructure level. Your instructions get followed instead of
               being buried under thousands of tokens of schemas.
             </p>
           </div>
 
-          <div class="code-block">
-            <div class="code-block-header">
-              <div class="dot dot-red"></div>
-              <div class="dot dot-yellow"></div>
-              <div class="dot dot-green"></div>
-              <span class="code-block-title">context window allocation</span>
+          <div class="code-block bg-surface border border-edge rounded-lg overflow-hidden">
+            <div class="code-header flex items-center gap-2 px-4 py-3 border-b border-edge">
+              <div class="w-2.5 h-2.5 rounded-full bg-[#ff5f57]"></div>
+              <div class="w-2.5 h-2.5 rounded-full bg-[#febc2e]"></div>
+              <div class="w-2.5 h-2.5 rounded-full bg-[#28c840]"></div>
+              <span class="text-[11px] text-fg-faint ml-2">context window allocation</span>
             </div>
-            <div class="context-viz">
-              <div class="context-label">before mcpd:</div>
-              <div class="context-row">
-                <pre class="context-grid" set:html={codeBefore} />
-                <div class="context-legend">
+            <div class="flex flex-col gap-3 p-4">
+              <div class="text-[11px] text-fg-faint uppercase tracking-wide font-mono">before mcpd:</div>
+              <div class="flex flex-col md:flex-row gap-3 md:gap-6 items-start md:items-center">
+                <pre class="context-grid font-mono text-[13px] leading-[1.6] text-fg p-0 m-0" set:html={codeBefore} />
+                <div class="context-legend flex flex-col gap-1 text-[11px] font-mono text-fg-muted">
                   <div><span class="output">⛁</span> mcp tools 30%</div>
                   <div><span class="kw">⛁</span> skills 6%</div>
                   <div><span class="flag">⛁</span> prompts 6%</div>
                   <div><span class="str">⛁</span> task 58%</div>
                 </div>
               </div>
-              <div class="context-label">after mcpd:</div>
-              <div class="context-row">
-                <pre class="context-grid" set:html={codeAfter} />
-                <div class="context-legend">
+              <div class="text-[11px] text-fg-faint uppercase tracking-wide font-mono mt-3 pt-3 border-t border-edge">after mcpd:</div>
+              <div class="flex flex-col md:flex-row gap-3 md:gap-6 items-start md:items-center">
+                <pre class="context-grid font-mono text-[13px] leading-[1.6] text-fg p-0 m-0" set:html={codeAfter} />
+                <div class="context-legend flex flex-col gap-1 text-[11px] font-mono text-fg-muted">
                   <div><span class="kw">⛁</span> skills 6%</div>
                   <div><span class="flag">⛁</span> prompts 6%</div>
                   <div><span class="str">⛁</span> task 58%</div>
@@ -358,103 +358,65 @@ const codeAfter = `<span class="kw">⛁ </span><span class="flag">⛁ </span><sp
     </div>
 
     <!-- Get Started CTA -->
-    <div class="container">
-      <section class="cta-section">
-        <div class="cta-content">
-          <h2>Get started in seconds</h2>
-          <p>
+    <div class="max-w-[960px] mx-auto px-6">
+      <section class="py-8 md:py-16 cta-glow">
+        <div class="text-center max-w-[640px] mx-auto">
+          <h2 class="text-xl font-semibold mb-3 text-fg">Get started in seconds</h2>
+          <p class="text-[13px] text-fg-muted leading-relaxed mb-8">
             Auto-discover your MCP servers, start the daemon, and run your first
             tool call.
           </p>
 
-          <div class="cta-steps">
-            <div class="cta-step">
-              <span class="cta-step-num">1</span>
+          <div class="flex flex-col gap-4 text-left">
+            <div class="flex items-baseline gap-4 bg-surface border border-edge rounded-lg px-5 py-4 hover:border-edge-light transition">
+              <span class="text-brand font-bold text-sm shrink-0 w-[1.5ch]">1</span>
               <div>
-                <code>npx mcpd init</code>
-                <span class="cta-step-desc"
-                  >generates config from your existing setup</span
-                >
+                <code class="text-brand bg-raised px-1.5 py-px rounded text-[13px]">npx mcpd init</code>
+                <span class="text-fg-faint text-xs ml-3">generates config from your existing setup</span>
               </div>
             </div>
-            <div class="cta-step">
-              <span class="cta-step-num">2</span>
+            <div class="flex items-baseline gap-4 bg-surface border border-edge rounded-lg px-5 py-4 hover:border-edge-light transition">
+              <span class="text-brand font-bold text-sm shrink-0 w-[1.5ch]">2</span>
               <div>
-                <code>mcpd tools</code>
-                <span class="cta-step-desc"
-                  >lists every tool across all servers</span
-                >
+                <code class="text-brand bg-raised px-1.5 py-px rounded text-[13px]">mcpd tools</code>
+                <span class="text-fg-faint text-xs ml-3">lists every tool across all servers</span>
               </div>
             </div>
-            <div class="cta-step">
-              <span class="cta-step-num">3</span>
+            <div class="flex items-baseline gap-4 bg-surface border border-edge rounded-lg px-5 py-4 hover:border-edge-light transition">
+              <span class="text-brand font-bold text-sm shrink-0 w-[1.5ch]">3</span>
               <div>
-                <code>mcpd call server/tool '{"{}"}'</code>
-                <span class="cta-step-desc"
-                  >invoke any tool from the command line</span
-                >
+                <code class="text-brand bg-raised px-1.5 py-px rounded text-[13px]">mcpd call server/tool '{"{}"}'</code>
+                <span class="text-fg-faint text-xs ml-3">invoke any tool from the command line</span>
               </div>
             </div>
           </div>
 
-          <div class="hero-actions" style="margin-top: var(--s7);">
-            <a href="/getting-started/installation/" class="btn btn-primary"
-              >Read the Docs</a
-            >
-            <a href="https://github.com/skoob13/mcpd" class="btn"
-              >View on GitHub</a
-            >
+          <div class="flex flex-col md:flex-row justify-center items-center gap-4 mt-8">
+            <a href="/getting-started/installation/" class="btn btn-primary">Read the Docs</a>
+            <a href="https://github.com/skoob13/mcpd" class="btn">View on GitHub</a>
           </div>
         </div>
       </section>
     </div>
 
     <!-- Footer -->
-    <div class="container">
-      <footer class="footer">
-        <div class="footer-links">
-          <a href="/getting-started/installation/">Docs</a>
-          <a href="https://github.com/skoob13/mcpd">GitHub</a>
-          <a href="https://www.npmjs.com/package/mcpd">npm</a>
-          <a href="https://modelcontextprotocol.io">MCP Spec</a>
+    <div class="max-w-[960px] mx-auto px-6">
+      <footer class="py-12 text-center text-xs text-fg-faint">
+        <div class="flex justify-center gap-6 mb-4">
+          <a href="/getting-started/installation/" class="text-fg-muted text-xs hover:text-fg">Docs</a>
+          <a href="https://github.com/skoob13/mcpd" class="text-fg-muted text-xs hover:text-fg">GitHub</a>
+          <a href="https://www.npmjs.com/package/mcpd" class="text-fg-muted text-xs hover:text-fg">npm</a>
+          <a href="https://modelcontextprotocol.io" class="text-fg-muted text-xs hover:text-fg">MCP Spec</a>
         </div>
-        <div class="footer-separator">
+        <div class="text-fg-faint mb-3">
           &#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;&#9472;
         </div>
         <div>MIT License &middot; Built for the MCP ecosystem</div>
-        <div class="footer-ascii">$ exit 0</div>
+        <div class="text-[11px] text-fg-faint opacity-50 mt-4">$ exit 0</div>
       </footer>
     </div>
 
     <script is:inline>
-      const toggle = document.getElementById("theme-toggle");
-      function setTheme(light) {
-        if (light) {
-          document.documentElement.classList.add("light");
-          toggle.innerHTML = "\u25D0 dark";
-        } else {
-          document.documentElement.classList.remove("light");
-          toggle.innerHTML = "\u25D1 light";
-        }
-        try {
-          localStorage.setItem("theme", light ? "light" : "dark");
-        } catch (e) {}
-      }
-      var saved = null;
-      try {
-        saved = localStorage.getItem("theme");
-      } catch (e) {}
-      if (saved === "light") {
-        setTheme(true);
-      } else if (saved === "dark") {
-        setTheme(false);
-      } else if (window.matchMedia("(prefers-color-scheme: light)").matches) {
-        setTheme(true);
-      }
-      toggle.addEventListener("click", function () {
-        setTheme(!document.documentElement.classList.contains("light"));
-      });
-
       var installBox = document.getElementById("install-box");
       var copyHint = document.getElementById("copy-hint");
       installBox.addEventListener("click", function () {

@@ -148,4 +148,4 @@ Overall average: **60-90% token reduction** on common development operations.
 # Website development guidelines
 
 Use Tailwind for styling.
-Use Svelte for interactable frontend components.
+Use Svelte for frontend components.
