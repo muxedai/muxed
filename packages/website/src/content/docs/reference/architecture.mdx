@@ -2,3 +2,181 @@
 title: Architecture
 description: How muxed works under the hood – daemon lifecycle, server management, and tool routing.
 ---
+
+## High-level architecture
+
+```
+  muxed call server/tool '{}'
+  ──────────────────────────────────►  ┌──────────────────────┐
+  (Unix socket: ~/.muxed/muxed.sock)    │     muxed daemon      │
+                                       │                      │
+  muxed tools                          │  ServerManager(fs)   │──► [stdio: filesystem]
+  ──────────────────────────────────►  │  ServerManager(pg)   │──► [stdio: postgres]
+                                       │  ServerManager(...)   │──► [HTTP: remote]
+  muxed servers                        │                      │
+  ──────────────────────────────────►  └──────────────────────┘
+                                        (auto-exits after idle)
+```
+
+The CLI is a thin client. Every `muxed` command connects to the daemon over a Unix socket, sends a JSON-RPC request, prints the result, and disconnects. The daemon owns all MCP server connections, maintaining them across CLI invocations so servers stay warm and ready.
+
+## Daemon startup flow
+
+1. Load config from `muxed.config.json`
+2. Create ServerPool and connect to all configured MCP servers
+3. Auto-generate TypeScript types from tool schemas
+4. Create JSON-RPC server on Unix domain socket (`~/.muxed/muxed.sock`)
+5. Optionally start HTTP listener (if `daemon.http.enabled`)
+6. Write PID file
+7. Signal parent process that daemon is ready
+
+## Lock file mechanism
+
+An atomic lock at `~/.config/muxed/muxed.lock` prevents race conditions during startup. This is especially important when multiple terminal sessions or editors attempt to start the daemon simultaneously.
+
+- Uses exclusive file creation (`wx` flag) to guarantee atomicity
+- Validates the lock holder is alive and is a muxed/node process
+- Stale locks are detected and cleaned up automatically
+
+## Stale daemon detection
+
+When starting, muxed checks for stale state left behind by a previously crashed daemon:
+
+- Reads PID file, verifies process exists via `/proc`
+- Confirms process is actually muxed/node (not a recycled PID)
+- Tests socket connection with 2s timeout
+- If stale: cleans up PID file, socket file, and lock file
+
+## IPC protocol
+
+- **Transport**: Unix domain socket at `~/.muxed/muxed.sock`
+- **Encoding**: Newline-delimited JSON-RPC 2.0
+- **Connection model**: One-shot connections — connect, send request, receive response, disconnect
+- The daemon resets its idle timer on each request
+
+## JSON-RPC methods
+
+The daemon exposes 18 methods over the JSON-RPC interface:
+
+| Method | Description |
+|--------|-------------|
+| `servers/list` | List all servers with status and capabilities |
+| `tools/list` | List tools (optionally filtered by server) |
+| `tools/info` | Get a specific tool's schema |
+| `tools/call` | Invoke a tool |
+| `tools/call-async` | Invoke a tool asynchronously (returns task handle) |
+| `tools/grep` | Search tools by pattern |
+| `resources/list` | List resources |
+| `resources/read` | Read a resource |
+| `prompts/list` | List prompt templates |
+| `prompts/get` | Render a prompt |
+| `completions/complete` | Get argument completions |
+| `tasks/list` | List active tasks |
+| `tasks/get` | Get task status |
+| `tasks/result` | Get completed task result |
+| `tasks/cancel` | Cancel a running task |
+| `auth/status` | Get OAuth authentication status |
+| `daemon/status` | Daemon status (PID, uptime, servers) |
+| `config/reload` | Reload config, reconnect changed servers |
+| `daemon/stop` | Shut down the daemon |
+
+## Optional HTTP listener
+
+The daemon can optionally expose the same JSON-RPC interface over HTTP, useful for remote access, container deployments, or multi-editor setups.
+
+- Plain `http.createServer` on configurable port (default 3100)
+- POST-only, same JSON-RPC handler as the Unix socket
+- **Origin validation**: rejects requests from non-localhost origins (DNS rebinding protection)
+
+## ServerPool
+
+The ServerPool manages all ServerManager instances and provides an aggregated view of every connected MCP server.
+
+- Each ServerManager wraps one MCP server connection using the `@modelcontextprotocol/sdk` Client
+- Per-server connection states: `connecting`, `connected`, `error`, `closed`
+- ServerPool provides aggregation methods: `listAllTools()`, `findTool()`, `grepTools()`, etc.
+
+## Health checks
+
+- Periodic `ping()` calls at configurable interval (default 30s)
+- Tracks consecutive failures per server
+- Marks server as `error` after threshold is exceeded
+- Health status visible via `muxed servers` and `muxed daemon status`
+
+## Auto-reconnect
+
+When a server connection drops, the daemon automatically attempts to reconnect using exponential backoff:
+
+- **Backoff schedule**: 1s, 2s, 4s, 8s, 16s... up to 60s max
+- **Max restart attempts**: configurable (default: unlimited)
+- **Backoff reset**: resets on successful reconnection
+- Handles both stdio server crashes and HTTP connection drops
+
+## Graceful shutdown
+
+When the daemon receives SIGTERM or SIGINT, it follows an ordered shutdown sequence:
+
+1. SIGTERM or SIGINT received
+2. Stop accepting new connections on socket
+3. Wait for in-flight requests to complete (up to `shutdownTimeout`, default 10s)
+4. Force-close remaining connections if timeout exceeded
+5. Disconnect all MCP servers gracefully
+6. Kill child processes
+7. Remove socket file and PID file
+8. Exit
+
+## Transport types
+
+### stdio — for local MCP servers
+
+- Server runs as a child process
+- Communication via stdin/stdout
+- Process lifecycle managed by muxed
+
+### Streamable HTTP — for remote MCP servers
+
+- Uses `StreamableHTTPClientTransport` from the MCP SDK
+- POST for all client-to-server messages
+- GET to open SSE stream for server-to-client messages
+- `MCP-Session-Id` header: auto-detected from server, stored, sent on subsequent requests
+- `MCP-Protocol-Version` header: sent after initialization
+- SSE reconnection with `Last-Event-ID` for resumability
+
+### SSE (legacy) — for older servers
+
+- Uses `SSEClientTransport` from the SDK
+- Selected with `transport: "sse"` in config
+
+## Protocol version negotiation
+
+- muxed requests protocol version `2025-11-25` during initialize
+- The SDK handles version negotiation — if server only supports older versions, SDK negotiates downgrade
+- Negotiated version stored per server, visible in `muxed servers` output
+
+## MCP capability support
+
+- **Tools**: title, annotations (readOnlyHint, destructiveHint, idempotentHint, openWorldHint), outputSchema, structuredContent
+- **Resources**: text and blob content types
+- **Prompts**: argument rendering
+- **Completions**: argument auto-complete
+- **Tasks**: async tool execution with progress tracking (experimental)
+- **Content types**: text, image, audio, resource links, structured content
+
+## Task system
+
+The task system enables asynchronous tool execution with progress tracking:
+
+- `callAsync` invokes a tool and returns a `TaskHandle` with `taskId`
+- Daemon tracks active tasks per server
+- On server disconnect: tasks marked as `unreachable`
+- On reconnect: task status re-queried if server maintains state
+- Configurable expiry timeout (default 1 hour) for stale task cleanup
+
+## Idle shutdown
+
+The daemon automatically exits after a period of inactivity to conserve resources:
+
+- Configurable timeout (default 5 minutes)
+- Timer resets on each incoming request
+- Set `idleTimeout: 0` to disable (daemon runs indefinitely)
+- On timeout: triggers graceful shutdown sequence

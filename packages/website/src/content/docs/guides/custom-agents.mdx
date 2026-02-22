@@ -2,3 +2,121 @@
 title: Custom Agents
 description: Build custom agents that use muxed for tool management.
 ---
+
+## Why build agents with muxed
+
+When an LLM orchestrates multi-step workflows, every intermediate result typically flows back through the model. That burns tokens and adds latency. With muxed you can chain MCP tool calls in shell scripts or Node.js so that intermediate data stays outside the model entirely.
+
+This is the same insight behind Anthropic's code execution approach and Cloudflare's Code Mode — but available today as a CLI and npm package.
+
+Common use cases:
+
+- **ETL pipelines** — query a database, filter rows, write the result to a file, all without the model seeing raw data.
+- **Automated reports** — pull from multiple servers, combine, and save.
+- **Bulk operations** — iterate over records and call a tool for each one.
+- **Scheduled tasks** — run agents on a cron without an LLM in the loop at all.
+
+## CLI-based agents (bash scripting)
+
+Chain `muxed call` commands through bash pipes. The model never sees intermediate data:
+
+```bash
+# Query → filter → write. Model never sees the raw 10k rows.
+muxed call postgres/query \
+    '{"sql":"SELECT * FROM users"}' --json \
+  | jq '[.[] | select(.active)]' \
+  | muxed call filesystem/write_file \
+    '{"path":"/tmp/active.json"}' -
+```
+
+Key features for scripting:
+
+- `--json` flag outputs machine-readable JSON for piping.
+- `-` as the JSON argument reads from stdin.
+- Chain multiple `muxed call` commands with `|` pipes.
+- Use `jq`, `sed`, `awk`, or any Unix tool for filtering between calls.
+
+### Example: automated report generation
+
+```bash
+#!/bin/bash
+# Pull data from multiple servers, combine, and save
+
+# Get active users from PostHog
+USERS=$(muxed call posthog/query-run \
+  '{"query": {"kind": "HogQLQuery", "query": "SELECT email FROM persons WHERE is_active"}}' --json)
+
+# Get support tickets from Intercom
+TICKETS=$(muxed call intercom/search-conversations \
+  '{"query": "billing", "limit": 50}' --json)
+
+# Write combined report
+echo "{\"users\": $USERS, \"tickets\": $TICKETS}" \
+  | muxed call filesystem/write_file '{"path": "/tmp/report.json"}' -
+```
+
+## Node.js agents
+
+Use the `createClient()` API for typed tool access with async/await:
+
+```typescript
+import { createClient } from 'muxed';
+
+const client = await createClient();
+
+// Query churned customers from PostHog
+const churn = await client.call('posthog/query-run', {
+  query: { kind: 'HogQLQuery', query: 'SELECT email FROM persons' }
+});
+
+// Pull support history in parallel
+const history = await Promise.all(
+  customers.map(c =>
+    client.call('intercom/search-conversations', {
+      query: c.email, limit: 5
+    })
+  )
+);
+
+console.log(history);
+```
+
+Key features for Node.js:
+
+- `Promise.all` for parallel calls across servers.
+- Full npm ecosystem available for data processing.
+- Typed results when combined with `muxed typegen`.
+- Daemon auto-starts if not already running.
+
+## The pattern: discover, filter, call, process, chain
+
+Every custom agent follows the same five-step loop:
+
+1. **Discover** — `muxed grep "pattern"` to find relevant tools.
+2. **Inspect** — `muxed info server/tool` to check the schema.
+3. **Call** — `muxed call server/tool '{...}' --json` to invoke and get JSON output.
+4. **Process** — Transform the result with `jq`, Node.js, or any tool.
+5. **Chain** — Pipe the result to the next `muxed call`.
+
+## Async tasks for long-running operations
+
+Some tools support async execution. Use `--async` to get a task handle instead of blocking:
+
+```bash
+# Start a long-running export
+TASK=$(muxed call analytics/export '{"range": "30d"}' --async --json)
+TASK_ID=$(echo $TASK | jq -r '.taskId')
+SERVER=$(echo $TASK | jq -r '.server')
+
+# Check status
+muxed task $SERVER/$TASK_ID
+
+# Get result when complete
+muxed task-result $SERVER/$TASK_ID
+```
+
+This is useful for exports, batch jobs, or any operation that takes more than a few seconds. The `--async` flag returns immediately with a task handle you can poll or wait on.
+
+---
+
+See the [Programmatic API guide](/guides/programmatic-api/) for the full Node.js API reference.

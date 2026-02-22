@@ -2,3 +2,88 @@
 title: Claude Code
 description: Use muxed with Claude Code for optimized MCP tool management.
 ---
+
+Claude Code is one of the most capable coding agents available, but its performance degrades as you add MCP servers. muxed fixes this by keeping tool schemas out of the context window and letting the agent discover tools on demand.
+
+## Why muxed matters for Claude Code
+
+Every MCP server you add to Claude Code dumps its full tool schema into the context window. This has compounding costs:
+
+- **20-30% of context consumed by tool schemas** before the agent starts working. That is context you paid for that produces no useful output.
+- **Skills, prompts, and default tools are deterministic** — models always execute them. MCP tools compete for attention. The more you add, the less your designed trajectories get followed.
+- **Tool selection accuracy drops** as the number of available tools increases. The agent picks the wrong tool more often, leading to wasted calls and failed tasks.
+- **Offloading tools to muxed is context engineering at the infrastructure level.** Your carefully crafted instructions get followed instead of being drowned out by tool schemas.
+
+## What changes with muxed
+
+Consider a concrete example: a user asks the agent to fix a customer query issue. The agent has access to a dozen MCP servers — postgres, filesystem, analytics, monitoring, and more.
+
+**Without muxed**, all tool schemas sit in the context window from the start. The agent tries to figure out which tools to use from the crowded context. It picks the wrong ones — `postgres/execute_query` to run arbitrary SQL, `filesystem/read_file` to scan log files — and spends 38+ tool calls chasing dead ends. The "customer-analysis" skill that was specifically designed for this workflow never loads because the model's attention is spread across hundreds of tool definitions. The task either fails or produces a fragile result.
+
+**With muxed**, the context window is clean. The agent loads the "customer-analysis" skill first because there are no competing tool schemas pulling its attention elsewhere. When it needs a specific tool, it runs `muxed grep "query"`, finds `postgres/query_log`, checks its schema with `muxed info`, and calls it directly. The issue is fixed in 3 steps.
+
+The difference is not the model. It is the context. Fewer schemas means the agent follows the trajectories you designed instead of improvising with whatever tools happen to be visible.
+
+## Setup
+
+### 1. Install muxed
+
+```bash
+npm install -g muxed
+```
+
+### 2. Auto-discover your existing servers
+
+```bash
+muxed init
+```
+
+`init` scans Claude Desktop's `claude_desktop_config.json`, Cursor, VS Code, and other agent configs. It copies server definitions into `muxed.config.json` and optionally replaces the original entries with a single muxed proxy entry.
+
+### 3. Add muxed to Claude Code
+
+Add this to your `.mcp.json` file:
+
+```json
+{
+  "mcpServers": {
+    "muxed": {
+      "command": "npx",
+      "args": ["muxed@latest", "mcp"]
+    }
+  }
+}
+```
+
+This tells Claude Code to connect to muxed as its single MCP server. All your actual servers run behind muxed, managed by the daemon.
+
+## How `muxed init` works
+
+The init command handles the full discovery and migration workflow:
+
+- **Discovery** — Scans 12+ config file locations across Claude Desktop, Cursor, VS Code, Windsurf, Cline, Roo Code, and Amazon Q.
+- **Deduplication** — Merges identical servers that appear in multiple agent configs. If two agents both define a `filesystem` server with the same command and args, muxed keeps one copy.
+- **Conflict resolution** — When two servers share a name but have different configurations, muxed prefixes the conflicting entries with the agent name to keep them distinct.
+- **Config generation** — Writes a single `muxed.config.json` with every discovered server, ready to use.
+
+## Agent instructions
+
+When connected as an MCP server, muxed injects instructions into the agent's context that teach it the `grep`, `info`, `call` pattern. The agent learns to:
+
+1. **`muxed grep "search-term"`** — Find relevant tools by searching names and descriptions across all servers.
+2. **`muxed info server/tool`** — Check the full schema before calling, so the agent knows exactly what arguments to pass.
+3. **`muxed call server/tool '{"args": "..."}'`** — Invoke the tool. Only the result enters the context window.
+
+This pattern means the agent never needs all tool schemas loaded at once. It pulls in exactly what it needs for the current step and moves on.
+
+## Context window comparison
+
+**Before muxed:** Roughly 30% of the context window is consumed by MCP tool schemas. That leaves 70% for skills, prompts, and the actual task. Every tool definition competes with your instructions for the model's attention, and adding more servers makes the problem worse.
+
+**After muxed:** MCP schemas are gone from the context window entirely. That 30% is now free for skills, prompts, and conversation — the things that actually drive correct behavior. The agent follows your designed trajectories because there is nothing competing with them.
+
+## Next steps
+
+- [Quick Start](/getting-started/quick-start/) — Your first tool call in under a minute
+- [Configuration](/getting-started/configuration/) — Full config options
+- [CLI Reference](/reference/cli-commands/) — All available commands

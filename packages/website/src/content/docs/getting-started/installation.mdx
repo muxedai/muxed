@@ -2,3 +2,49 @@
 title: Installation
 description: Install muxed globally or use it with npx.
 ---
+
+## Prerequisites
+
+- **Node.js 18 or later** — check with `node --version`
+
+## Install globally
+
+```bash
+npm install -g muxed
+```
+
+This makes the `muxed` command available everywhere on your system.
+
+## Or use npx (no install needed)
+
+You can run muxed directly without installing it:
+
+```bash
+npx muxed <command>
+```
+
+Every example in these docs works the same way with `npx muxed` in place of `muxed`.
+
+## Verify installation
+
+Check that muxed is available:
+
+```bash
+muxed --version
+```
+
+List configured servers:
+
+```bash
+muxed servers
+```
+
+## How the daemon works
+
+There is no explicit start command. The muxed daemon starts automatically the first time you run any command. It will also shut itself down after 5 minutes of inactivity (no incoming requests). The idle timeout is configurable.
+
+You do not need to manage the daemon lifecycle yourself — it starts on demand and exits when idle.
+
+## Next steps
+
+Head over to the [Quick Start](/getting-started/quick-start/) to configure your first MCP server.
