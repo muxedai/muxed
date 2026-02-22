@@ -6,3 +6,4 @@ coverage
 .DS_Store
 *.log
 **/bin/_chunks/
+.claude/skills/posthog-*
