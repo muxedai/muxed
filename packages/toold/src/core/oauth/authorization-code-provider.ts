@@ -43,7 +43,7 @@ export class AuthorizationCodeProvider implements OAuthClientProvider {
       token_endpoint_auth_method: this.config.clientSecret ? 'client_secret_basic' : 'none',
       grant_types: ['authorization_code', 'refresh_token'],
       response_types: ['code'],
-      client_name: 'mcpd',
+      client_name: 'toold',
       scope: this.config.scope,
     };
   }

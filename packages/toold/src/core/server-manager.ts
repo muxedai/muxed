@@ -188,7 +188,7 @@ export class ServerManager {
 
   private createClient(): Client {
     const client = new Client(
-      { name: 'mcpd', version: '0.1.0' },
+      { name: 'toold', version: '0.1.0' },
       {
         capabilities: { tasks: { list: {}, cancel: {} } },
         listChanged: {

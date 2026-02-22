@@ -1,15 +1,15 @@
-# 06 - `mcpd init` Command
+# 06 - `toold init` Command
 
 ## Overview
 
-The `init` command bootstraps mcpd by scraping MCP server configurations from known coding agents (both local/repo-level and global/user-level config files), copying discovered servers into the mcpd config, and then deleting the original MCP server entries from the source configs.
+The `init` command bootstraps toold by scraping MCP server configurations from known coding agents (both local/repo-level and global/user-level config files), copying discovered servers into the toold config, and then deleting the original MCP server entries from the source configs.
 
-After running `init`, the user's coding agents will have their MCP servers managed centrally by mcpd, and each agent is reconfigured to point at mcpd as its sole MCP server instead.
+After running `init`, the user's coding agents will have their MCP servers managed centrally by toold, and each agent is reconfigured to point at toold as its sole MCP server instead.
 
 ## Behavior
 
 ```
-mcpd init [--dry-run] [--json] [--no-delete] [--no-replace]
+toold init [--dry-run] [--json] [--no-delete] [--no-replace]
 ```
 
 ### Flags
@@ -18,22 +18,22 @@ mcpd init [--dry-run] [--json] [--no-delete] [--no-replace]
 |------|-------------|
 | `--dry-run` | Show what would be done without writing any files |
 | `--json` | Output results as JSON |
-| `--no-delete` | Copy servers to mcpd config but don't remove originals |
-| `--no-replace` | Don't inject mcpd as a replacement server in agent configs |
+| `--no-delete` | Copy servers to toold config but don't remove originals |
+| `--no-replace` | Don't inject toold as a replacement server in agent configs |
 
 ### Flow
 
 1. **Discover** — Scan all known agent config file locations (local + global) for MCP server entries
 2. **Deduplicate** — Merge discovered servers, handling name collisions (same name + same config → keep one; same name + different config → prefix with agent name)
-3. **Write mcpd config** — Merge discovered servers into `mcpd.config.json` (local) or `~/.config/mcpd/config.json` (global), creating the file if it doesn't exist
-4. **Replace in agents** — For each agent config that had servers removed, inject a single `mcpd` stdio server entry pointing to `npx mcpd` (so the agent uses mcpd as its MCP proxy)
+3. **Write toold config** — Merge discovered servers into `toold.config.json` (local) or `~/.config/toold/config.json` (global), creating the file if it doesn't exist
+4. **Replace in agents** — For each agent config that had servers removed, inject a single `toold` stdio server entry pointing to `npx toold` (so the agent uses toold as its MCP proxy)
 5. **Delete originals** — Remove the original `mcpServers` / `servers` entries from agent configs (unless `--no-delete`)
 6. **Report** — Print summary of what was discovered, merged, and cleaned up
 
 ### Which config file gets written
 
-- If run from a repo directory that has any local agent configs (`.cursor/mcp.json`, `.vscode/mcp.json`, `.mcp.json`, etc.), write `./mcpd.config.json` (project-local)
-- Global agent configs (e.g., `~/.cursor/mcp.json`, Claude Desktop global config) get merged into `~/.config/mcpd/config.json`
+- If run from a repo directory that has any local agent configs (`.cursor/mcp.json`, `.vscode/mcp.json`, `.mcp.json`, etc.), write `./toold.config.json` (project-local)
+- Global agent configs (e.g., `~/.cursor/mcp.json`, Claude Desktop global config) get merged into `~/.config/toold/config.json`
 - If `--config <path>` is provided on the parent command, use that path exclusively
 
 ## Agent Config Locations to Scrape
@@ -64,11 +64,11 @@ Searched relative to `process.cwd()`:
 
 ## Normalization
 
-Each agent stores servers slightly differently. Before merging into mcpd config, normalize:
+Each agent stores servers slightly differently. Before merging into toold config, normalize:
 
-1. **VS Code `servers` → `mcpServers`**: Rename key. Strip `type` field from stdio entries (mcpd infers from presence of `command` vs `url`). Keep `type: "sse"` as `transport: "sse"`.
+1. **VS Code `servers` → `mcpServers`**: Rename key. Strip `type` field from stdio entries (toold infers from presence of `command` vs `url`). Keep `type: "sse"` as `transport: "sse"`.
 2. **Windsurf `serverUrl`**: Rename to `url`.
-3. **Extra fields**: Strip agent-specific fields (`alwaysAllow`, `disabled`, `timeout`, `source`) — these are not relevant to mcpd.
+3. **Extra fields**: Strip agent-specific fields (`alwaysAllow`, `disabled`, `timeout`, `source`) — these are not relevant to toold.
 4. **`env` with `${input:...}` references** (VS Code): Warn user that these require manual resolution. Keep the env vars but log a warning.
 
 ## Deduplication Strategy
@@ -80,9 +80,9 @@ When the same server name appears in multiple agent configs:
 
 ## File Modification Strategy
 
-### Writing mcpd config
+### Writing toold config
 
-- If the target mcpd config file exists, read it, merge new servers (don't overwrite existing entries with same name), write back
+- If the target toold config file exists, read it, merge new servers (don't overwrite existing entries with same name), write back
 - If it doesn't exist, create it with just `{ "mcpServers": { ... } }`
 - Preserve any existing `daemon` config section
 
@@ -90,9 +90,9 @@ When the same server name appears in multiple agent configs:
 
 - Read the full JSON
 - Remove only the `mcpServers` / `servers` entries (leave all other config intact)
-- If `--no-replace` is not set, add a single mcpd entry so the agent still has MCP access:
-  - For `mcpServers`-based agents: `{ "mcpd": { "command": "npx", "args": ["mcpd@latest", "proxy"] } }`
-  - For `servers`-based agents (VS Code): `{ "mcpd": { "type": "stdio", "command": "npx", "args": ["mcpd@latest", "proxy"] } }`
+- If `--no-replace` is not set, add a single toold entry so the agent still has MCP access:
+  - For `mcpServers`-based agents: `{ "toold": { "command": "npx", "args": ["toold@latest", "proxy"] } }`
+  - For `servers`-based agents (VS Code): `{ "toold": { "type": "stdio", "command": "npx", "args": ["toold@latest", "proxy"] } }`
 - Write back with same formatting (detect indent from original file)
 
 ### Backup
@@ -137,8 +137,8 @@ Functions:
 - `discoverAgentConfigs(): DiscoveredConfig[]` — Scan all paths, return found configs with their servers
 - `normalizeServers(agent: AgentDef, raw: Record<string, unknown>): Record<string, ServerConfig>` — Strip extra fields, rename keys
 - `mergeServers(discovered: DiscoveredConfig[]): { merged: Record<string, ServerConfig>; conflicts: Conflict[] }` — Deduplicate
-- `writeAgentConfig(agent: AgentDef, configPath: string, servers: Record<string, ServerConfig> | null, mcpdEntry: Record<string, unknown> | null): void` — Modify agent file (remove old servers, optionally add mcpd entry)
-- `writeMcpdConfig(configPath: string, servers: Record<string, ServerConfig>, existingConfig?: McpdConfig): void` — Write or merge into mcpd config
+- `writeAgentConfig(agent: AgentDef, configPath: string, servers: Record<string, ServerConfig> | null, tooldEntry: Record<string, unknown> | null): void` — Modify agent file (remove old servers, optionally add toold entry)
+- `writeMcpdConfig(configPath: string, servers: Record<string, ServerConfig>, existingConfig?: McpdConfig): void` — Write or merge into toold config
 
 Types:
 
@@ -159,12 +159,12 @@ type Conflict = {
 
 type InitResult = {
   discovered: Array<{ agent: string; path: string; serverCount: number }>;
-  imported: string[];             // server names added to mcpd config
-  skipped: string[];              // server names already in mcpd config
+  imported: string[];             // server names added to toold config
+  skipped: string[];              // server names already in toold config
   conflicts: Conflict[];
   warnings: string[];             // e.g., "${input:...} references"
   modifiedFiles: string[];        // agent configs that were modified
-  mcpdConfigPath: string;         // where mcpd config was written
+  tooldConfigPath: string;         // where toold config was written
 };
 ```
 
@@ -172,18 +172,18 @@ type InitResult = {
 
 ```typescript
 export const initCommand = new Command('init')
-  .description('Import MCP servers from coding agents into mcpd')
+  .description('Import MCP servers from coding agents into toold')
   .option('--dry-run', 'Show what would be done without writing files')
   .option('--json', 'Output as JSON')
   .option('--no-delete', 'Keep original server entries in agent configs')
-  .option('--no-replace', 'Don\'t add mcpd entry to agent configs')
+  .option('--no-replace', 'Don\'t add toold entry to agent configs')
   .action(async (opts) => {
-    // 1. Determine target mcpd config path
+    // 1. Determine target toold config path
     // 2. Call discoverAgentConfigs()
     // 3. Call mergeServers()
     // 4. If --dry-run, format and print results, exit
-    // 5. Write mcpd config
-    // 6. Unless --no-delete: modify agent configs (backup + remove servers + add mcpd entry)
+    // 5. Write toold config
+    // 6. Unless --no-delete: modify agent configs (backup + remove servers + add toold entry)
     // 7. Format and print results
   });
 ```
@@ -196,7 +196,7 @@ Human-readable output showing:
 - Any conflicts and how they were resolved
 - Warnings (e.g., unresolved `${input:...}`)
 - Files modified
-- Path to mcpd config written
+- Path to toold config written
 
 #### 4. `src/cli/index.ts` — Register command
 
@@ -214,7 +214,7 @@ Discovered MCP servers:
   claude-desktop    ~/.config/Claude/claude...json   4
   cursor (global)   ~/.cursor/mcp.json              1
 
-Imported 8 servers into ./mcpd.config.json:
+Imported 8 servers into ./toold.config.json:
   filesystem, postgres, github, brave-search, memory, slack, linear, sentry
 
 Skipped 2 (already existed):
@@ -224,7 +224,7 @@ Conflicts (resolved by prefixing):
   github → cursor-github, vscode-github
 
 Warnings:
-  vscode server "api-service": env references ${input:api-key} — set manually in mcpd config
+  vscode server "api-service": env references ${input:api-key} — set manually in toold config
 
 Modified files:
   .cursor/mcp.json (backed up to .cursor/mcp.json.bak)
@@ -236,9 +236,9 @@ Modified files:
 ## Edge Cases
 
 1. **No agent configs found** — Print "No MCP server configurations found in any known agent config files." and exit cleanly
-2. **mcpd config already exists with all servers** — Print "All discovered servers already exist in mcpd config. Nothing to do."
+2. **toold config already exists with all servers** — Print "All discovered servers already exist in toold config. Nothing to do."
 3. **Agent config file is malformed JSON** — Warn and skip that file, continue with others
 4. **Agent config file has no servers** — Skip silently
 5. **Permission errors reading/writing files** — Warn per file, continue with others
-6. **Circular reference** — If an agent config already has an mcpd entry, skip it (don't import mcpd into mcpd)
+6. **Circular reference** — If an agent config already has an toold entry, skip it (don't import toold into toold)
 7. **Empty servers after normalization** — Skip that agent

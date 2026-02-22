@@ -1,4 +1,4 @@
-/// <reference path="../../mcpd.generated.d.ts" />
+/// <reference path="../../toold.generated.d.ts" />
 
 import type {
   Tool,
@@ -15,7 +15,7 @@ import type {
   HttpServerConfig,
   DaemonConfig,
 } from '../core/types.js';
-import { ensureDaemon, sendRequest, McpdError } from './socket.js';
+import { ensureDaemon, sendRequest, TooldError } from './socket.js';
 
 // Re-export types for library consumers
 export type { Tool, Resource, Prompt } from '@modelcontextprotocol/sdk/types.js';
@@ -26,17 +26,17 @@ export type {
   HttpServerConfig,
   DaemonConfig,
 } from '../core/types.js';
-export { McpdError } from './socket.js';
+export { TooldError } from './socket.js';
 
-/** Tool type map — empty by default, populated by `mcpd typegen`. */
-export interface McpdToolMap {}
+/** Tool type map — empty by default, populated by `toold typegen`. */
+export interface TooldToolMap {}
 
-type HasTools = keyof McpdToolMap extends never ? false : true;
+type HasTools = keyof TooldToolMap extends never ? false : true;
 
 // --- Client-specific types ---
 
 export type CreateClientOptions = {
-  /** Path to mcpd.config.json. Uses default resolution if omitted. */
+  /** Path to toold.config.json. Uses default resolution if omitted. */
   configPath?: string;
   /** Skip auto-starting the daemon. Throws if daemon is not running. Default: true. */
   autoStart?: boolean;
@@ -84,9 +84,9 @@ export type TaskStatus = Record<string, unknown>;
 export type TaskResult = Record<string, unknown>;
 export type TaskCancelResult = Record<string, unknown>;
 
-// --- McpdClient ---
+// --- TooldClient ---
 
-export class McpdClient {
+export class TooldClient {
   #send: (method: string, params?: Record<string, unknown>) => Promise<unknown>;
 
   /** @internal Use `createClient()` instead. */
@@ -121,15 +121,15 @@ export class McpdClient {
   }
 
   async call<K extends string>(
-    name: HasTools extends true ? (K extends keyof McpdToolMap ? K : K & {}) : string,
-    args?: K extends keyof McpdToolMap ? McpdToolMap[K]['input'] : Record<string, unknown>,
+    name: HasTools extends true ? (K extends keyof TooldToolMap ? K : K & {}) : string,
+    args?: K extends keyof TooldToolMap ? TooldToolMap[K]['input'] : Record<string, unknown>,
     options?: CallOptions
-  ): Promise<K extends keyof McpdToolMap ? McpdToolMap[K]['output'] : CallResult> {
+  ): Promise<K extends keyof TooldToolMap ? TooldToolMap[K]['output'] : CallResult> {
     return (await this.#send('tools/call', {
       name,
       arguments: args ?? {},
       ...(options?.timeout ? { timeout: options.timeout } : {}),
-    })) as K extends keyof McpdToolMap ? McpdToolMap[K]['output'] : CallResult;
+    })) as K extends keyof TooldToolMap ? TooldToolMap[K]['output'] : CallResult;
   }
 
   async callAsync(name: string, args?: Record<string, unknown>): Promise<TaskHandle> {
@@ -237,12 +237,12 @@ export class McpdClient {
 
 // --- Factory ---
 
-export async function createClient(options?: CreateClientOptions): Promise<McpdClient> {
+export async function createClient(options?: CreateClientOptions): Promise<TooldClient> {
   const { configPath, autoStart = true } = options ?? {};
 
   if (autoStart) {
     await ensureDaemon(configPath);
   }
 
-  return new McpdClient(sendRequest);
+  return new TooldClient(sendRequest);
 }

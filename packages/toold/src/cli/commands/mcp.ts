@@ -10,8 +10,8 @@ import {
 import {
   discoverAgentConfigs,
   mergeServers,
-  writeMcpdConfig,
-  getMcpdConfigPath,
+  writeTooldConfig,
+  getTooldConfigPath,
 } from '../../core/agents.js';
 import type {
   ServerConfig,
@@ -306,7 +306,7 @@ mcpCommand
       return;
     }
 
-    // Read existing mcpd servers
+    // Read existing toold servers
     let existingServers: Record<string, ServerConfig> = {};
     if (fs.existsSync(configPath)) {
       try {
@@ -324,7 +324,7 @@ mcpCommand
 
     // Add all merged servers (no conflict resolution for this simple command)
     const allServers = { ...result.merged };
-    writeMcpdConfig(configPath, allServers);
+    writeTooldConfig(configPath, allServers);
     await tryReloadDaemon();
 
     for (const w of warnings) {

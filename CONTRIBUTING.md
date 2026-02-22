@@ -1,12 +1,12 @@
-# Contributing to mcpd
+# Contributing to toold
 
-Thanks for your interest in contributing to mcpd! This document covers the basics for getting started.
+Thanks for your interest in contributing to toold! This document covers the basics for getting started.
 
 ## Development Setup
 
 ```bash
-git clone https://github.com/skoob13/mcpd.git
-cd mcpd
+git clone https://github.com/skoob13/toold.git
+cd toold
 pnpm install
 ```
 
@@ -52,7 +52,7 @@ Before making significant changes, review the relevant spec in `specs/`. The spe
 ## Reporting Issues
 
 Please include:
-- mcpd version (`mcpd --version`)
+- toold version (`toold --version`)
 - Node.js version (`node --version`)
 - OS and architecture
 - Steps to reproduce

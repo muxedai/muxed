@@ -57,7 +57,7 @@ export type InitResult = {
   conflicts: Conflict[];
   warnings: string[];
   modifiedFiles: string[];
-  mcpdConfigPath: string;
+  tooldConfigPath: string;
   dryRun: boolean;
 };
 
@@ -184,7 +184,7 @@ export function getAgentDefs(): AgentDef[] {
   ];
 }
 
-// Normalize a single server entry from an agent config into mcpd's ServerConfig format
+// Normalize a single server entry from an agent config into toold's ServerConfig format
 function normalizeServer(
   agent: AgentDef,
   name: string,
@@ -197,7 +197,7 @@ function normalizeServer(
     for (const [key, value] of Object.entries(env)) {
       if (typeof value === 'string' && value.includes('${input:')) {
         warnings.push(
-          `${agent.name} server "${name}": env.${key} references ${value} \u2014 set manually in mcpd config`
+          `${agent.name} server "${name}": env.${key} references ${value} \u2014 set manually in toold config`
         );
       }
     }
@@ -267,8 +267,8 @@ export function discoverAgentConfigs(): { discovered: DiscoveredConfig[]; warnin
     const servers: Record<string, ServerConfig> = {};
     for (const [name, raw] of Object.entries(rawServers)) {
       if (typeof raw !== 'object' || raw === null) continue;
-      // Skip if the agent already has an mcpd entry (don't import mcpd into mcpd)
-      if (name === 'mcpd') continue;
+      // Skip if the agent already has an toold entry (don't import toold into toold)
+      if (name === 'toold') continue;
       const normalized = normalizeServer(agent, name, raw as Record<string, unknown>, warnings);
       if (normalized) {
         servers[name] = normalized;
@@ -309,7 +309,7 @@ export function mergeServers(
   }
 
   for (const [name, entries] of byName) {
-    // Already in mcpd config — skip
+    // Already in toold config — skip
     if (name in existingServers) {
       if (!skipped.includes(name)) skipped.push(name);
       continue;
@@ -338,8 +338,8 @@ function detectIndent(text: string): string {
   return match?.[1] ?? '  ';
 }
 
-// Write mcpd config file, merging with existing content
-export function writeMcpdConfig(configPath: string, servers: Record<string, ServerConfig>): void {
+// Write toold config file, merging with existing content
+export function writeTooldConfig(configPath: string, servers: Record<string, ServerConfig>): void {
   let existing: Record<string, unknown> = {};
   if (fs.existsSync(configPath)) {
     try {
@@ -358,18 +358,18 @@ export function writeMcpdConfig(configPath: string, servers: Record<string, Serv
   fs.writeFileSync(configPath, JSON.stringify(existing, null, 2) + '\n');
 }
 
-// Get the mcpd replacement entry for an agent (to be injected after removing original servers)
-function getMcpdEntry(agent: AgentDef): Record<string, unknown> {
+// Get the toold replacement entry for an agent (to be injected after removing original servers)
+function getTooldEntry(agent: AgentDef): Record<string, unknown> {
   if (agent.serversKey === 'servers') {
     // VS Code format
-    return { type: 'stdio', command: 'npx', args: ['mcpd@latest', 'proxy'] };
+    return { type: 'stdio', command: 'npx', args: ['toold@latest', 'proxy'] };
   }
-  return { command: 'npx', args: ['mcpd@latest', 'proxy'] };
+  return { command: 'npx', args: ['toold@latest', 'proxy'] };
 }
 
 // Backup and modify an agent config file:
 // - Remove original servers
-// - Optionally inject mcpd entry
+// - Optionally inject toold entry
 export function modifyAgentConfig(
   dc: DiscoveredConfig,
   opts: { delete: boolean; replace: boolean }
@@ -384,7 +384,7 @@ export function modifyAgentConfig(
 
   if (opts.delete) {
     if (opts.replace) {
-      content[dc.agent.serversKey] = { mcpd: getMcpdEntry(dc.agent) };
+      content[dc.agent.serversKey] = { toold: getTooldEntry(dc.agent) };
     } else {
       delete content[dc.agent.serversKey];
     }
@@ -393,9 +393,9 @@ export function modifyAgentConfig(
   fs.writeFileSync(dc.configPath, JSON.stringify(content, null, indent) + '\n');
 }
 
-// Determine the mcpd config path for a given scope
-export function getMcpdConfigPath(scope: 'local' | 'global', explicitPath?: string): string {
+// Determine the toold config path for a given scope
+export function getTooldConfigPath(scope: 'local' | 'global', explicitPath?: string): string {
   if (explicitPath) return explicitPath;
-  if (scope === 'local') return path.join(process.cwd(), 'mcpd.config.json');
-  return path.join(home, '.config', 'mcpd', 'config.json');
+  if (scope === 'local') return path.join(process.cwd(), 'toold.config.json');
+  return path.join(home, '.config', 'toold', 'config.json');
 }

@@ -1,5 +1,5 @@
 {
-  "name": "@mcpd/website",
+  "name": "@toold/website",
   "private": true,
   "type": "module",
   "scripts": {

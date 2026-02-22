@@ -2,13 +2,13 @@ import net from 'node:net';
 import { isDaemonRunning, cleanupStaleFiles, daemonize } from '../daemon/process.js';
 import { getSocketPath } from '../utils/paths.js';
 
-export class McpdError extends Error {
+export class TooldError extends Error {
   readonly code: number;
   readonly data?: unknown;
 
   constructor(code: number, message: string, data?: unknown) {
     super(message);
-    this.name = 'McpdError';
+    this.name = 'TooldError';
     this.code = code;
     this.data = data;
   }
@@ -59,7 +59,7 @@ export async function sendRequest(
 
     socket.on('error', (err) => {
       if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
-        reject(new Error('Daemon is not running. Run `mcpd status` to check.'));
+        reject(new Error('Daemon is not running. Run `toold status` to check.'));
       } else if ((err as NodeJS.ErrnoException).code === 'ECONNREFUSED') {
         reject(new Error('Daemon may have crashed. Try running a command to auto-restart it.'));
       } else {
@@ -94,7 +94,7 @@ export async function sendRequest(
         };
 
         if (response.error) {
-          reject(new McpdError(response.error.code, response.error.message, response.error.data));
+          reject(new TooldError(response.error.code, response.error.message, response.error.data));
         } else {
           resolve(response.result);
         }

@@ -4,7 +4,7 @@ import { createRequire } from 'node:module';
 import { loadConfig } from '../core/config.js';
 import { ServerPool } from '../core/server-pool.js';
 import { generateTypes, type ToolEntry } from '../codegen/typegen.js';
-import { ensureMcpdDir, getPidPath } from '../utils/paths.js';
+import { ensureTooldDir, getPidPath } from '../utils/paths.js';
 import { initLogger, type Logger } from '../utils/logger.js';
 import { createDaemonServer } from './server.js';
 import { createHttpListener } from './http-server.js';
@@ -12,8 +12,8 @@ import { createHttpListener } from './http-server.js';
 async function runAutoTypegen(serverPool: ServerPool, logger: Logger): Promise<void> {
   try {
     const require = createRequire(path.resolve('package.json'));
-    const mcpdPkgDir = path.dirname(require.resolve('mcpd/package.json'));
-    const outputPath = path.join(mcpdPkgDir, 'mcpd.generated.d.ts');
+    const tooldPkgDir = path.dirname(require.resolve('toold/package.json'));
+    const outputPath = path.join(tooldPkgDir, 'toold.generated.d.ts');
 
     const tools = serverPool.listAllTools() as ToolEntry[];
     if (tools.length === 0) {
@@ -26,13 +26,13 @@ async function runAutoTypegen(serverPool: ServerPool, logger: Logger): Promise<v
     logger.info(`Auto-generated ${tools.length} tool types → ${outputPath}`);
   } catch {
     // Not installed as a dependency or no node_modules — skip silently
-    logger.debug('Skipping auto-typegen (mcpd not resolvable as a dependency)');
+    logger.debug('Skipping auto-typegen (toold not resolvable as a dependency)');
   }
 }
 
 export async function startDaemon(configPath?: string): Promise<void> {
   const config = loadConfig(configPath);
-  ensureMcpdDir();
+  ensureTooldDir();
 
   // Initialize logger with configured level
   const isForeground = !!process.send;

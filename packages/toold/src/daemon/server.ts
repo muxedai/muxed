@@ -1,6 +1,6 @@
 import net from 'node:net';
 import type { ServerPool } from '../core/server-pool.js';
-import type { McpdConfig } from '../core/types.js';
+import type { TooldConfig } from '../core/types.js';
 import { loadConfig } from '../core/config.js';
 import { getSocketPath } from '../utils/paths.js';
 import { getLogger } from '../utils/logger.js';
@@ -29,7 +29,7 @@ export type DaemonServer = {
   handleRequest: JsonRpcHandler;
 };
 
-export function createDaemonServer(serverPool: ServerPool, config: McpdConfig): DaemonServer {
+export function createDaemonServer(serverPool: ServerPool, config: TooldConfig): DaemonServer {
   const socketPath = getSocketPath();
   let idleTimer: ReturnType<typeof setTimeout> | undefined;
   let shutdownInProgress = false;

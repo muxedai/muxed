@@ -16,14 +16,14 @@ type ToolEntry = { server: string; tool: Tool };
 type ResourceEntry = { server: string; resource: Resource };
 type PromptEntry = { server: string; prompt: Prompt };
 
-const CLI_INSTRUCTIONS = `mcpd is an MCP server aggregator. All tools and prompts are namespaced as server/name. To manage MCP servers use the CLI:
-- mcpd mcp list                              List configured servers
-- mcpd mcp add <name> <command-or-url>       Add a stdio or HTTP server
-- mcpd mcp add-json <name> '<json>'          Add a server from JSON config
-- mcpd mcp remove <name>                     Remove a server
-- mcpd mcp get <name>                        Show server config
-- mcpd servers                               Show connected servers and status
-- mcpd reload                                Reload config and reconnect`;
+const CLI_INSTRUCTIONS = `toold is an MCP server aggregator. All tools and prompts are namespaced as server/name. To manage MCP servers use the CLI:
+- toold mcp list                              List configured servers
+- toold mcp add <name> <command-or-url>       Add a stdio or HTTP server
+- toold mcp add-json <name> '<json>'          Add a server from JSON config
+- toold mcp remove <name>                     Remove a server
+- toold mcp get <name>                        Show server config
+- toold servers                               Show connected servers and status
+- toold reload                                Reload config and reconnect`;
 
 function buildInstructions(servers: ServerState[]): string {
   const parts: string[] = [CLI_INSTRUCTIONS];
@@ -49,7 +49,7 @@ export async function startMcpProxy(configPath?: string): Promise<void> {
   const instructions = buildInstructions(servers);
 
   const server = new Server(
-    { name: 'mcpd', version: '0.1.0' },
+    { name: 'toold', version: '0.1.0' },
     {
       capabilities: {
         ...(hasTools ? { tools: {} } : {}),

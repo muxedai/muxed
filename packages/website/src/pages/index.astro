@@ -1,38 +1,37 @@
 ---
 import "../styles/landing.css";
 
-const title = "mcpd — Your agent wastes tokens on tools. Fix it.";
+const title = "toold — Your agent wastes tokens on tools. Fix it.";
 const description =
-  "mcpd moves MCP tools to a background daemon so your agent's context stays clean and instructions get followed.";
+  "toold moves MCP tools to a background daemon so your agent's context stays clean and instructions get followed.";
 
-const asciiLogo = `                        _
-  _ __ ___   ___ _ __   __| |
- | '_ \` _ \\ / __| '_ \\ / _\` |
- | | | | | | (__| |_) | (_| |
- |_| |_| |_|\\___| .__/ \\__,_|
-                 |_|`;
+const asciiLogo = `  _              _     _
+ | |_ ___   ___ | | __| |
+ | __/ _ \\ / _ \\| |/ _\` |
+ | || (_) | (_) | | (_| |
+  \\__\\___/ \\___/|_|\\__,_|`;
 
 const codeDiscovery = `<span class="ln"> 1</span> <span class="comment"># find the tool you need — not all 200</span>
-<span class="ln"> 2</span> <span class="dollar">$</span> mcpd grep <span class="str">"read"</span>
+<span class="ln"> 2</span> <span class="dollar">$</span> toold grep <span class="str">"read"</span>
 <span class="ln"> 3</span> <span class="output">  filesystem/read_file      Read file contents</span>
 <span class="ln"> 4</span> <span class="output">  postgres/query            Read data via SQL</span>
 <span class="ln"> 5</span>
 <span class="ln"> 6</span> <span class="comment"># inspect its schema</span>
-<span class="ln"> 7</span> <span class="dollar">$</span> mcpd info filesystem/read_file
+<span class="ln"> 7</span> <span class="dollar">$</span> toold info filesystem/read_file
 <span class="ln"> 8</span> <span class="output">  path (string, required)   File path to read</span>
 <span class="ln"> 9</span>
 <span class="ln">10</span> <span class="comment"># call it — only the result enters the LLM</span>
-<span class="ln">11</span> <span class="dollar">$</span> mcpd call filesystem/read_file \\
+<span class="ln">11</span> <span class="dollar">$</span> toold call filesystem/read_file \\
 <span class="ln">12</span>     <span class="str">'{"path": "/tmp/config.json"}'</span>`;
 
 const codeChaining = `<span class="ln">1</span> <span class="comment"># query → filter → write. model never sees the raw 10k rows.</span>
-<span class="ln">2</span> <span class="dollar">$</span> mcpd call postgres/query \\
+<span class="ln">2</span> <span class="dollar">$</span> toold call postgres/query \\
 <span class="ln">3</span>     <span class="str">'{"sql":"SELECT * FROM users"}'</span> <span class="flag">--json</span> \\
 <span class="ln">4</span>   | jq <span class="str">'[.[] | select(.active)]'</span> \\
-<span class="ln">5</span>   | mcpd call filesystem/write_file \\
+<span class="ln">5</span>   | toold call filesystem/write_file \\
 <span class="ln">6</span>     <span class="str">'{"path":"/tmp/active.json"}'</span> <span class="flag">-</span>`;
 
-const codeNodeApi = `<span class="ln"> 1</span> <span class="kw">import</span> { createClient } <span class="kw">from</span> <span class="str">'mcpd'</span>;
+const codeNodeApi = `<span class="ln"> 1</span> <span class="kw">import</span> { createClient } <span class="kw">from</span> <span class="str">'toold'</span>;
 <span class="ln"> 2</span>
 <span class="ln"> 3</span> <span class="kw">const</span> client = <span class="kw">await</span> createClient();
 <span class="ln"> 4</span>
@@ -66,12 +65,12 @@ const codeAfter = `<span class="kw">⛁ </span><span class="flag">⛁ </span><sp
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{title}</title>
     <meta name="description" content={description} />
-    <link rel="canonical" href="https://mcpd.dev" />
+    <link rel="canonical" href="https://toold.dev" />
     <link rel="sitemap" href="/sitemap-index.xml" />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://mcpd.dev" />
+    <meta property="og:url" content="https://toold.dev" />
   </head>
   <body
     class="font-mono bg-page text-fg text-sm leading-[1.6] antialiased overflow-x-hidden"
@@ -82,7 +81,7 @@ const codeAfter = `<span class="kw">⛁ </span><span class="flag">⛁ </span><sp
         <div
           class="font-bold text-[15px] -tracking-wide text-fg flex items-center gap-2"
         >
-          <span class="text-brand">$</span> mcpd
+          <span class="text-brand">$</span> toold
         </div>
         <div class="flex items-center gap-4 md:gap-6 text-[13px]">
           <a
@@ -91,12 +90,12 @@ const codeAfter = `<span class="kw">⛁ </span><span class="flag">⛁ </span><sp
             >Docs</a
           >
           <a
-            href="https://github.com/skoob13/mcpd"
+            href="https://github.com/skoob13/toold"
             class="text-fg-muted hover:text-fg transition-colors !no-underline"
             >GitHub</a
           >
           <a
-            href="https://www.npmjs.com/package/mcpd"
+            href="https://www.npmjs.com/package/toold"
             class="text-fg-muted hover:text-fg transition-colors !no-underline"
             >npm</a
           >
@@ -120,7 +119,7 @@ const codeAfter = `<span class="kw">⛁ </span><span class="flag">⛁ </span><sp
             class="text-[13px] text-fg-muted max-w-[540px] mx-auto mb-10 leading-relaxed"
           >
             Every MCP server you add dumps schemas into context, and the model
-            spends tokens figuring out tools instead of doing your task. mcpd
+            spends tokens figuring out tools instead of doing your task. toold
             moves tools to a background daemon and discovers them lazily &mdash;
             via shell or Node.js API.
           </p>
@@ -130,7 +129,7 @@ const codeAfter = `<span class="kw">⛁ </span><span class="flag">⛁ </span><sp
             id="install-box"
           >
             <span class="text-green select-none">$</span>
-            <span class="text-fg">npx mcpd init</span><span
+            <span class="text-fg">npx toold init</span><span
               class="cursor-blink text-brand/80 ml-px">&#9611;</span
             >
             <span
@@ -145,7 +144,7 @@ const codeAfter = `<span class="kw">⛁ </span><span class="flag">⛁ </span><sp
             <a href="/getting-started/installation/" class="btn btn-primary"
               >Get Started</a
             >
-            <a href="https://github.com/skoob13/mcpd" class="btn"
+            <a href="https://github.com/skoob13/toold" class="btn"
               >&#9733; Star on GitHub</a
             >
           </div>
@@ -240,7 +239,7 @@ const codeAfter = `<span class="kw">⛁ </span><span class="flag">⛁ </span><sp
               followed.
             </p>
             <p class="text-[13px] text-fg-muted leading-relaxed mt-3">
-              Offloading tools to mcpd is context engineering at the
+              Offloading tools to toold is context engineering at the
               infrastructure level. Skills load first, the right MCP tools get
               called from there &mdash; exactly the trajectory you designed.
             </p>
@@ -256,7 +255,7 @@ const codeAfter = `<span class="kw">⛁ </span><span class="flag">⛁ </span><sp
               >
                 <span
                   class="text-[11px] font-bold uppercase tracking-wide text-red"
-                  >&#x2717; without mcpd</span
+                  >&#x2717; without toold</span
                 >
               </div>
               <div class="flex flex-col gap-0 text-xs font-mono p-3">
@@ -303,7 +302,7 @@ const codeAfter = `<span class="kw">⛁ </span><span class="flag">⛁ </span><sp
               >
                 <span
                   class="text-[11px] font-bold uppercase tracking-wide text-green"
-                  >&#x2713; with mcpd</span
+                  >&#x2713; with toold</span
                 >
               </div>
               <div class="flex flex-col gap-0 text-xs font-mono p-3">
@@ -322,7 +321,7 @@ const codeAfter = `<span class="kw">⛁ </span><span class="flag">⛁ </span><sp
                   class="cc-tool py-1.5 pl-4 border-l-2 border-brand/30 ml-1"
                 >
                   <span class="text-brand">$ </span>
-                  <span class="text-fg">mcpd grep "query"</span>
+                  <span class="text-fg">toold grep "query"</span>
                   <span class="text-fg-faint ml-2"
                     >&rarr; postgres/query_log</span
                   >
@@ -331,7 +330,7 @@ const codeAfter = `<span class="kw">⛁ </span><span class="flag">⛁ </span><sp
                   class="cc-tool py-1.5 pl-4 border-l-2 border-brand/30 ml-1"
                 >
                   <span class="text-brand">$ </span>
-                  <span class="text-fg">mcpd call postgres/query_log</span>
+                  <span class="text-fg">toold call postgres/query_log</span>
                   <span class="text-green ml-2 text-[10px]">&#x2713;</span>
                 </div>
                 <div
@@ -355,7 +354,7 @@ const codeAfter = `<span class="kw">⛁ </span><span class="flag">⛁ </span><sp
           <h2
             class="text-[13px] font-normal tracking-[0.2em] uppercase text-fg-faint"
           >
-            How mcpd fixes this
+            How toold fixes this
           </h2>
         </div>
 
@@ -371,7 +370,7 @@ const codeAfter = `<span class="kw">⛁ </span><span class="flag">⛁ </span><sp
               Tools live in the daemon, not the prompt. Agents find what they
               need with <code
                 class="text-brand bg-raised px-1 py-px rounded text-[11px]"
-                >mcpd grep</code
+                >toold grep</code
               > &mdash; no schema preloading, no token waste.
             </p>
           </div>
@@ -395,7 +394,7 @@ const codeAfter = `<span class="kw">⛁ </span><span class="flag">⛁ </span><sp
               One daemon, every agent
             </h3>
             <p class="text-xs text-fg-muted leading-relaxed">
-              Configure once, use everywhere. mcpd reads your existing agent
+              Configure once, use everywhere. toold reads your existing agent
               configs &mdash; zero per-agent setup.
             </p>
           </div>
@@ -458,7 +457,7 @@ const codeAfter = `<span class="kw">⛁ </span><span class="flag">⛁ </span><sp
             </h2>
             <p class="text-[13px] text-fg-muted leading-relaxed">
               A typical MCP setup burns a third of the context on tool schemas
-              the agent may never use. mcpd moves them out entirely &mdash;
+              the agent may never use. toold moves them out entirely &mdash;
               freeing space for the skills, prompts, and conversation that
               actually drive results.
             </p>
@@ -469,7 +468,7 @@ const codeAfter = `<span class="kw">⛁ </span><span class="flag">⛁ </span><sp
               <div
                 class="text-[11px] font-bold uppercase tracking-wide font-mono mb-3 text-red"
               >
-                before mcpd:
+                before toold:
               </div>
               <div
                 class="flex flex-col sm:flex-row gap-4 sm:gap-6 items-start sm:items-center"
@@ -494,7 +493,7 @@ const codeAfter = `<span class="kw">⛁ </span><span class="flag">⛁ </span><sp
               <div
                 class="text-[11px] font-bold uppercase tracking-wide font-mono mb-3 text-green"
               >
-                after mcpd:
+                after toold:
               </div>
               <div
                 class="flex flex-col sm:flex-row gap-4 sm:gap-6 items-start sm:items-center"
@@ -568,7 +567,7 @@ const codeAfter = `<span class="kw">⛁ </span><span class="flag">⛁ </span><sp
               Node.js and Bash APIs
             </h2>
             <p class="text-[13px] text-fg-muted leading-relaxed">
-              mcpd is also an npm package. Agents write Node.js scripts with
+              toold is also an npm package. Agents write Node.js scripts with
               typed results, <code
                 class="text-brand bg-raised px-1 py-px rounded text-[11px]"
                 >Promise.all</code
@@ -620,7 +619,7 @@ const codeAfter = `<span class="kw">⛁ </span><span class="flag">⛁ </span><sp
               <div>
                 <code
                   class="text-brand bg-raised px-1.5 py-px rounded text-[13px]"
-                  >npx mcpd init</code
+                  >npx toold init</code
                 >
                 <span class="text-fg-faint text-xs ml-3"
                   >generates config from your existing setup</span
@@ -636,7 +635,7 @@ const codeAfter = `<span class="kw">⛁ </span><span class="flag">⛁ </span><sp
               <div>
                 <code
                   class="text-brand bg-raised px-1.5 py-px rounded text-[13px]"
-                  >mcpd tools</code
+                  >toold tools</code
                 >
                 <span class="text-fg-faint text-xs ml-3"
                   >lists every tool across all servers</span
@@ -652,7 +651,7 @@ const codeAfter = `<span class="kw">⛁ </span><span class="flag">⛁ </span><sp
               <div>
                 <code
                   class="text-brand bg-raised px-1.5 py-px rounded text-[13px]"
-                  >mcpd call server/tool '{"{}"}'</code
+                  >toold call server/tool '{"{}"}'</code
                 >
                 <span class="text-fg-faint text-xs ml-3"
                   >invoke any tool from the command line</span
@@ -667,7 +666,7 @@ const codeAfter = `<span class="kw">⛁ </span><span class="flag">⛁ </span><sp
             <a href="/getting-started/installation/" class="btn btn-primary"
               >Read the Docs</a
             >
-            <a href="https://github.com/skoob13/mcpd" class="btn"
+            <a href="https://github.com/skoob13/toold" class="btn"
               >&#9733; Star on GitHub</a
             >
           </div>
@@ -684,11 +683,11 @@ const codeAfter = `<span class="kw">⛁ </span><span class="flag">⛁ </span><sp
             class="text-fg-muted text-xs hover:text-fg">Docs</a
           >
           <a
-            href="https://github.com/skoob13/mcpd"
+            href="https://github.com/skoob13/toold"
             class="text-fg-muted text-xs hover:text-fg">GitHub</a
           >
           <a
-            href="https://www.npmjs.com/package/mcpd"
+            href="https://www.npmjs.com/package/toold"
             class="text-fg-muted text-xs hover:text-fg">npm</a
           >
           <a
@@ -709,7 +708,7 @@ const codeAfter = `<span class="kw">⛁ </span><span class="flag">⛁ </span><sp
       var copyHint = document.getElementById("copy-hint");
       installBox.addEventListener("click", function () {
         navigator.clipboard
-          .writeText("npx mcpd init")
+          .writeText("npx toold init")
           .then(function () {
             copyHint.textContent = "copied!";
             setTimeout(function () {

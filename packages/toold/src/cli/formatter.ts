@@ -353,7 +353,7 @@ export function formatInit(result: InitResult): string {
   // Imported
   if (result.imported.length > 0) {
     lines.push('');
-    lines.push(`Imported ${result.imported.length} server(s) into ${result.mcpdConfigPath}:`);
+    lines.push(`Imported ${result.imported.length} server(s) into ${result.tooldConfigPath}:`);
     lines.push(`  ${result.imported.join(', ')}`);
   }
 
@@ -395,7 +395,7 @@ export function formatInit(result: InitResult): string {
 
   if (result.imported.length === 0 && result.skipped.length > 0) {
     lines.push('');
-    lines.push('All discovered servers already exist in mcpd config. Nothing to do.');
+    lines.push('All discovered servers already exist in toold config. Nothing to do.');
   }
 
   return lines.join('\n');

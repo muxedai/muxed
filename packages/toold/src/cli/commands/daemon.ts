@@ -13,7 +13,7 @@ function getExplicitConfig(cmd: Command): string | undefined {
 // ─── daemon command group ───
 
 export const daemonCommand = new Command('daemon')
-  .description('Start, stop, reload, or check status of the mcpd background daemon')
+  .description('Start, stop, reload, or check status of the toold background daemon')
   .enablePositionalOptions();
 
 // ─── daemon start ───

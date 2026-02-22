@@ -5,15 +5,15 @@ import path from 'node:path';
 import { getDaemonPid, isDaemonRunning, cleanupStaleFiles } from './process.js';
 
 // Use a temp directory for test isolation
-const testDir = path.join(os.tmpdir(), 'mcpd-process-test');
-const testPidPath = path.join(testDir, 'mcpd.pid');
-const testSocketPath = path.join(testDir, 'mcpd.sock');
+const testDir = path.join(os.tmpdir(), 'toold-process-test');
+const testPidPath = path.join(testDir, 'toold.pid');
+const testSocketPath = path.join(testDir, 'toold.sock');
 
 vi.mock('../utils/paths.js', () => ({
   getPidPath: () => testPidPath,
   getSocketPath: () => testSocketPath,
-  getMcpdDir: () => testDir,
-  ensureMcpdDir: () => fs.mkdirSync(testDir, { recursive: true }),
+  getTooldDir: () => testDir,
+  ensureTooldDir: () => fs.mkdirSync(testDir, { recursive: true }),
 }));
 
 describe('getDaemonPid', () => {

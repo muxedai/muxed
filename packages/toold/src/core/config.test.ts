@@ -5,7 +5,7 @@ import os from 'node:os';
 import { loadConfig } from './config.js';
 
 function writeTmpConfig(dir: string, config: unknown): string {
-  const filePath = path.join(dir, 'mcpd.config.json');
+  const filePath = path.join(dir, 'toold.config.json');
   fs.writeFileSync(filePath, JSON.stringify(config));
   return filePath;
 }
@@ -14,7 +14,7 @@ describe('loadConfig', () => {
   let tmpDir: string;
 
   beforeEach(() => {
-    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'mcpd-test-'));
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'toold-test-'));
   });
 
   afterEach(() => {
@@ -247,7 +247,7 @@ describe('loadConfig', () => {
 
   it('merges global config servers into project config', () => {
     // Write a fake global config
-    const globalDir = path.join(os.homedir(), '.config', 'mcpd');
+    const globalDir = path.join(os.homedir(), '.config', 'toold');
     const globalPath = path.join(globalDir, 'config.json');
     const hadGlobalConfig = fs.existsSync(globalPath);
     const originalGlobalContent = hadGlobalConfig ? fs.readFileSync(globalPath, 'utf-8') : null;
@@ -289,7 +289,7 @@ describe('loadConfig', () => {
   });
 
   it('does not merge global config when loading the global config itself', () => {
-    const globalDir = path.join(os.homedir(), '.config', 'mcpd');
+    const globalDir = path.join(os.homedir(), '.config', 'toold');
     const globalPath = path.join(globalDir, 'config.json');
     const hadGlobalConfig = fs.existsSync(globalPath);
     const originalGlobalContent = hadGlobalConfig ? fs.readFileSync(globalPath, 'utf-8') : null;
@@ -337,7 +337,7 @@ describe('loadConfig', () => {
     const configPath = writeTmpConfig(tmpDir, {
       mcpServers: {
         local: { command: 'echo' },
-        overlap: { command: 'mcpd-overlap' },
+        overlap: { command: 'toold-overlap' },
       },
       mergeClaudeConfig: true,
     });
@@ -347,7 +347,7 @@ describe('loadConfig', () => {
     // verify the config loads correctly with the flag set.
     const config = loadConfig(configPath);
     expect(config.mcpServers.local).toEqual({ command: 'echo' });
-    // mcpd servers always take precedence
-    expect(config.mcpServers.overlap).toEqual({ command: 'mcpd-overlap' });
+    // toold servers always take precedence
+    expect(config.mcpServers.overlap).toEqual({ command: 'toold-overlap' });
   });
 });

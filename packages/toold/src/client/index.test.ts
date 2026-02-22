@@ -1,14 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { McpdClient, McpdError, createClient } from './index.js';
+import { TooldClient, TooldError, createClient } from './index.js';
 
 // Mock the socket module
 vi.mock('./socket.js', () => {
-  const McpdError = class McpdError extends Error {
+  const TooldError = class TooldError extends Error {
     readonly code: number;
     readonly data?: unknown;
     constructor(code: number, message: string, data?: unknown) {
       super(message);
-      this.name = 'McpdError';
+      this.name = 'TooldError';
       this.code = code;
       this.data = data;
     }
@@ -17,7 +17,7 @@ vi.mock('./socket.js', () => {
   return {
     ensureDaemon: vi.fn(),
     sendRequest: vi.fn(),
-    McpdError,
+    TooldError,
   };
 });
 
@@ -47,14 +47,14 @@ describe('createClient', () => {
     expect(mockEnsureDaemon).not.toHaveBeenCalled();
   });
 
-  it('returns an McpdClient instance', async () => {
+  it('returns an TooldClient instance', async () => {
     const client = await createClient();
-    expect(client).toBeInstanceOf(McpdClient);
+    expect(client).toBeInstanceOf(TooldClient);
   });
 });
 
-describe('McpdClient', () => {
-  let client: McpdClient;
+describe('TooldClient', () => {
+  let client: TooldClient;
 
   beforeEach(async () => {
     client = await createClient({ autoStart: false });
@@ -314,18 +314,18 @@ describe('McpdClient', () => {
   });
 });
 
-describe('McpdError', () => {
+describe('TooldError', () => {
   it('has code and message properties', () => {
-    const err = new McpdError(-32602, 'Invalid params', { detail: 'missing name' });
+    const err = new TooldError(-32602, 'Invalid params', { detail: 'missing name' });
     expect(err).toBeInstanceOf(Error);
     expect(err.code).toBe(-32602);
     expect(err.message).toBe('Invalid params');
     expect(err.data).toEqual({ detail: 'missing name' });
-    expect(err.name).toBe('McpdError');
+    expect(err.name).toBe('TooldError');
   });
 
   it('works without data', () => {
-    const err = new McpdError(-32601, 'Method not found');
+    const err = new TooldError(-32601, 'Method not found');
     expect(err.code).toBe(-32601);
     expect(err.data).toBeUndefined();
   });

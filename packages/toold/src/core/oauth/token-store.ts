@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import type { OAuthTokens } from '@modelcontextprotocol/sdk/shared/auth.js';
 import type { OAuthClientInformationMixed } from '@modelcontextprotocol/sdk/shared/auth.js';
-import { getMcpdDir } from '../../utils/paths.js';
+import { getTooldDir } from '../../utils/paths.js';
 
 type StoredData = {
   tokens?: OAuthTokens;
@@ -15,7 +15,7 @@ function sanitizeName(name: string): string {
 }
 
 function getAuthDir(): string {
-  return path.join(getMcpdDir(), 'auth');
+  return path.join(getTooldDir(), 'auth');
 }
 
 function getStorePath(serverName: string): string {

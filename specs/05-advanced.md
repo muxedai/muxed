@@ -52,7 +52,7 @@ Add `src/daemon/http-server.ts`:
 - Accept JSON-RPC requests via HTTP POST (same handler as Unix socket)
 - Useful for remote access or container deployments
 - Origin header validation for DNS rebinding protection: reject requests from unexpected origins
-- Note: this is mcpd's internal API, not a full MCP endpoint. A full MCP proxy mode (Streamable HTTP server exposing aggregated capabilities) could be a future enhancement.
+- Note: this is toold's internal API, not a full MCP endpoint. A full MCP proxy mode (Streamable HTTP server exposing aggregated capabilities) could be a future enhancement.
 
 Update config:
 ```json
@@ -71,27 +71,27 @@ Update config:
 
 Update `src/core/config.ts`:
 - Optionally read `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS)
-- Merge `mcpServers` from Claude Desktop config with mcpd's own config
-- mcpd config takes precedence on conflicts
+- Merge `mcpServers` from Claude Desktop config with toold's own config
+- toold config takes precedence on conflicts
 - Add `--merge-claude-config` flag or config option
 
 ### 4. Protocol version negotiation
 
-- mcpd requests `2025-11-25` as `protocolVersion` during `initialize`
+- toold requests `2025-11-25` as `protocolVersion` during `initialize`
 - The SDK handles version negotiation: if the server only supports an older version, the SDK negotiates downgrade
 - Log the negotiated protocol version per server
-- Store negotiated version in server status (visible via `mcpd status` and `mcpd servers`)
-- If a server negotiates an older version, some features may be unavailable (e.g., tasks, structuredContent). mcpd should check the negotiated version before attempting to use newer features and fail gracefully.
+- Store negotiated version in server status (visible via `toold status` and `toold servers`)
+- If a server negotiates an older version, some features may be unavailable (e.g., tasks, structuredContent). toold should check the negotiated version before attempting to use newer features and fail gracefully.
 
 ## Verification
 
-1. Configure a Streamable HTTP MCP server in config → `mcpd tools` lists its tools
+1. Configure a Streamable HTTP MCP server in config → `toold tools` lists its tools
 2. Verify `MCP-Session-Id` is stored and reused across requests (check logs)
 3. Verify `MCP-Protocol-Version` header is sent on all HTTP requests after init
 4. Test SSE stream reconnection with `Last-Event-ID` for resumability
 5. Configure a legacy SSE server with `transport: "sse"` → still connects and works
 6. Enable HTTP listener → `curl -X POST http://localhost:3100 -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'` returns tools
 7. Test Origin header validation on HTTP listener
-8. Add servers in Claude Desktop config → `mcpd servers` shows merged list
+8. Add servers in Claude Desktop config → `toold servers` shows merged list
 9. Connect to server supporting only older protocol version → graceful degradation, version shown in status
 10. `pnpm test` passes

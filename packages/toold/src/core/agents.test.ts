@@ -4,10 +4,10 @@ import path from 'node:path';
 import os from 'node:os';
 import type { ServerConfig } from './types.js';
 import type { AgentDef, DiscoveredConfig } from './agents.js';
-import { mergeServers, writeMcpdConfig, modifyAgentConfig, getMcpdConfigPath } from './agents.js';
+import { mergeServers, writeTooldConfig, modifyAgentConfig, getTooldConfigPath } from './agents.js';
 
 function makeTmpDir(): string {
-  return fs.mkdtempSync(path.join(os.tmpdir(), 'mcpd-agents-test-'));
+  return fs.mkdtempSync(path.join(os.tmpdir(), 'toold-agents-test-'));
 }
 
 function writeJson(filePath: string, data: unknown): void {
@@ -44,7 +44,7 @@ function makeDiscovered(
 }
 
 describe('mergeServers', () => {
-  it('imports servers into an empty mcpd config', () => {
+  it('imports servers into an empty toold config', () => {
     const discovered: DiscoveredConfig[] = [
       makeDiscovered(
         { name: 'cursor' },
@@ -72,7 +72,7 @@ describe('mergeServers', () => {
     });
   });
 
-  it('skips servers that already exist in mcpd config', () => {
+  it('skips servers that already exist in toold config', () => {
     const existing: Record<string, ServerConfig> = {
       filesystem: { command: 'npx', args: ['old-filesystem'] },
     };
@@ -174,7 +174,7 @@ describe('mergeServers', () => {
   });
 });
 
-describe('writeMcpdConfig', () => {
+describe('writeTooldConfig', () => {
   let tmpDir: string;
 
   beforeEach(() => {
@@ -186,25 +186,25 @@ describe('writeMcpdConfig', () => {
   });
 
   it('creates a new config file with servers', () => {
-    const configPath = path.join(tmpDir, 'mcpd.config.json');
+    const configPath = path.join(tmpDir, 'toold.config.json');
     const servers: Record<string, ServerConfig> = {
       filesystem: { command: 'npx', args: ['-y', 'fs-server'] },
     };
 
-    writeMcpdConfig(configPath, servers);
+    writeTooldConfig(configPath, servers);
 
     const written = readJson(configPath) as { mcpServers: Record<string, unknown> };
     expect(written.mcpServers.filesystem).toEqual({ command: 'npx', args: ['-y', 'fs-server'] });
   });
 
   it('preserves existing daemon config when writing servers', () => {
-    const configPath = path.join(tmpDir, 'mcpd.config.json');
+    const configPath = path.join(tmpDir, 'toold.config.json');
     writeJson(configPath, {
       mcpServers: {},
       daemon: { idleTimeout: 60000 },
     });
 
-    writeMcpdConfig(configPath, { github: { command: 'npx', args: ['github'] } });
+    writeTooldConfig(configPath, { github: { command: 'npx', args: ['github'] } });
 
     const written = readJson(configPath) as {
       daemon: { idleTimeout: number };
@@ -217,7 +217,7 @@ describe('writeMcpdConfig', () => {
   it('creates parent directories if needed', () => {
     const configPath = path.join(tmpDir, 'nested', 'deep', 'config.json');
 
-    writeMcpdConfig(configPath, { test: { command: 'echo' } });
+    writeTooldConfig(configPath, { test: { command: 'echo' } });
 
     expect(fs.existsSync(configPath)).toBe(true);
   });
@@ -226,7 +226,7 @@ describe('writeMcpdConfig', () => {
     const configPath = path.join(tmpDir, 'bad.json');
     fs.writeFileSync(configPath, 'not valid json{{{');
 
-    writeMcpdConfig(configPath, { test: { command: 'echo' } });
+    writeTooldConfig(configPath, { test: { command: 'echo' } });
 
     const written = readJson(configPath) as { mcpServers: Record<string, unknown> };
     expect(written.mcpServers.test).toEqual({ command: 'echo' });
@@ -261,7 +261,7 @@ describe('modifyAgentConfig', () => {
     expect(backup).toEqual(original);
   });
 
-  it('removes servers and injects mcpd entry when delete+replace', () => {
+  it('removes servers and injects toold entry when delete+replace', () => {
     const configPath = path.join(tmpDir, 'mcp.json');
     const original = {
       mcpServers: { foo: { command: 'foo' }, bar: { command: 'bar' } },
@@ -279,12 +279,12 @@ describe('modifyAgentConfig', () => {
     const modified = readJson(configPath) as Record<string, unknown>;
     expect(modified.otherConfig).toBe(true);
     const mcpServers = modified.mcpServers as Record<string, unknown>;
-    expect(mcpServers.mcpd).toEqual({ command: 'npx', args: ['mcpd@latest', 'proxy'] });
+    expect(mcpServers.toold).toEqual({ command: 'npx', args: ['toold@latest', 'proxy'] });
     expect(mcpServers.foo).toBeUndefined();
     expect(mcpServers.bar).toBeUndefined();
   });
 
-  it('removes servers without injecting mcpd when delete+no-replace', () => {
+  it('removes servers without injecting toold when delete+no-replace', () => {
     const configPath = path.join(tmpDir, 'mcp.json');
     const original = { mcpServers: { foo: { command: 'foo' } }, other: 'kept' };
     writeJson(configPath, original);
@@ -315,7 +315,11 @@ describe('modifyAgentConfig', () => {
 
     const modified = readJson(configPath) as Record<string, unknown>;
     const servers = modified.servers as Record<string, unknown>;
-    expect(servers.mcpd).toEqual({ type: 'stdio', command: 'npx', args: ['mcpd@latest', 'proxy'] });
+    expect(servers.toold).toEqual({
+      type: 'stdio',
+      command: 'npx',
+      args: ['toold@latest', 'proxy'],
+    });
   });
 
   it('preserves indentation from original file', () => {
@@ -337,18 +341,18 @@ describe('modifyAgentConfig', () => {
   });
 });
 
-describe('getMcpdConfigPath', () => {
+describe('getTooldConfigPath', () => {
   it('returns explicit path when provided', () => {
-    expect(getMcpdConfigPath('local', '/my/custom/path.json')).toBe('/my/custom/path.json');
+    expect(getTooldConfigPath('local', '/my/custom/path.json')).toBe('/my/custom/path.json');
   });
 
   it('returns cwd-based path for local scope', () => {
-    const result = getMcpdConfigPath('local');
-    expect(result).toBe(path.join(process.cwd(), 'mcpd.config.json'));
+    const result = getTooldConfigPath('local');
+    expect(result).toBe(path.join(process.cwd(), 'toold.config.json'));
   });
 
   it('returns home-based path for global scope', () => {
-    const result = getMcpdConfigPath('global');
-    expect(result).toBe(path.join(os.homedir(), '.config', 'mcpd', 'config.json'));
+    const result = getTooldConfigPath('global');
+    expect(result).toBe(path.join(os.homedir(), '.config', 'toold', 'config.json'));
   });
 });

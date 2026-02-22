@@ -1,5 +1,5 @@
 {
-  "name": "mcpd",
+  "name": "toold",
   "version": "0.1.0",
   "description": "MCP server daemon and aggregator CLI — aggregate all your Model Context Protocol servers behind a single background daemon with lazy start, auto-reconnect, and idle shutdown",
   "type": "module",
@@ -14,12 +14,12 @@
     }
   },
   "bin": {
-    "mcpd": "./bin/cli.mjs"
+    "toold": "./bin/cli.mjs"
   },
   "files": [
     "dist",
     "bin",
-    "mcpd.generated.d.ts"
+    "toold.generated.d.ts"
   ],
   "engines": {
     "node": ">=20"
@@ -44,12 +44,12 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/skoob13/mcpd.git",
-    "directory": "packages/mcpd"
+    "url": "https://github.com/skoob13/toold.git",
+    "directory": "packages/toold"
   },
-  "homepage": "https://github.com/skoob13/mcpd#readme",
+  "homepage": "https://github.com/skoob13/toold#readme",
   "bugs": {
-    "url": "https://github.com/skoob13/mcpd/issues"
+    "url": "https://github.com/skoob13/toold/issues"
   },
   "author": "Georgiy Tarasov",
   "license": "MIT",

@@ -5,7 +5,7 @@ import os from 'node:os';
 import { Logger } from './logger.js';
 
 describe('Logger', () => {
-  const tmpDir = path.join(os.tmpdir(), 'mcpd-logger-test');
+  const tmpDir = path.join(os.tmpdir(), 'toold-logger-test');
   let logPath: string;
   let logger: Logger;
 

@@ -1,13 +1,13 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { getMcpdConfigPath } from './agents.js';
-import type { McpdConfig, ServerConfig } from './types.js';
+import { getTooldConfigPath } from './agents.js';
+import type { TooldConfig, ServerConfig } from './types.js';
 
 export function getConfigPath(scope: 'local' | 'global', explicitPath?: string): string {
-  return getMcpdConfigPath(scope, explicitPath);
+  return getTooldConfigPath(scope, explicitPath);
 }
 
-export function readConfigFile(filePath: string): McpdConfig {
+export function readConfigFile(filePath: string): TooldConfig {
   if (!fs.existsSync(filePath)) {
     return { mcpServers: {} };
   }
@@ -16,13 +16,13 @@ export function readConfigFile(filePath: string): McpdConfig {
     return {
       ...content,
       mcpServers: (content.mcpServers ?? {}) as Record<string, ServerConfig>,
-    } as McpdConfig;
+    } as TooldConfig;
   } catch {
     return { mcpServers: {} };
   }
 }
 
-export function writeConfigFile(filePath: string, config: McpdConfig): void {
+export function writeConfigFile(filePath: string, config: TooldConfig): void {
   const dir = path.dirname(filePath);
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });

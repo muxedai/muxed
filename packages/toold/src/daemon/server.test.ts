@@ -4,24 +4,24 @@ import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
 import { ServerPool } from '../core/server-pool.js';
-import type { McpdConfig } from '../core/types.js';
+import type { TooldConfig } from '../core/types.js';
 import { createDaemonServer, type DaemonServer } from './server.js';
 
-const testDir = path.join(os.tmpdir(), 'mcpd-server-test');
-const testSocketPath = path.join(testDir, 'mcpd.sock');
-const testPidPath = path.join(testDir, 'mcpd.pid');
+const testDir = path.join(os.tmpdir(), 'toold-server-test');
+const testSocketPath = path.join(testDir, 'toold.sock');
+const testPidPath = path.join(testDir, 'toold.pid');
 
-const testLogPath = path.join(testDir, 'mcpd.log');
+const testLogPath = path.join(testDir, 'toold.log');
 
 vi.mock('../utils/paths.js', () => ({
   getPidPath: () => testPidPath,
   getSocketPath: () => testSocketPath,
-  getMcpdDir: () => testDir,
+  getTooldDir: () => testDir,
   getLogPath: () => testLogPath,
-  ensureMcpdDir: () => fs.mkdirSync(testDir, { recursive: true }),
+  ensureTooldDir: () => fs.mkdirSync(testDir, { recursive: true }),
 }));
 
-const validConfig: McpdConfig = {
+const validConfig: TooldConfig = {
   mcpServers: {
     everything: {
       command: 'node',

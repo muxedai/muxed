@@ -31,7 +31,7 @@ export function openBrowser(url: string): void {
  * Falls back to opening the browser directly if notifications aren't supported.
  */
 export async function notifyReauth(serverName: string, authUrl: string): Promise<void> {
-  const title = 'mcpd';
+  const title = 'toold';
   const message = `Server "${serverName}" needs re-authorization`;
   const platform = process.platform;
 

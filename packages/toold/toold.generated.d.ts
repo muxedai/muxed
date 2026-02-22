@@ -1,2 +1,2 @@
-// Stub — run `mcpd typegen` to populate with tool types
+// Stub — run `toold typegen` to populate with tool types
 export {};

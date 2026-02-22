@@ -1,22 +1,22 @@
-# mcpd - MCP Server Proxy/Aggregator CLI
+# toold - MCP Server Proxy/Aggregator CLI
 
 > **Target Protocol**: MCP specification `2025-11-25`
 
 ## Context
 
-Coding agents (like Claude Code) need to interact with multiple MCP servers, but managing connections to N servers is complex and slow. `mcpd` aggregates all MCP servers behind a single CLI interface, keeping servers warm via a background daemon. Agents interact with it as `npx mcpd <command>`.
+Coding agents (like Claude Code) need to interact with multiple MCP servers, but managing connections to N servers is complex and slow. `toold` aggregates all MCP servers behind a single CLI interface, keeping servers warm via a background daemon. Agents interact with it as `npx toold <command>`.
 
 ## Architecture: Lazy Daemon + CLI
 
 ```
-  npx mcpd call server/tool '{}'
+  npx toold call server/tool '{}'
   ──────────────────────────────────►  ┌──────────────────────┐
-  (Unix socket: ~/.mcpd/mcpd.sock)    │     mcpd daemon      │
+  (Unix socket: ~/.toold/toold.sock)    │     toold daemon      │
                                       │                      │
-  npx mcpd tools                      │  ServerManager(fs)   │──► [stdio child: filesystem]
+  npx toold tools                      │  ServerManager(fs)   │──► [stdio child: filesystem]
   ──────────────────────────────────►  │  ServerManager(pg)   │──► [stdio child: postgres]
                                       │  ServerManager(...)   │──► [Streamable HTTP: remote]
-  npx mcpd servers                    │                      │
+  npx toold servers                    │                      │
   ──────────────────────────────────►  └──────────────────────┘
                                        (auto-exits after idle timeout)
 ```
@@ -31,29 +31,29 @@ Coding agents (like Claude Code) need to interact with multiple MCP servers, but
 
 | Command | Description |
 |---------|-------------|
-| `mcpd servers [--json]` | List servers with connection status, title, capabilities |
-| `mcpd tools [server] [--json]` | List available tools (with title, annotations) |
-| `mcpd info <server/tool> [--json]` | Tool schema details (inputSchema, outputSchema, annotations) |
-| `mcpd call <server/tool> [json\|-] [--timeout ms] [--async]` | Invoke a tool (`--async` for task-based execution) |
-| `mcpd grep <pattern>` | Search tool names, titles, and descriptions |
-| `mcpd resources [server] [--json]` | List resources (with title, annotations) |
-| `mcpd read <server/resource>` | Read a resource |
-| `mcpd prompts [server] [--json]` | List prompt templates (with title, icons) |
-| `mcpd prompt <server/prompt> [args-json] [--json]` | Get a prompt (render with arguments) |
-| `mcpd completions <type> <name> <arg> <value> [--json]` | Argument auto-completions |
-| `mcpd tasks [server] [--json]` | List active tasks |
-| `mcpd task <taskId> [--json]` | Get task status |
-| `mcpd task-result <taskId> [--json]` | Get completed task result |
-| `mcpd task-cancel <taskId>` | Cancel a running task |
-| `mcpd stop` | Stop daemon manually (optional, it auto-exits on idle) |
-| `mcpd status` | Daemon status: running/stopped, PID, uptime, servers, protocol versions |
-| `mcpd reload` | Reload config, reconnect changed servers |
+| `toold servers [--json]` | List servers with connection status, title, capabilities |
+| `toold tools [server] [--json]` | List available tools (with title, annotations) |
+| `toold info <server/tool> [--json]` | Tool schema details (inputSchema, outputSchema, annotations) |
+| `toold call <server/tool> [json\|-] [--timeout ms] [--async]` | Invoke a tool (`--async` for task-based execution) |
+| `toold grep <pattern>` | Search tool names, titles, and descriptions |
+| `toold resources [server] [--json]` | List resources (with title, annotations) |
+| `toold read <server/resource>` | Read a resource |
+| `toold prompts [server] [--json]` | List prompt templates (with title, icons) |
+| `toold prompt <server/prompt> [args-json] [--json]` | Get a prompt (render with arguments) |
+| `toold completions <type> <name> <arg> <value> [--json]` | Argument auto-completions |
+| `toold tasks [server] [--json]` | List active tasks |
+| `toold task <taskId> [--json]` | Get task status |
+| `toold task-result <taskId> [--json]` | Get completed task result |
+| `toold task-cancel <taskId>` | Cancel a running task |
+| `toold stop` | Stop daemon manually (optional, it auto-exits on idle) |
+| `toold status` | Daemon status: running/stopped, PID, uptime, servers, protocol versions |
+| `toold reload` | Reload config, reconnect changed servers |
 
 All commands (except `stop`) auto-start the daemon if not running. Daemon auto-exits after idle timeout (default 5 min).
 
 ## Configuration
 
-**File: `mcpd.config.json`** (project-local, then `~/.config/mcpd/config.json`)
+**File: `toold.config.json`** (project-local, then `~/.config/toold/config.json`)
 
 ```json
 {
@@ -95,34 +95,34 @@ Daemon settings:
 
 ## Capability Negotiation
 
-When mcpd connects to upstream MCP servers as a client, it declares these capabilities during `initialize`:
+When toold connects to upstream MCP servers as a client, it declares these capabilities during `initialize`:
 
 **Declared (supported):**
-- `tasks`: `{ list: {}, cancel: {} }` — mcpd can track and cancel long-running tasks
+- `tasks`: `{ list: {}, cancel: {} }` — toold can track and cancel long-running tasks
 
 **Not declared (unsupported):**
 - `sampling` — CLI callers cannot perform LLM sampling on behalf of servers
 - `elicitation` — CLI callers cannot interactively collect user input
-- `roots` — mcpd does not provide filesystem root paths to servers
+- `roots` — toold does not provide filesystem root paths to servers
 
-After handshake, mcpd stores each server's `ServerCapabilities` and `serverInfo` (including `name`, `version`, `title`, `description`, `icons`, `websiteUrl`) and the negotiated `protocolVersion`.
+After handshake, toold stores each server's `ServerCapabilities` and `serverInfo` (including `name`, `version`, `title`, `description`, `icons`, `websiteUrl`) and the negotiated `protocolVersion`.
 
 ## Features Not Supported
 
-mcpd is a CLI proxy — it cannot relay server-initiated requests back to a non-interactive caller:
+toold is a CLI proxy — it cannot relay server-initiated requests back to a non-interactive caller:
 
-1. **Elicitation** (`elicitation/create`): Servers may request user input. mcpd does NOT register an elicitation handler. Tool calls that trigger elicitation will fail with an error indicating the capability is unavailable.
+1. **Elicitation** (`elicitation/create`): Servers may request user input. toold does NOT register an elicitation handler. Tool calls that trigger elicitation will fail with an error indicating the capability is unavailable.
 
-2. **Sampling** (`sampling/createMessage`): Servers may request LLM completions. mcpd does NOT register a sampling handler. Tool calls that require sampling will fail gracefully.
+2. **Sampling** (`sampling/createMessage`): Servers may request LLM completions. toold does NOT register a sampling handler. Tool calls that require sampling will fail gracefully.
 
-3. **Roots** (`roots/list`): Servers may request filesystem root paths. mcpd does NOT provide roots.
+3. **Roots** (`roots/list`): Servers may request filesystem root paths. toold does NOT provide roots.
 
-4. **Audio/icon rendering**: mcpd passes audio content and icon metadata through in `--json` output but cannot render them in CLI mode. Audio shows as `[Audio: mimeType, size]`, icons are omitted in human-readable output.
+4. **Audio/icon rendering**: toold passes audio content and icon metadata through in `--json` output but cannot render them in CLI mode. Audio shows as `[Audio: mimeType, size]`, icons are omitted in human-readable output.
 
 ## Project Structure
 
 ```
-mcpd/
+toold/
   package.json
   tsconfig.json
   build.config.mjs                # obuild config (single entry: src/cli.ts)
@@ -164,10 +164,10 @@ mcpd/
 
 ```json
 {
-  "name": "mcpd",
+  "name": "toold",
   "version": "0.1.0",
   "type": "module",
-  "bin": { "mcpd": "./bin/cli.mjs" },
+  "bin": { "toold": "./bin/cli.mjs" },
   "files": ["dist", "bin"],
   "engines": { "node": ">=20" },
   "packageManager": "pnpm@10.17.1",
@@ -249,7 +249,7 @@ All content types pass through unchanged in `--json` output.
 
 ### Tasks (Experimental)
 Some upstream tools declare `execution.taskSupport` ("required", "optional", or "forbidden"):
-- `taskSupport: "required"`: `mcpd call` uses task-based flow automatically. Without `--async`, blocks and polls until completion. With `--async`, returns task handle immediately.
+- `taskSupport: "required"`: `toold call` uses task-based flow automatically. Without `--async`, blocks and polls until completion. With `--async`, returns task handle immediately.
 - `taskSupport: "optional"`: immediate execution by default; `--async` flag triggers task mode.
 - `taskSupport: "forbidden"` or absent: standard synchronous execution.
 

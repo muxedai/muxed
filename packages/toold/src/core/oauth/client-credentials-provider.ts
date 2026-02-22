@@ -26,7 +26,7 @@ export class ClientCredentialsProvider implements OAuthClientProvider {
       token_endpoint_auth_method: 'client_secret_basic',
       grant_types: ['client_credentials'],
       response_types: [],
-      client_name: 'mcpd',
+      client_name: 'toold',
     };
   }
 

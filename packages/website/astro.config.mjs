@@ -6,13 +6,13 @@ import tailwindcss from "@tailwindcss/vite";
 import svelte from "@astrojs/svelte";
 
 export default defineConfig({
-  site: "https://mcpd.dev",
+  site: "https://toold.dev",
   vite: {
     plugins: [tailwindcss()],
   },
   integrations: [
     starlight({
-      title: "mcpd",
+      title: "toold",
       tagline: "One daemon to manage them all",
       customCss: ["./src/styles/global.css"],
       plugins: [starlightLlmsTxt()],
@@ -20,7 +20,7 @@ export default defineConfig({
         {
           icon: "github",
           label: "GitHub",
-          href: "https://github.com/skoob13/mcpd",
+          href: "https://github.com/skoob13/toold",
         },
       ],
       sidebar: [

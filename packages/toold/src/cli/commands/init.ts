@@ -2,9 +2,9 @@ import { Command } from 'commander';
 import {
   discoverAgentConfigs,
   mergeServers,
-  writeMcpdConfig,
+  writeTooldConfig,
   modifyAgentConfig,
-  getMcpdConfigPath,
+  getTooldConfigPath,
 } from '../../core/agents.js';
 import type { Conflict, InitResult, UnresolvedConflict } from '../../core/agents.js';
 import type { ServerConfig } from '../../core/types.js';
@@ -72,7 +72,7 @@ export const initCommand = new Command('init')
   .option('--json', 'Output as JSON')
   .option('-y, --yes', 'Skip prompts; resolve conflicts by priority (claude-code > cursor > first)')
   .option('--no-delete', 'Keep original server entries in agent configs')
-  .option('--no-replace', "Don't add mcpd entry to agent configs")
+  .option('--no-replace', "Don't add toold entry to agent configs")
   .action(
     async (opts: {
       dryRun?: boolean;
@@ -93,15 +93,15 @@ export const initCommand = new Command('init')
         return;
       }
 
-      // 2. Determine mcpd config path — single merged config
+      // 2. Determine toold config path — single merged config
       const hasLocalConfigs = discovered.some((d) => d.agent.scope === 'local');
-      const mcpdPath = getMcpdConfigPath(hasLocalConfigs ? 'local' : 'global', configPath);
+      const tooldPath = getTooldConfigPath(hasLocalConfigs ? 'local' : 'global', configPath);
 
-      // 3. Read existing mcpd servers
+      // 3. Read existing toold servers
       let existingServers: Record<string, ServerConfig> = {};
-      if (fs.existsSync(mcpdPath)) {
+      if (fs.existsSync(tooldPath)) {
         try {
-          const existing = JSON.parse(fs.readFileSync(mcpdPath, 'utf-8')) as Record<
+          const existing = JSON.parse(fs.readFileSync(tooldPath, 'utf-8')) as Record<
             string,
             unknown
           >;
@@ -127,12 +127,12 @@ export const initCommand = new Command('init')
         imported.push(name);
       }
 
-      // 6. Write mcpd config
+      // 6. Write toold config
       if (!opts.dryRun && imported.length > 0) {
-        writeMcpdConfig(mcpdPath, result.merged);
+        writeTooldConfig(tooldPath, result.merged);
       }
 
-      // 7. Modify agent configs (backup + remove servers + optionally add mcpd entry)
+      // 7. Modify agent configs (backup + remove servers + optionally add toold entry)
       const modifiedFiles: string[] = [];
       const shouldDelete = isInteractive
         ? await confirm(
@@ -166,7 +166,7 @@ export const initCommand = new Command('init')
         conflicts,
         warnings,
         modifiedFiles,
-        mcpdConfigPath: mcpdPath,
+        tooldConfigPath: tooldPath,
         dryRun: opts.dryRun ?? false,
       };
 

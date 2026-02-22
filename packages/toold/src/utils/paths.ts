@@ -2,22 +2,22 @@ import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
 
-export function getMcpdDir(): string {
-  return path.join(os.homedir(), '.mcpd');
+export function getTooldDir(): string {
+  return path.join(os.homedir(), '.toold');
 }
 
 export function getSocketPath(): string {
-  return path.join(getMcpdDir(), 'mcpd.sock');
+  return path.join(getTooldDir(), 'toold.sock');
 }
 
 export function getPidPath(): string {
-  return path.join(getMcpdDir(), 'mcpd.pid');
+  return path.join(getTooldDir(), 'toold.pid');
 }
 
 export function getLogPath(): string {
-  return path.join(getMcpdDir(), 'mcpd.log');
+  return path.join(getTooldDir(), 'toold.log');
 }
 
-export function ensureMcpdDir(): void {
-  fs.mkdirSync(getMcpdDir(), { recursive: true });
+export function ensureTooldDir(): void {
+  fs.mkdirSync(getTooldDir(), { recursive: true });
 }

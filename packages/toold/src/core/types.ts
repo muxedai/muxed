@@ -69,7 +69,7 @@ export type DaemonConfig = {
 };
 
 // Top-level config
-export type McpdConfig = {
+export type TooldConfig = {
   mcpServers: Record<string, ServerConfig>;
   daemon?: DaemonConfig;
   mergeClaudeConfig?: boolean;

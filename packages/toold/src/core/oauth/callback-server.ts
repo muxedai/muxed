@@ -6,14 +6,14 @@ export type CallbackResult = {
 };
 
 const SUCCESS_HTML = `<!DOCTYPE html>
-<html><head><title>mcpd - Authorization Successful</title></head>
+<html><head><title>toold - Authorization Successful</title></head>
 <body style="font-family:system-ui;text-align:center;padding:60px">
 <h1>Authorization Successful</h1>
-<p>You can close this tab and return to mcpd.</p>
+<p>You can close this tab and return to toold.</p>
 </body></html>`;
 
 const ERROR_HTML = (msg: string) => `<!DOCTYPE html>
-<html><head><title>mcpd - Authorization Error</title></head>
+<html><head><title>toold - Authorization Error</title></head>
 <body style="font-family:system-ui;text-align:center;padding:60px">
 <h1>Authorization Error</h1>
 <p>${msg}</p>

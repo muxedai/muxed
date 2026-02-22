@@ -18,7 +18,7 @@ describe('generateTypes', () => {
       },
     ];
     const output = await generateTypes(tools);
-    expect(output).toContain("declare module 'mcpd'");
+    expect(output).toContain("declare module 'toold'");
     expect(output).toContain("'fs/read'");
     expect(output).toContain('path: string');
     expect(output).toContain('output: unknown');
@@ -131,7 +131,7 @@ describe('generateTypes', () => {
 
   it('handles empty tool list', async () => {
     const output = await generateTypes([]);
-    expect(output).toContain('interface McpdToolMap');
+    expect(output).toContain('interface TooldToolMap');
     expect(output).toContain('export {}');
   });
 

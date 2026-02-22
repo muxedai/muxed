@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>mcpd — Website Moodboard</title>
+<title>toold — Website Moodboard</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap');
 
@@ -845,7 +845,7 @@
 
     <nav class="nav" style="margin-top: var(--s4);">
       <div class="nav-logo">
-        <span class="prompt">$</span> mcpd
+        <span class="prompt">$</span> toold
       </div>
       <div class="nav-links">
         <a href="#">Docs</a>
@@ -885,7 +885,7 @@
 
       <div class="install-box">
         <span class="dollar">$</span>
-        <span class="cmd">npx mcpd tools</span>
+        <span class="cmd">npx toold tools</span>
         <span class="copy-hint">click to copy</span>
       </div>
 
@@ -960,14 +960,14 @@
     </div>
 
     <div class="features-header">
-      <h2>How mcpd fixes this</h2>
+      <h2>How toold fixes this</h2>
     </div>
 
     <div class="features-grid">
       <div class="feature-card">
         <div class="feature-icon" style="font-size: 14px;">-98%</div>
         <h3>Fewer tokens</h3>
-        <p>Tools stay in the daemon, not the prompt. Discover on-demand with <code style="color: var(--accent); background: var(--bg-elevated); padding: 1px 4px; border-radius: 3px; font-size: 11px;">mcpd grep</code> instead of loading every schema upfront.</p>
+        <p>Tools stay in the daemon, not the prompt. Discover on-demand with <code style="color: var(--accent); background: var(--bg-elevated); padding: 1px 4px; border-radius: 3px; font-size: 11px;">toold grep</code> instead of loading every schema upfront.</p>
       </div>
       <div class="feature-card">
         <div class="feature-icon">&#x26a1;</div>
@@ -982,17 +982,17 @@
       <div class="feature-card">
         <div class="feature-icon">|&gt;</div>
         <h3>Chain &amp; script</h3>
-        <p>Pipe <code style="color: var(--accent); background: var(--bg-elevated); padding: 1px 4px; border-radius: 3px; font-size: 11px;">mcpd call</code> through bash, jq, or any language. Intermediate results never re-enter the LLM.</p>
+        <p>Pipe <code style="color: var(--accent); background: var(--bg-elevated); padding: 1px 4px; border-radius: 3px; font-size: 11px;">toold call</code> through bash, jq, or any language. Intermediate results never re-enter the LLM.</p>
       </div>
       <div class="feature-card">
         <div class="feature-icon">&#x2605;</div>
         <h3>Context engineering wins</h3>
-        <p>Offload tools to mcpd and reclaim context for skills, prompts, and default tools &mdash; the things agents execute deterministically with higher priority than MCP tool calls.</p>
+        <p>Offload tools to toold and reclaim context for skills, prompts, and default tools &mdash; the things agents execute deterministically with higher priority than MCP tool calls.</p>
       </div>
       <div class="feature-card">
         <div class="feature-icon">{}</div>
         <h3>Zero config</h3>
-        <p>Reuse your claude_desktop_config.json. Or <code style="color: var(--accent); background: var(--bg-elevated); padding: 1px 4px; border-radius: 3px; font-size: 11px;">mcpd init</code> to auto-discover servers. Drop-in replacement for mcp-remote.</p>
+        <p>Reuse your claude_desktop_config.json. Or <code style="color: var(--accent); background: var(--bg-elevated); padding: 1px 4px; border-radius: 3px; font-size: 11px;">toold init</code> to auto-discover servers. Drop-in replacement for mcp-remote.</p>
       </div>
     </div>
   </section>
@@ -1007,7 +1007,7 @@
     <div class="design-note">
       <strong>Code blocks:</strong> Two side-by-side examples now. First shows
       on-demand discovery (grep + info + call). Second shows chaining &mdash;
-      piping mcpd calls through scripts without the LLM seeing intermediates.
+      piping toold calls through scripts without the LLM seeing intermediates.
     </div>
 
     <div class="code-section">
@@ -1028,16 +1028,16 @@
           <span class="code-block-title">terminal</span>
         </div>
         <pre><span class="line-num"> 1</span> <span class="comment"># discover — not preload</span>
-<span class="line-num"> 2</span> <span class="dollar">$</span> mcpd grep <span class="str">"read"</span>
+<span class="line-num"> 2</span> <span class="dollar">$</span> toold grep <span class="str">"read"</span>
 <span class="line-num"> 3</span> <span class="output">  filesystem/read_file      Read file contents</span>
 <span class="line-num"> 4</span> <span class="output">  postgres/query            Read data via SQL</span>
 <span class="line-num"> 5</span>
 <span class="line-num"> 6</span> <span class="comment"># inspect only the tool you need</span>
-<span class="line-num"> 7</span> <span class="dollar">$</span> mcpd info filesystem/read_file
+<span class="line-num"> 7</span> <span class="dollar">$</span> toold info filesystem/read_file
 <span class="line-num"> 8</span> <span class="output">  path (string, required)   File path to read</span>
 <span class="line-num"> 9</span>
 <span class="line-num">10</span> <span class="comment"># call it — only the result enters the LLM</span>
-<span class="line-num">11</span> <span class="dollar">$</span> mcpd call filesystem/read_file \
+<span class="line-num">11</span> <span class="dollar">$</span> toold call filesystem/read_file \
 <span class="line-num">12</span>     <span class="str">'{"path": "/tmp/config.json"}'</span></pre>
       </div>
     </div>
@@ -1061,7 +1061,7 @@
         <h2>Write scripts, not tool calls</h2>
         <p>
           Agents can chain MCP calls through bash pipes or write
-          Node.js scripts using the <code style="color: var(--accent); background: var(--bg-elevated); padding: 1px 4px; border-radius: 3px; font-size: 11px;">mcpd</code> client library.
+          Node.js scripts using the <code style="color: var(--accent); background: var(--bg-elevated); padding: 1px 4px; border-radius: 3px; font-size: 11px;">toold</code> client library.
           Either way, intermediate data never re-enters the model.
         </p>
         <p style="margin-top: var(--s3);">
@@ -1078,10 +1078,10 @@
           <span class="code-block-title">bash &mdash; pipe through jq</span>
         </div>
         <pre><span class="line-num">1</span> <span class="comment"># query &rarr; filter &rarr; write. model never sees the raw 10k rows.</span>
-<span class="line-num">2</span> <span class="dollar">$</span> mcpd call postgres/query \
+<span class="line-num">2</span> <span class="dollar">$</span> toold call postgres/query \
 <span class="line-num">3</span>     <span class="str">'{"sql":"SELECT * FROM users"}'</span> <span class="flag">--json</span> \
 <span class="line-num">4</span>   | jq <span class="str">'[.[] | select(.active)]'</span> \
-<span class="line-num">5</span>   | mcpd call filesystem/write_file \
+<span class="line-num">5</span>   | toold call filesystem/write_file \
 <span class="line-num">6</span>     <span class="str">'{"path":"/tmp/active.json"}'</span> <span class="flag">-</span></pre>
       </div>
     </div>
@@ -1091,7 +1091,7 @@
       <div class="code-section-text">
         <h2>Node.js API</h2>
         <p>
-          mcpd is also an npm package. Agents write Node.js scripts with
+          toold is also an npm package. Agents write Node.js scripts with
           typed results, <code style="color: var(--accent); background: var(--bg-elevated); padding: 1px 4px; border-radius: 3px; font-size: 11px;">Promise.all</code> for parallel calls across
           servers, and the full npm ecosystem.
         </p>
@@ -1104,7 +1104,7 @@
           <div class="dot dot-green"></div>
           <span class="code-block-title">churn-analysis.mjs</span>
         </div>
-        <pre><span class="line-num"> 1</span> <span class="kw">import</span> { createClient } <span class="kw">from</span> <span class="str">'mcpd'</span>;
+        <pre><span class="line-num"> 1</span> <span class="kw">import</span> { createClient } <span class="kw">from</span> <span class="str">'toold'</span>;
 <span class="line-num"> 2</span>
 <span class="line-num"> 3</span> <span class="kw">const</span> client = <span class="kw">await</span> createClient();
 <span class="line-num"> 4</span>
@@ -1143,7 +1143,7 @@
           Skills, prompts, and default tools are deterministic &mdash;
           models always use them. MCP tools compete for attention in a
           crowded context window, and accuracy drops as you add more.
-          Offloading tools to mcpd frees context for the things agents
+          Offloading tools to toold frees context for the things agents
           actually execute reliably.
         </p>
         <p style="margin-top: var(--s3);">
@@ -1161,13 +1161,13 @@
           <span class="code-block-title">context window allocation</span>
         </div>
         <pre>
-<span class="line-num"> </span> <span class="comment">before mcpd:</span>
+<span class="line-num"> </span> <span class="comment">before toold:</span>
 <span class="line-num"> </span> <span class="output">  [##########                    ] mcp tools      30%</span>
 <span class="line-num"> </span> <span class="output">  [##                            ] skills          6%</span>
 <span class="line-num"> </span> <span class="output">  [##                            ] prompts         6%</span>
 <span class="line-num"> </span> <span class="output">  [#################             ] task           58%</span>
 <span class="line-num"> </span>
-<span class="line-num"> </span> <span class="comment">after mcpd:</span>
+<span class="line-num"> </span> <span class="comment">after toold:</span>
 <span class="line-num"> </span> <span class="str">  [#                             ] mcp tools       2%</span>
 <span class="line-num"> </span> <span class="str">  [########                      ] skills         24%</span>
 <span class="line-num"> </span> <span class="str">  [#####                         ] prompts        14%</span>
@@ -1200,21 +1200,21 @@
         <div class="feature-card" style="display: flex; align-items: baseline; gap: var(--s4); padding: var(--s4) var(--s5);">
           <span style="color: var(--accent); font-weight: 700; font-size: 14px;">1</span>
           <div>
-            <code style="color: var(--accent); background: var(--bg-elevated); padding: 1px 6px; border-radius: 3px; font-size: 13px;">npx mcpd init</code>
+            <code style="color: var(--accent); background: var(--bg-elevated); padding: 1px 6px; border-radius: 3px; font-size: 13px;">npx toold init</code>
             <span style="color: var(--text-muted); font-size: 12px; margin-left: var(--s3);">generates config from your existing setup</span>
           </div>
         </div>
         <div class="feature-card" style="display: flex; align-items: baseline; gap: var(--s4); padding: var(--s4) var(--s5);">
           <span style="color: var(--accent); font-weight: 700; font-size: 14px;">2</span>
           <div>
-            <code style="color: var(--accent); background: var(--bg-elevated); padding: 1px 6px; border-radius: 3px; font-size: 13px;">mcpd tools</code>
+            <code style="color: var(--accent); background: var(--bg-elevated); padding: 1px 6px; border-radius: 3px; font-size: 13px;">toold tools</code>
             <span style="color: var(--text-muted); font-size: 12px; margin-left: var(--s3);">lists every tool across all servers</span>
           </div>
         </div>
         <div class="feature-card" style="display: flex; align-items: baseline; gap: var(--s4); padding: var(--s4) var(--s5);">
           <span style="color: var(--accent); font-weight: 700; font-size: 14px;">3</span>
           <div>
-            <code style="color: var(--accent); background: var(--bg-elevated); padding: 1px 6px; border-radius: 3px; font-size: 13px;">mcpd call server/tool '{}'</code>
+            <code style="color: var(--accent); background: var(--bg-elevated); padding: 1px 6px; border-radius: 3px; font-size: 13px;">toold call server/tool '{}'</code>
             <span style="color: var(--text-muted); font-size: 12px; margin-left: var(--s3);">invoke any tool from the command line</span>
           </div>
         </div>
@@ -1266,7 +1266,7 @@
       <div class="docs-content">
         <h1>Installation</h1>
         <p>
-          Install mcpd globally via npm, or use it directly with <code>npx</code>.
+          Install toold globally via npm, or use it directly with <code>npx</code>.
           Requires Node.js 20 or later.
         </p>
         <div class="code-block" style="margin-bottom: var(--s4);">
@@ -1276,15 +1276,15 @@
             <div class="dot dot-green"></div>
             <span class="code-block-title">terminal</span>
           </div>
-          <pre><span class="dollar">$</span> npm install -g mcpd</pre>
+          <pre><span class="dollar">$</span> npm install -g toold</pre>
         </div>
         <p>
-          Once installed, any <code>mcpd</code> command will auto-start the background
+          Once installed, any <code>toold</code> command will auto-start the background
           daemon if it's not already running. The daemon shuts down automatically after
           5 minutes of inactivity.
         </p>
         <p>
-          Create a <code>mcpd.config.json</code> in your project root to configure
+          Create a <code>toold.config.json</code> in your project root to configure
           which MCP servers to connect to. The format is compatible with the
           <code>mcpServers</code> section of <code>claude_desktop_config.json</code>.
         </p>

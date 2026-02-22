@@ -29,7 +29,7 @@ Handles daemon communication from the CLI side.
 - Close connection after each request (short-lived connections)
 
 **Error handling:**
-- Socket not found → suggest running `mcpd status` to check
+- Socket not found → suggest running `toold status` to check
 - Connection refused → daemon may have crashed, suggest restart
 - Timeout → suggest `--timeout` flag or check server health
 
@@ -95,35 +95,35 @@ Formats daemon responses for human-readable CLI output. All formatters accept th
 
 Each command in `src/cli/commands/`. Every command (except `stop`) calls `ensureDaemon()` first.
 
-**`servers.ts`** — `mcpd servers [--json]`
+**`servers.ts`** — `toold servers [--json]`
 - `ensureDaemon()`
 - `sendRequest('servers/list')`
 - Output: `formatServers()` or `formatJson()`
 
-**`tools.ts`** — `mcpd tools [server] [--json]`
+**`tools.ts`** — `toold tools [server] [--json]`
 - `ensureDaemon()`
 - `sendRequest('tools/list', { server })` (server is optional)
 - Output: `formatTools()` or `formatJson()`
 
-**`info.ts`** — `mcpd info <server/tool> [--json]`
+**`info.ts`** — `toold info <server/tool> [--json]`
 - `ensureDaemon()`
 - `sendRequest('tools/info', { name: serverTool })`
 - Output: `formatToolInfo()` or `formatJson()`
 
-**`call.ts`** — `mcpd call <server/tool> [json] [--timeout ms]`
+**`call.ts`** — `toold call <server/tool> [json] [--timeout ms]`
 - `ensureDaemon()`
 - Parse JSON args from positional argument (or `-` for stdin — just note this, stdin is added in iteration 3)
 - `sendRequest('tools/call', { name: serverTool, arguments: parsedArgs })`
 - Output: `formatCallResult()` or `formatJson()`
 - Support `--timeout` flag passed through to daemon
 
-**`stop.ts`** — `mcpd stop`
+**`stop.ts`** — `toold stop`
 - Try `sendRequest('daemon/stop')`
 - If socket not found: report "Daemon is not running"
 - On success: report "Daemon stopped"
 - Do NOT call `ensureDaemon()` — that would start one just to stop it
 
-**`status.ts`** — `mcpd status [--json]`
+**`status.ts`** — `toold status [--json]`
 - First check `isDaemonRunning()`. If not running: report "Daemon is not running" and exit
 - If running: `sendRequest('daemon/status')`
 - Output: `formatStatus()` or `formatJson()`
@@ -134,7 +134,7 @@ Each command in `src/cli/commands/`. Every command (except `stop`) calls `ensure
 Wire up Commander:
 ```typescript
 const program = new Command();
-program.name('mcpd').description('MCP Server Proxy/Aggregator').version('0.1.0');
+program.name('toold').description('MCP Server Proxy/Aggregator').version('0.1.0');
 program.option('--config <path>', 'Path to config file');
 
 // Register subcommands
@@ -168,7 +168,7 @@ if (process.argv.includes('--daemon')) {
 
 1. `pnpm build` succeeds
 2. `pnpm type-check` passes
-3. End-to-end: create `mcpd.config.json` in project root:
+3. End-to-end: create `toold.config.json` in project root:
    ```json
    {
      "mcpServers": {

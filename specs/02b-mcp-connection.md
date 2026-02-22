@@ -23,7 +23,7 @@ Wraps a single MCP server connection. One instance per configured server.
   - `StdioServerConfig` → `StdioClientTransport` with `{ command, args, env, cwd }` from config. The SDK spawns the child process.
   - `HttpServerConfig` → `StreamableHTTPClientTransport` with `{ url }` from config. Pass custom `headers` via `requestInit` if present.
 - Create SDK `Client` with:
-  - `Implementation` info: `{ name: 'mcpd', version: '<read from package.json or hardcode>' }`
+  - `Implementation` info: `{ name: 'toold', version: '<read from package.json or hardcode>' }`
   - Client capabilities: `{ tasks: { list: {}, cancel: {} } }` — explicitly no `sampling`, `elicitation`, or `roots`
 - Call `client.connect(transport)` which performs the `initialize` handshake
   - This requests protocol version `2025-11-25`

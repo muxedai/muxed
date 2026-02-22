@@ -2,10 +2,10 @@ import { fork } from 'node:child_process';
 import fs from 'node:fs';
 import net from 'node:net';
 import path from 'node:path';
-import { getMcpdDir, getPidPath, getSocketPath } from '../utils/paths.js';
+import { getTooldDir, getPidPath, getSocketPath } from '../utils/paths.js';
 
 function getLockPath(): string {
-  return path.join(getMcpdDir(), 'mcpd.lock');
+  return path.join(getTooldDir(), 'toold.lock');
 }
 
 export function getDaemonPid(): number | null {
@@ -27,11 +27,11 @@ function isProcessAlive(pid: number): boolean {
   }
 }
 
-function isMcpdProcess(pid: number): boolean {
-  // Verify the PID is actually an mcpd/node process
+function isTooldProcess(pid: number): boolean {
+  // Verify the PID is actually an toold/node process
   try {
     const cmdline = fs.readFileSync(`/proc/${pid}/cmdline`, 'utf-8');
-    return cmdline.includes('mcpd') || cmdline.includes('node');
+    return cmdline.includes('toold') || cmdline.includes('node');
   } catch {
     // /proc may not exist (macOS), fall back to process alive check
     return isProcessAlive(pid);
@@ -105,7 +105,7 @@ export async function isDaemonRunning(): Promise<boolean> {
   const pid = getDaemonPid();
   if (pid === null) return false;
   if (!isProcessAlive(pid)) return false;
-  if (!isMcpdProcess(pid)) return false;
+  if (!isTooldProcess(pid)) return false;
   return tryConnectSocket(getSocketPath());
 }
 
@@ -130,8 +130,8 @@ export async function cleanupStaleFiles(): Promise<void> {
     return;
   }
 
-  if (pid !== null && isProcessAlive(pid) && !isMcpdProcess(pid)) {
-    // PID exists and alive, but not an mcpd process — stale PID file
+  if (pid !== null && isProcessAlive(pid) && !isTooldProcess(pid)) {
+    // PID exists and alive, but not an toold process — stale PID file
     try {
       fs.unlinkSync(pidPath);
     } catch {

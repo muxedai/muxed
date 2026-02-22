@@ -1,8 +1,8 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import { ServerPool } from './server-pool.js';
-import type { McpdConfig } from './types.js';
+import type { TooldConfig } from './types.js';
 
-const validConfig: McpdConfig = {
+const validConfig: TooldConfig = {
   mcpServers: {
     everything: {
       command: 'node',
@@ -80,7 +80,7 @@ describe('ServerPool', () => {
 
   it('handles mixed success and failure in connectAll', async () => {
     pool = new ServerPool();
-    const mixedConfig: McpdConfig = {
+    const mixedConfig: TooldConfig = {
       mcpServers: {
         everything: {
           command: 'node',

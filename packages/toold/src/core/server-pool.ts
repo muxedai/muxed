@@ -1,5 +1,5 @@
 import type { Tool, Resource, Prompt } from '@modelcontextprotocol/sdk/types.js';
-import type { McpdConfig, ServerState, TrackedTask } from './types.js';
+import type { TooldConfig, ServerState, TrackedTask } from './types.js';
 import { ServerManager } from './server-manager.js';
 import { getLogger } from '../utils/logger.js';
 
@@ -9,7 +9,7 @@ export class ServerPool {
   private taskExpiryTimer: ReturnType<typeof setInterval> | undefined;
   private taskExpiryTimeout: number = 3_600_000;
 
-  async connectAll(config: McpdConfig): Promise<void> {
+  async connectAll(config: TooldConfig): Promise<void> {
     const entries = Object.entries(config.mcpServers);
     this.taskExpiryTimeout = config.daemon?.taskExpiryTimeout ?? 3_600_000;
 
@@ -309,7 +309,7 @@ export class ServerPool {
   }
 
   async reload(
-    newConfig: McpdConfig
+    newConfig: TooldConfig
   ): Promise<{ added: string[]; removed: string[]; changed: string[] }> {
     const oldNames = new Set(this.servers.keys());
     const newNames = new Set(Object.keys(newConfig.mcpServers));

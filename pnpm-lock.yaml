@@ -21,7 +21,7 @@ importers:
         specifier: ^0.14.1
         version: 0.14.1
 
-  packages/mcpd:
+  packages/toold:
     dependencies:
       '@modelcontextprotocol/sdk':
         specifier: ^1.26.0

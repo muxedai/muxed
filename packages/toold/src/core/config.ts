@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
 import { z } from 'zod/v4';
-import type { McpdConfig } from './types.js';
+import type { TooldConfig } from './types.js';
 
 const StdioServerConfigSchema = z.object({
   command: z.string(),
@@ -65,7 +65,7 @@ const DaemonConfigSchema = z.object({
   http: HttpListenerSchema.optional(),
 });
 
-const McpdConfigSchema = z.object({
+const TooldConfigSchema = z.object({
   mcpServers: z.record(z.string(), ServerConfigSchema),
   daemon: DaemonConfigSchema.optional(),
   mergeClaudeConfig: z.boolean().optional(),
@@ -98,7 +98,7 @@ function mergeClaudeDesktopServers(servers: Record<string, unknown>): Record<str
     const claudeServers = raw.mcpServers as Record<string, unknown> | undefined;
     if (!claudeServers || typeof claudeServers !== 'object') return servers;
 
-    // Claude Desktop servers as base, mcpd servers take precedence
+    // Claude Desktop servers as base, toold servers take precedence
     return { ...claudeServers, ...servers };
   } catch {
     return servers;
@@ -118,7 +118,7 @@ const DAEMON_DEFAULTS = {
 };
 
 function getGlobalConfigPath(): string {
-  return path.join(os.homedir(), '.config', 'mcpd', 'config.json');
+  return path.join(os.homedir(), '.config', 'toold', 'config.json');
 }
 
 function findConfigFile(configPath?: string): string {
@@ -129,7 +129,7 @@ function findConfigFile(configPath?: string): string {
     return configPath;
   }
 
-  const cwdConfig = path.join(process.cwd(), 'mcpd.config.json');
+  const cwdConfig = path.join(process.cwd(), 'toold.config.json');
   if (fs.existsSync(cwdConfig)) {
     return cwdConfig;
   }
@@ -140,11 +140,11 @@ function findConfigFile(configPath?: string): string {
   }
 
   throw new Error(
-    'No config file found. Create mcpd.config.json in the current directory or ~/.config/mcpd/config.json'
+    'No config file found. Create toold.config.json in the current directory or ~/.config/toold/config.json'
   );
 }
 
-function validateServerConfigs(config: McpdConfig): void {
+function validateServerConfigs(config: TooldConfig): void {
   for (const [name, serverConfig] of Object.entries(config.mcpServers)) {
     const hasCommand = 'command' in serverConfig;
     const hasUrl = 'url' in serverConfig;
@@ -157,7 +157,7 @@ function validateServerConfigs(config: McpdConfig): void {
   }
 }
 
-export function loadConfig(configPath?: string): McpdConfig {
+export function loadConfig(configPath?: string): TooldConfig {
   const filePath = findConfigFile(configPath);
   const raw = fs.readFileSync(filePath, 'utf-8');
 
@@ -168,12 +168,12 @@ export function loadConfig(configPath?: string): McpdConfig {
     throw new Error(`Invalid JSON in config file: ${filePath}`);
   }
 
-  const result = McpdConfigSchema.safeParse(parsed);
+  const result = TooldConfigSchema.safeParse(parsed);
   if (!result.success) {
     throw new Error(`Invalid config: ${z.prettifyError(result.error)}`);
   }
 
-  const config = result.data as McpdConfig;
+  const config = result.data as TooldConfig;
 
   // Merge global config servers when using a project-level config
   const globalConfigPath = getGlobalConfigPath();
@@ -183,13 +183,13 @@ export function loadConfig(configPath?: string): McpdConfig {
   ) {
     try {
       const globalRaw = JSON.parse(fs.readFileSync(globalConfigPath, 'utf-8'));
-      const globalResult = McpdConfigSchema.safeParse(globalRaw);
+      const globalResult = TooldConfigSchema.safeParse(globalRaw);
       if (globalResult.success) {
         // Global servers as base, project servers take precedence
         config.mcpServers = {
           ...globalResult.data.mcpServers,
           ...config.mcpServers,
-        } as McpdConfig['mcpServers'];
+        } as TooldConfig['mcpServers'];
       }
     } catch {
       // Ignore invalid global config
@@ -198,7 +198,7 @@ export function loadConfig(configPath?: string): McpdConfig {
 
   // Merge Claude Desktop servers if enabled
   if (config.mergeClaudeConfig) {
-    config.mcpServers = mergeClaudeDesktopServers(config.mcpServers) as McpdConfig['mcpServers'];
+    config.mcpServers = mergeClaudeDesktopServers(config.mcpServers) as TooldConfig['mcpServers'];
   }
 
   validateServerConfigs(config);

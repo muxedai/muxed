@@ -7,7 +7,7 @@ import { generateTypes, type ToolEntry } from '../../codegen/typegen.js';
 
 export const typegenCommand = new Command('typegen')
   .description('Generate TypeScript types from tool schemas for type-safe tool calls')
-  .option('-c, --config <path>', 'Path to mcpd.config.json')
+  .option('-c, --config <path>', 'Path to toold.config.json')
   .action(async (opts: { config?: string }) => {
     const configPath = typegenCommand.parent?.opts().config ?? opts.config;
     await ensureDaemon(configPath);
@@ -16,10 +16,10 @@ export const typegenCommand = new Command('typegen')
 
     const content = await generateTypes(tools);
 
-    // Resolve node_modules/mcpd/ from the user's project
+    // Resolve node_modules/toold/ from the user's project
     const require = createRequire(path.resolve('package.json'));
-    const mcpdPkgDir = path.dirname(require.resolve('mcpd/package.json'));
-    const outputPath = path.join(mcpdPkgDir, 'mcpd.generated.d.ts');
+    const tooldPkgDir = path.dirname(require.resolve('toold/package.json'));
+    const outputPath = path.join(tooldPkgDir, 'toold.generated.d.ts');
 
     fs.writeFileSync(outputPath, content, 'utf-8');
 
