@@ -43,6 +43,35 @@ body::after {
   background-size: 256px 256px;
 }
 
+/* Dot grid atmosphere */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  background-image: radial-gradient(
+    circle,
+    rgba(129, 140, 248, 0.035) 1px,
+    transparent 1px
+  );
+  background-size: 24px 24px;
+}
+
+/* === Cursor blink === */
+@keyframes cursor-blink {
+  0%,
+  100% {
+    opacity: 0.8;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+.cursor-blink {
+  animation: cursor-blink 1.2s step-end infinite;
+}
+
 /* === Buttons === */
 .btn {
   @apply inline-flex items-center gap-2 px-5 py-2 rounded text-[13px] font-mono font-medium border border-edge bg-raised text-fg-muted cursor-pointer transition-all no-underline;
@@ -81,6 +110,16 @@ body::after {
   z-index: -1;
   mask-image: linear-gradient(to bottom, white 50%, transparent 100%);
   -webkit-mask-image: linear-gradient(to bottom, white 50%, transparent 100%);
+  animation: glow-breathe 6s ease-in-out infinite;
+}
+@keyframes glow-breathe {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
 }
 
 /* === Shimmer border === */
@@ -124,25 +163,66 @@ body::after {
   opacity: 1;
 }
 
+/* === Claude Code terminal === */
+.cc-terminal {
+  background: var(--color-page);
+}
+.cc-header {
+  background: rgba(0, 0, 0, 0.25);
+}
+
+/* === Trajectory pass glow === */
+.trajectory-pass {
+  border-color: rgba(94, 194, 105, 0.2);
+}
+
 /* === CTA glow === */
 .cta-glow {
   position: relative;
   isolation: isolate;
+  overflow: hidden;
 }
 .cta-glow::before {
   content: "";
   position: absolute;
-  top: -120px;
+  top: 0;
   left: 0;
   right: 0;
   bottom: 0;
   background: radial-gradient(
     ellipse at center top,
     rgba(129, 140, 248, 0.15) 0%,
-    transparent 60%
+    transparent 70%
   );
   pointer-events: none;
   z-index: -1;
+}
+
+/* === Feature card === */
+.feature-card {
+  position: relative;
+}
+.feature-card::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(to bottom, var(--color-brand), transparent 80%);
+  border-radius: 1px;
+  opacity: 0.6;
+  transition: opacity 0.3s;
+}
+.feature-card:hover::after {
+  opacity: 1;
+  filter: drop-shadow(0 0 6px rgba(129, 140, 248, 0.4));
+}
+.feature-card:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    -3px 0 12px -4px rgba(129, 140, 248, 0.2),
+    0 6px 20px rgba(0, 0, 0, 0.2);
 }
 
 /* === Entrance animations === */
@@ -175,19 +255,13 @@ body::after {
   animation-delay: 0ms;
 }
 .features-stagger > .visible:nth-child(2) {
-  animation-delay: 60ms;
+  animation-delay: 80ms;
 }
 .features-stagger > .visible:nth-child(3) {
-  animation-delay: 120ms;
+  animation-delay: 160ms;
 }
 .features-stagger > .visible:nth-child(4) {
-  animation-delay: 180ms;
-}
-.features-stagger > .visible:nth-child(5) {
   animation-delay: 240ms;
-}
-.features-stagger > .visible:nth-child(6) {
-  animation-delay: 300ms;
 }
 
 /* === Code block === */
@@ -260,7 +334,9 @@ body::after {
 
 /* === Stat value glow === */
 .stat-glow {
-  text-shadow: 0 0 20px rgba(129, 140, 248, 0.3);
+  text-shadow:
+    0 0 20px rgba(129, 140, 248, 0.4),
+    0 0 60px rgba(129, 140, 248, 0.12);
 }
 
 /* === Responsive === */
