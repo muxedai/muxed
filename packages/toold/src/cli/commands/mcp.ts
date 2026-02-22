@@ -1,29 +1,22 @@
 import { Command } from 'commander';
 import {
   getConfigPath,
-  readConfigFile,
   addServer,
   removeServer,
   getServer,
   listServers,
 } from '../../core/config-writer.js';
-import {
-  discoverAgentConfigs,
-  mergeServers,
-  writeTooldConfig,
-  getTooldConfigPath,
-} from '../../core/agents.js';
+import { discoverAgentConfigs, mergeServers, writeTooldConfig } from '../../core/agents.js';
 import type {
   ServerConfig,
   StdioServerConfig,
   HttpServerConfig,
   OAuthConfig,
 } from '../../core/types.js';
-import { isStdioConfig, isHttpConfig } from '../../core/types.js';
 import { formatJson, formatMcpServer, formatMcpServerList } from '../formatter.js';
 import { isDaemonRunning } from '../../daemon/process.js';
 import { sendRequest } from '../client.js';
-import { startMcpProxy } from '../../mcp-proxy.js';
+import { startMcpProxy } from '../../mcp/mcp-proxy.js';
 import * as readline from 'node:readline/promises';
 import fs from 'node:fs';
 

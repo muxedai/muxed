@@ -1,8 +1,11 @@
 {
   "mcpServers": {
-    "everything": {
-      "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-everything"]
+    "posthog-prod": {
+      "type": "http",
+      "url": "https://mcp.posthog.com/mcp",
+      "headers": {
+        "x-posthog-mcp-version": "2"
+      }
     }
   }
 }

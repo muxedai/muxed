@@ -2,7 +2,7 @@ import { fork } from 'node:child_process';
 import fs from 'node:fs';
 import net from 'node:net';
 import path from 'node:path';
-import { getTooldDir, getPidPath, getSocketPath } from '../utils/paths.js';
+import { getTooldDir, getPidPath, getSocketPath, ensureTooldDir } from '../utils/paths.js';
 
 function getLockPath(): string {
   return path.join(getTooldDir(), 'toold.lock');
@@ -62,15 +62,16 @@ function tryConnectSocket(socketPath: string): Promise<boolean> {
 function acquireLock(): boolean {
   const lockPath = getLockPath();
   try {
+    ensureTooldDir();
     // Use exclusive flag to ensure atomic creation
     fs.writeFileSync(lockPath, String(process.pid), { flag: 'wx' });
     return true;
   } catch (err) {
     if ((err as NodeJS.ErrnoException).code === 'EEXIST') {
-      // Lock file exists – check if the holder is still alive
+      // Lock file exists – check if the holder is still alive and is a toold process
       try {
         const lockPid = parseInt(fs.readFileSync(lockPath, 'utf-8').trim(), 10);
-        if (!Number.isFinite(lockPid) || !isProcessAlive(lockPid)) {
+        if (!Number.isFinite(lockPid) || !isProcessAlive(lockPid) || !isTooldProcess(lockPid)) {
           // Stale lock, remove and retry
           fs.unlinkSync(lockPath);
           try {
@@ -147,23 +148,25 @@ export async function cleanupStaleFiles(): Promise<void> {
   }
 
   if (pid === null) {
-    // No PID file but socket might exist
+    // No PID file but socket/lock might exist as stale leftovers
     try {
       fs.unlinkSync(socketPath);
     } catch {
       // ignore
     }
+    releaseLock();
   }
 }
 
 export async function daemonize(configPath?: string): Promise<void> {
   // Acquire lock to prevent race conditions
   if (!acquireLock()) {
-    // Another process is starting the daemon, wait for it
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    const running = await isDaemonRunning();
-    if (running) return;
-    throw new Error('Another process is starting the daemon. Try again.');
+    // Another process is starting the daemon – poll until it's ready
+    for (let i = 0; i < 10; i++) {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      if (await isDaemonRunning()) return;
+    }
+    throw new Error('Timed out waiting for another process to start the daemon.');
   }
 
   try {

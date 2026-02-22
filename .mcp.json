@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "toold": {
+      "command": "npx",
+      "args": ["toold", "mcp"]
+    }
+  }
+}

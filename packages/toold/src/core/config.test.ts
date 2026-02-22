@@ -59,8 +59,30 @@ describe('loadConfig', () => {
     });
   });
 
-  it('throws on missing config file', () => {
+  it('throws on explicit config path that does not exist', () => {
     expect(() => loadConfig('/nonexistent/path/config.json')).toThrow('Config file not found');
+  });
+
+  it('returns default config with empty mcpServers when no config file exists', () => {
+    // Use a cwd where no config exists, and no global config
+    const origCwd = process.cwd();
+    process.chdir(tmpDir);
+    const globalPath = path.join(os.homedir(), '.config', 'toold', 'config.json');
+    const hadGlobal = fs.existsSync(globalPath);
+    const originalGlobal = hadGlobal ? fs.readFileSync(globalPath, 'utf-8') : null;
+    if (hadGlobal) fs.unlinkSync(globalPath);
+
+    try {
+      const config = loadConfig();
+      expect(config.mcpServers).toEqual({});
+      expect(config.daemon).toBeDefined();
+    } finally {
+      process.chdir(origCwd);
+      if (originalGlobal !== null) {
+        fs.mkdirSync(path.dirname(globalPath), { recursive: true });
+        fs.writeFileSync(globalPath, originalGlobal);
+      }
+    }
   });
 
   it('throws on invalid JSON', () => {

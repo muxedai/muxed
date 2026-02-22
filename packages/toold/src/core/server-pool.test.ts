@@ -78,6 +78,64 @@ describe('ServerPool', () => {
     expect(pool.getServer('unknown')).toBeUndefined();
   });
 
+  it('grepTools matches tool name', async () => {
+    pool = new ServerPool();
+    await pool.connectAll(validConfig);
+
+    const results = pool.grepTools('echo');
+    expect(results.length).toBeGreaterThan(0);
+    expect(results.every((r) => /echo/i.test(r.tool.name))).toBe(true);
+  });
+
+  it('grepTools matches server name', async () => {
+    pool = new ServerPool();
+    await pool.connectAll(validConfig);
+
+    const results = pool.grepTools('everything');
+    expect(results.length).toBeGreaterThan(0);
+    expect(results.every((r) => r.server === 'everything')).toBe(true);
+  });
+
+  it('grepTools matches combined server/tool pattern', async () => {
+    pool = new ServerPool();
+    await pool.connectAll(validConfig);
+
+    const results = pool.grepTools('everything.*echo');
+    expect(results.length).toBeGreaterThan(0);
+    expect(results[0]!.server).toBe('everything');
+    expect(results[0]!.tool.name).toBe('echo');
+  });
+
+  it('grepTools returns empty for no match', async () => {
+    pool = new ServerPool();
+    await pool.connectAll(validConfig);
+
+    const results = pool.grepTools('zzz_nonexistent_zzz');
+    expect(results).toHaveLength(0);
+  });
+
+  it('grepTools normalizes BRE alternation to JS regex', async () => {
+    pool = new ServerPool();
+    await pool.connectAll(validConfig);
+
+    // BRE-style \| should work as alternation (same as JS |)
+    const breResults = pool.grepTools('echo\\|add');
+    const jsResults = pool.grepTools('echo|add');
+    expect(breResults.length).toBeGreaterThan(0);
+    expect(breResults).toEqual(jsResults);
+  });
+
+  it('grepTools normalizes BRE grouping to JS regex', async () => {
+    pool = new ServerPool();
+    await pool.connectAll(validConfig);
+
+    // BRE-style \( \) should work as grouping
+    const breResults = pool.grepTools('\\(echo\\|add\\)');
+    const jsResults = pool.grepTools('(echo|add)');
+    expect(breResults.length).toBeGreaterThan(0);
+    expect(breResults).toEqual(jsResults);
+  });
+
   it('handles mixed success and failure in connectAll', async () => {
     pool = new ServerPool();
     const mixedConfig: TooldConfig = {

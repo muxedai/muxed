@@ -121,7 +121,7 @@ function getGlobalConfigPath(): string {
   return path.join(os.homedir(), '.config', 'toold', 'config.json');
 }
 
-function findConfigFile(configPath?: string): string {
+function findConfigFile(configPath?: string): string | null {
   if (configPath) {
     if (!fs.existsSync(configPath)) {
       throw new Error(`Config file not found: ${configPath}`);
@@ -139,9 +139,7 @@ function findConfigFile(configPath?: string): string {
     return homeConfig;
   }
 
-  throw new Error(
-    'No config file found. Create toold.config.json in the current directory or ~/.config/toold/config.json'
-  );
+  return null;
 }
 
 function validateServerConfigs(config: TooldConfig): void {
@@ -159,26 +157,13 @@ function validateServerConfigs(config: TooldConfig): void {
 
 export function loadConfig(configPath?: string): TooldConfig {
   const filePath = findConfigFile(configPath);
-  const raw = fs.readFileSync(filePath, 'utf-8');
 
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(raw);
-  } catch {
-    throw new Error(`Invalid JSON in config file: ${filePath}`);
-  }
-
-  const result = TooldConfigSchema.safeParse(parsed);
-  if (!result.success) {
-    throw new Error(`Invalid config: ${z.prettifyError(result.error)}`);
-  }
-
-  const config = result.data as TooldConfig;
+  const config: TooldConfig = filePath ? parseConfigFile(filePath) : { mcpServers: {} };
 
   // Merge global config servers when using a project-level config
   const globalConfigPath = getGlobalConfigPath();
   if (
-    path.resolve(filePath) !== path.resolve(globalConfigPath) &&
+    (!filePath || path.resolve(filePath) !== path.resolve(globalConfigPath)) &&
     fs.existsSync(globalConfigPath)
   ) {
     try {
@@ -216,4 +201,22 @@ export function loadConfig(configPath?: string): TooldConfig {
   };
 
   return config;
+}
+
+function parseConfigFile(filePath: string): TooldConfig {
+  const raw = fs.readFileSync(filePath, 'utf-8');
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    throw new Error(`Invalid JSON in config file: ${filePath}`);
+  }
+
+  const result = TooldConfigSchema.safeParse(parsed);
+  if (!result.success) {
+    throw new Error(`Invalid config: ${z.prettifyError(result.error)}`);
+  }
+
+  return result.data as TooldConfig;
 }

@@ -146,14 +146,17 @@ export class ServerPool {
   }
 
   grepTools(pattern: string): Array<{ server: string; tool: Tool }> {
-    const regex = new RegExp(pattern, 'i');
+    // Normalize BRE (grep) metacharacters to JS regex equivalents:
+    // BRE uses \| \( \) \{ \} where JS uses | ( ) { }
+    const normalized = pattern.replace(/\\([|()\{\}])/g, '$1');
+    const regex = new RegExp(normalized, 'i');
     const result: Array<{ server: string; tool: Tool }> = [];
 
     for (const [name, manager] of this.servers) {
       if (manager.getStatus() !== 'connected') continue;
       for (const tool of manager.listTools()) {
         if (
-          regex.test(tool.name) ||
+          regex.test(`${name}/${tool.name}`) ||
           (tool.title && regex.test(tool.title)) ||
           (tool.description && regex.test(tool.description))
         ) {
