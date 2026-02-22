@@ -73,7 +73,7 @@ const codeAfter = `<span class="kw">⛁ </span><span class="flag">⛁ </span><sp
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://mcpd.dev" />
   </head>
-  <body class="font-mono bg-page text-fg text-sm leading-[1.6] antialiased">
+  <body class="font-mono bg-page text-fg text-sm leading-[1.6] antialiased overflow-x-hidden">
     <!-- Navigation -->
     <div class="max-w-[960px] mx-auto px-6">
       <nav class="flex items-center justify-between py-4 border-b border-edge">
@@ -104,18 +104,18 @@ const codeAfter = `<span class="kw">⛁ </span><span class="flag">⛁ </span><sp
 
     <!-- Hero -->
     <div class="max-w-[960px] mx-auto px-6">
-      <section class="py-8 md:py-16 section-divided">
-        <div class="text-center pt-8 relative hero-glow">
+      <section class="py-16 md:py-28 section-divided overflow-hidden">
+        <div class="text-center pt-4 md:pt-8 relative hero-glow">
           <pre
-            class="ascii-logo text-fg text-[11px] leading-tight tracking-wider whitespace-pre mb-8 opacity-50">{asciiLogo}</pre>
+            class="ascii-logo text-fg text-[11px] leading-tight tracking-wider whitespace-pre mb-10 md:mb-12 opacity-50">{asciiLogo}</pre>
 
           <h1
-            class="text-xl md:text-2xl font-semibold text-fg max-w-[600px] mx-auto mb-4 leading-snug"
+            class="text-xl md:text-2xl font-semibold text-fg max-w-[600px] mx-auto mb-5 leading-snug"
           >
             Your agent wastes your time &mdash; and it's the tools' fault.
           </h1>
           <p
-            class="text-[13px] text-fg-muted max-w-[540px] mx-auto mb-8 leading-relaxed"
+            class="text-[13px] text-fg-muted max-w-[540px] mx-auto mb-10 leading-relaxed"
           >
             Every MCP server you add dumps schemas into context, and the model
             spends tokens figuring out tools instead of doing your task. mcpd
@@ -124,7 +124,7 @@ const codeAfter = `<span class="kw">⛁ </span><span class="flag">⛁ </span><sp
           </p>
 
           <div
-            class="shimmer-border inline-flex items-center gap-3 bg-raised border border-edge rounded-lg px-5 py-3 text-sm mb-6 cursor-pointer hover:border-edge-light hover:bg-hover transition relative overflow-hidden"
+            class="shimmer-border inline-flex items-center gap-3 bg-raised border border-edge rounded-lg px-5 py-3 text-sm mb-8 cursor-pointer hover:border-edge-light hover:bg-hover transition relative overflow-hidden"
             id="install-box"
           >
             <span class="text-green select-none">$</span>
@@ -138,7 +138,7 @@ const codeAfter = `<span class="kw">⛁ </span><span class="flag">⛁ </span><sp
           </div>
 
           <div
-            class="flex flex-col md:flex-row justify-center items-center gap-4 mt-6"
+            class="flex flex-col md:flex-row justify-center items-center gap-4 mt-8"
           >
             <a href="/getting-started/installation/" class="btn btn-primary"
               >Get Started</a
@@ -272,9 +272,16 @@ const codeAfter = `<span class="kw">⛁ </span><span class="flag">⛁ </span><sp
                 <div class="cc-tool py-1.5 pl-4 border-l-2 border-edge ml-1">
                   <span class="text-fg-faint">&#9881; </span>
                   <span class="text-fg-faint">postgres/execute_query</span>
-                  <span class="text-red ml-2 text-[10px]"
-                    >wrong tool &mdash; 200 schemas in context</span
-                  >
+                  <span class="text-red ml-2 text-[10px]">wrong tool</span>
+                </div>
+                <div class="cc-tool py-1.5 pl-4 border-l-2 border-edge ml-1">
+                  <span class="text-fg-faint">&#9881; </span>
+                  <span class="text-fg-faint">filesystem/read_file</span>
+                  <span class="text-red ml-2 text-[10px]">wrong tool</span>
+                </div>
+                <div class="cc-tool py-1.5 pl-4 border-l-2 border-red/30 ml-1">
+                  <span class="text-fg-faint italic">...38 more tool calls</span>
+                  <span class="text-red ml-2 text-[10px]">no result</span>
                 </div>
                 <div class="cc-agent py-1.5 pl-4 border-l-2 border-red/30 ml-1">
                   <span class="text-red"
