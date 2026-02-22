@@ -14,21 +14,21 @@ toold init [--dry-run] [--json] [--no-delete] [--no-replace]
 
 ### Flags
 
-| Flag | Description |
-|------|-------------|
-| `--dry-run` | Show what would be done without writing any files |
-| `--json` | Output results as JSON |
-| `--no-delete` | Copy servers to toold config but don't remove originals |
+| Flag           | Description                                                 |
+| -------------- | ----------------------------------------------------------- |
+| `--dry-run`    | Show what would be done without writing any files           |
+| `--json`       | Output results as JSON                                      |
+| `--no-delete`  | Copy servers to toold config but don't remove originals     |
 | `--no-replace` | Don't inject toold as a replacement server in agent configs |
 
 ### Flow
 
-1. **Discover** — Scan all known agent config file locations (local + global) for MCP server entries
-2. **Deduplicate** — Merge discovered servers, handling name collisions (same name + same config → keep one; same name + different config → prefix with agent name)
-3. **Write toold config** — Merge discovered servers into `toold.config.json` (local) or `~/.config/toold/config.json` (global), creating the file if it doesn't exist
-4. **Replace in agents** — For each agent config that had servers removed, inject a single `toold` stdio server entry pointing to `npx toold` (so the agent uses toold as its MCP proxy)
-5. **Delete originals** — Remove the original `mcpServers` / `servers` entries from agent configs (unless `--no-delete`)
-6. **Report** — Print summary of what was discovered, merged, and cleaned up
+1. **Discover** – Scan all known agent config file locations (local + global) for MCP server entries
+2. **Deduplicate** – Merge discovered servers, handling name collisions (same name + same config → keep one; same name + different config → prefix with agent name)
+3. **Write toold config** – Merge discovered servers into `toold.config.json` (local) or `~/.config/toold/config.json` (global), creating the file if it doesn't exist
+4. **Replace in agents** – For each agent config that had servers removed, inject a single `toold` stdio server entry pointing to `npx toold` (so the agent uses toold as its MCP proxy)
+5. **Delete originals** – Remove the original `mcpServers` / `servers` entries from agent configs (unless `--no-delete`)
+6. **Report** – Print summary of what was discovered, merged, and cleaned up
 
 ### Which config file gets written
 
@@ -42,25 +42,25 @@ toold init [--dry-run] [--json] [--no-delete] [--no-replace]
 
 Searched relative to `process.cwd()`:
 
-| Agent | Path | Key | Notes |
-|-------|------|-----|-------|
-| Claude Code | `.mcp.json` | `mcpServers` | Project-scoped |
-| Cursor | `.cursor/mcp.json` | `mcpServers` | |
-| VS Code | `.vscode/mcp.json` | `servers` | Has `inputs` array, `type` field on entries |
-| Roo Code | `.roo/mcp.json` | `mcpServers` | Has `alwaysAllow`, `disabled` fields |
-| Amazon Q | `.amazonq/mcp.json` | `mcpServers` | Has `timeout` field |
+| Agent       | Path                | Key          | Notes                                       |
+| ----------- | ------------------- | ------------ | ------------------------------------------- |
+| Claude Code | `.mcp.json`         | `mcpServers` | Project-scoped                              |
+| Cursor      | `.cursor/mcp.json`  | `mcpServers` |                                             |
+| VS Code     | `.vscode/mcp.json`  | `servers`    | Has `inputs` array, `type` field on entries |
+| Roo Code    | `.roo/mcp.json`     | `mcpServers` | Has `alwaysAllow`, `disabled` fields        |
+| Amazon Q    | `.amazonq/mcp.json` | `mcpServers` | Has `timeout` field                         |
 
 ### Global (user-level) configs
 
-| Agent | Path (Linux) | Path (macOS) | Key | Notes |
-|-------|-------------|-------------|-----|-------|
-| Claude Desktop | `~/.config/Claude/claude_desktop_config.json` | `~/Library/Application Support/Claude/claude_desktop_config.json` | `mcpServers` | |
-| Cursor | `~/.cursor/mcp.json` | `~/.cursor/mcp.json` | `mcpServers` | |
-| Windsurf | `~/.codeium/windsurf/mcp_config.json` | `~/.codeium/windsurf/mcp_config.json` | `mcpServers` | Uses `serverUrl` for HTTP — normalize to `url` |
-| VS Code (global) | `~/.config/Code/User/mcp.json` | `~/Library/Application Support/Code/User/mcp.json` | `servers` | |
-| Cline | `~/.config/Code/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json` | `~/Library/Application Support/Code/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json` | `mcpServers` | |
-| Roo Code | `~/.config/Code/User/globalStorage/rooveterinaryinc.roo-cline/settings/cline_mcp_settings.json` | `~/Library/Application Support/Code/User/globalStorage/rooveterinaryinc.roo-cline/settings/cline_mcp_settings.json` | `mcpServers` | |
-| Amazon Q | `~/.aws/amazonq/mcp.json` | `~/.aws/amazonq/mcp.json` | `mcpServers` | |
+| Agent            | Path (Linux)                                                                                    | Path (macOS)                                                                                                        | Key          | Notes                                          |
+| ---------------- | ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- | ------------ | ---------------------------------------------- |
+| Claude Desktop   | `~/.config/Claude/claude_desktop_config.json`                                                   | `~/Library/Application Support/Claude/claude_desktop_config.json`                                                   | `mcpServers` |                                                |
+| Cursor           | `~/.cursor/mcp.json`                                                                            | `~/.cursor/mcp.json`                                                                                                | `mcpServers` |                                                |
+| Windsurf         | `~/.codeium/windsurf/mcp_config.json`                                                           | `~/.codeium/windsurf/mcp_config.json`                                                                               | `mcpServers` | Uses `serverUrl` for HTTP – normalize to `url` |
+| VS Code (global) | `~/.config/Code/User/mcp.json`                                                                  | `~/Library/Application Support/Code/User/mcp.json`                                                                  | `servers`    |                                                |
+| Cline            | `~/.config/Code/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json`     | `~/Library/Application Support/Code/User/globalStorage/saoudrizwan.claude-dev/settings/cline_mcp_settings.json`     | `mcpServers` |                                                |
+| Roo Code         | `~/.config/Code/User/globalStorage/rooveterinaryinc.roo-cline/settings/cline_mcp_settings.json` | `~/Library/Application Support/Code/User/globalStorage/rooveterinaryinc.roo-cline/settings/cline_mcp_settings.json` | `mcpServers` |                                                |
+| Amazon Q         | `~/.aws/amazonq/mcp.json`                                                                       | `~/.aws/amazonq/mcp.json`                                                                                           | `mcpServers` |                                                |
 
 ## Normalization
 
@@ -68,7 +68,7 @@ Each agent stores servers slightly differently. Before merging into toold config
 
 1. **VS Code `servers` → `mcpServers`**: Rename key. Strip `type` field from stdio entries (toold infers from presence of `command` vs `url`). Keep `type: "sse"` as `transport: "sse"`.
 2. **Windsurf `serverUrl`**: Rename to `url`.
-3. **Extra fields**: Strip agent-specific fields (`alwaysAllow`, `disabled`, `timeout`, `source`) — these are not relevant to toold.
+3. **Extra fields**: Strip agent-specific fields (`alwaysAllow`, `disabled`, `timeout`, `source`) – these are not relevant to toold.
 4. **`env` with `${input:...}` references** (VS Code): Warn user that these require manual resolution. Keep the env vars but log a warning.
 
 ## Deduplication Strategy
@@ -103,42 +103,42 @@ Before modifying any agent config file, create a `.bak` backup alongside it (e.g
 
 ### New files
 
-| File | Purpose |
-|------|---------|
-| `src/cli/commands/init.ts` | Command definition and orchestration |
-| `src/core/agents.ts` | Agent config discovery, reading, normalization, and writing |
+| File                       | Purpose                                                     |
+| -------------------------- | ----------------------------------------------------------- |
+| `src/cli/commands/init.ts` | Command definition and orchestration                        |
+| `src/core/agents.ts`       | Agent config discovery, reading, normalization, and writing |
 
 ### Changes to existing files
 
-| File | Change |
-|------|--------|
-| `src/cli/index.ts` | Register `initCommand` |
+| File                   | Change                                       |
+| ---------------------- | -------------------------------------------- |
+| `src/cli/index.ts`     | Register `initCommand`                       |
 | `src/cli/formatter.ts` | Add `formatInit()` for human-readable output |
 
 ### Step-by-step
 
-#### 1. `src/core/agents.ts` — Agent config discovery engine
+#### 1. `src/core/agents.ts` – Agent config discovery engine
 
 Define a registry of known agents:
 
 ```typescript
 type AgentDef = {
-  name: string;                          // e.g., "claude-desktop", "cursor", "vscode"
+  name: string; // e.g., "claude-desktop", "cursor", "vscode"
   scope: 'local' | 'global';
-  configPath: () => string | null;       // returns absolute path or null if N/A for this OS
-  serversKey: 'mcpServers' | 'servers';  // which JSON key holds the servers
+  configPath: () => string | null; // returns absolute path or null if N/A for this OS
+  serversKey: 'mcpServers' | 'servers'; // which JSON key holds the servers
   normalize?: (servers: Record<string, unknown>) => Record<string, ServerConfig>;
 };
 ```
 
 Functions:
 
-- `getAgentDefs(): AgentDef[]` — Return full list of agent definitions (local + global)
-- `discoverAgentConfigs(): DiscoveredConfig[]` — Scan all paths, return found configs with their servers
-- `normalizeServers(agent: AgentDef, raw: Record<string, unknown>): Record<string, ServerConfig>` — Strip extra fields, rename keys
-- `mergeServers(discovered: DiscoveredConfig[]): { merged: Record<string, ServerConfig>; conflicts: Conflict[] }` — Deduplicate
-- `writeAgentConfig(agent: AgentDef, configPath: string, servers: Record<string, ServerConfig> | null, tooldEntry: Record<string, unknown> | null): void` — Modify agent file (remove old servers, optionally add toold entry)
-- `writeMcpdConfig(configPath: string, servers: Record<string, ServerConfig>, existingConfig?: McpdConfig): void` — Write or merge into toold config
+- `getAgentDefs(): AgentDef[]` – Return full list of agent definitions (local + global)
+- `discoverAgentConfigs(): DiscoveredConfig[]` – Scan all paths, return found configs with their servers
+- `normalizeServers(agent: AgentDef, raw: Record<string, unknown>): Record<string, ServerConfig>` – Strip extra fields, rename keys
+- `mergeServers(discovered: DiscoveredConfig[]): { merged: Record<string, ServerConfig>; conflicts: Conflict[] }` – Deduplicate
+- `writeAgentConfig(agent: AgentDef, configPath: string, servers: Record<string, ServerConfig> | null, tooldEntry: Record<string, unknown> | null): void` – Modify agent file (remove old servers, optionally add toold entry)
+- `writeMcpdConfig(configPath: string, servers: Record<string, ServerConfig>, existingConfig?: McpdConfig): void` – Write or merge into toold config
 
 Types:
 
@@ -147,28 +147,28 @@ type DiscoveredConfig = {
   agent: AgentDef;
   configPath: string;
   servers: Record<string, ServerConfig>;
-  rawServers: Record<string, unknown>;     // original for diffing
-  otherContent: Record<string, unknown>;   // rest of the JSON (preserved on write-back)
+  rawServers: Record<string, unknown>; // original for diffing
+  otherContent: Record<string, unknown>; // rest of the JSON (preserved on write-back)
 };
 
 type Conflict = {
   name: string;
   agents: string[];
-  resolution: string;  // e.g., "prefixed as cursor-myserver"
+  resolution: string; // e.g., "prefixed as cursor-myserver"
 };
 
 type InitResult = {
   discovered: Array<{ agent: string; path: string; serverCount: number }>;
-  imported: string[];             // server names added to toold config
-  skipped: string[];              // server names already in toold config
+  imported: string[]; // server names added to toold config
+  skipped: string[]; // server names already in toold config
   conflicts: Conflict[];
-  warnings: string[];             // e.g., "${input:...} references"
-  modifiedFiles: string[];        // agent configs that were modified
-  tooldConfigPath: string;         // where toold config was written
+  warnings: string[]; // e.g., "${input:...} references"
+  modifiedFiles: string[]; // agent configs that were modified
+  tooldConfigPath: string; // where toold config was written
 };
 ```
 
-#### 2. `src/cli/commands/init.ts` — Command definition
+#### 2. `src/cli/commands/init.ts` – Command definition
 
 ```typescript
 export const initCommand = new Command('init')
@@ -176,7 +176,7 @@ export const initCommand = new Command('init')
   .option('--dry-run', 'Show what would be done without writing files')
   .option('--json', 'Output as JSON')
   .option('--no-delete', 'Keep original server entries in agent configs')
-  .option('--no-replace', 'Don\'t add toold entry to agent configs')
+  .option('--no-replace', "Don't add toold entry to agent configs")
   .action(async (opts) => {
     // 1. Determine target toold config path
     // 2. Call discoverAgentConfigs()
@@ -188,9 +188,10 @@ export const initCommand = new Command('init')
   });
 ```
 
-#### 3. `src/cli/formatter.ts` — Add `formatInit()`
+#### 3. `src/cli/formatter.ts` – Add `formatInit()`
 
 Human-readable output showing:
+
 - Table of discovered agents with server counts
 - List of imported servers
 - Any conflicts and how they were resolved
@@ -198,7 +199,7 @@ Human-readable output showing:
 - Files modified
 - Path to toold config written
 
-#### 4. `src/cli/index.ts` — Register command
+#### 4. `src/cli/index.ts` – Register command
 
 Add import and `program.addCommand(initCommand)`.
 
@@ -224,7 +225,7 @@ Conflicts (resolved by prefixing):
   github → cursor-github, vscode-github
 
 Warnings:
-  vscode server "api-service": env references ${input:api-key} — set manually in toold config
+  vscode server "api-service": env references ${input:api-key} – set manually in toold config
 
 Modified files:
   .cursor/mcp.json (backed up to .cursor/mcp.json.bak)
@@ -235,10 +236,10 @@ Modified files:
 
 ## Edge Cases
 
-1. **No agent configs found** — Print "No MCP server configurations found in any known agent config files." and exit cleanly
-2. **toold config already exists with all servers** — Print "All discovered servers already exist in toold config. Nothing to do."
-3. **Agent config file is malformed JSON** — Warn and skip that file, continue with others
-4. **Agent config file has no servers** — Skip silently
-5. **Permission errors reading/writing files** — Warn per file, continue with others
-6. **Circular reference** — If an agent config already has an toold entry, skip it (don't import toold into toold)
-7. **Empty servers after normalization** — Skip that agent
+1. **No agent configs found** – Print "No MCP server configurations found in any known agent config files." and exit cleanly
+2. **toold config already exists with all servers** – Print "All discovered servers already exist in toold config. Nothing to do."
+3. **Agent config file is malformed JSON** – Warn and skip that file, continue with others
+4. **Agent config file has no servers** – Skip silently
+5. **Permission errors reading/writing files** – Warn per file, continue with others
+6. **Circular reference** – If an agent config already has an toold entry, skip it (don't import toold into toold)
+7. **Empty servers after normalization** – Skip that agent

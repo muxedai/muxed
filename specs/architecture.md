@@ -29,25 +29,25 @@ Coding agents (like Claude Code) need to interact with multiple MCP servers, but
 
 ## CLI Commands
 
-| Command | Description |
-|---------|-------------|
-| `toold servers [--json]` | List servers with connection status, title, capabilities |
-| `toold tools [server] [--json]` | List available tools (with title, annotations) |
-| `toold info <server/tool> [--json]` | Tool schema details (inputSchema, outputSchema, annotations) |
-| `toold call <server/tool> [json\|-] [--timeout ms] [--async]` | Invoke a tool (`--async` for task-based execution) |
-| `toold grep <pattern>` | Search tool names, titles, and descriptions |
-| `toold resources [server] [--json]` | List resources (with title, annotations) |
-| `toold read <server/resource>` | Read a resource |
-| `toold prompts [server] [--json]` | List prompt templates (with title, icons) |
-| `toold prompt <server/prompt> [args-json] [--json]` | Get a prompt (render with arguments) |
-| `toold completions <type> <name> <arg> <value> [--json]` | Argument auto-completions |
-| `toold tasks [server] [--json]` | List active tasks |
-| `toold task <taskId> [--json]` | Get task status |
-| `toold task-result <taskId> [--json]` | Get completed task result |
-| `toold task-cancel <taskId>` | Cancel a running task |
-| `toold stop` | Stop daemon manually (optional, it auto-exits on idle) |
-| `toold status` | Daemon status: running/stopped, PID, uptime, servers, protocol versions |
-| `toold reload` | Reload config, reconnect changed servers |
+| Command                                                       | Description                                                             |
+| ------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| `toold servers [--json]`                                      | List servers with connection status, title, capabilities                |
+| `toold tools [server] [--json]`                               | List available tools (with title, annotations)                          |
+| `toold info <server/tool> [--json]`                           | Tool schema details (inputSchema, outputSchema, annotations)            |
+| `toold call <server/tool> [json\|-] [--timeout ms] [--async]` | Invoke a tool (`--async` for task-based execution)                      |
+| `toold grep <pattern>`                                        | Search tool names, titles, and descriptions                             |
+| `toold resources [server] [--json]`                           | List resources (with title, annotations)                                |
+| `toold read <server/resource>`                                | Read a resource                                                         |
+| `toold prompts [server] [--json]`                             | List prompt templates (with title, icons)                               |
+| `toold prompt <server/prompt> [args-json] [--json]`           | Get a prompt (render with arguments)                                    |
+| `toold completions <type> <name> <arg> <value> [--json]`      | Argument auto-completions                                               |
+| `toold tasks [server] [--json]`                               | List active tasks                                                       |
+| `toold task <taskId> [--json]`                                | Get task status                                                         |
+| `toold task-result <taskId> [--json]`                         | Get completed task result                                               |
+| `toold task-cancel <taskId>`                                  | Cancel a running task                                                   |
+| `toold stop`                                                  | Stop daemon manually (optional, it auto-exits on idle)                  |
+| `toold status`                                                | Daemon status: running/stopped, PID, uptime, servers, protocol versions |
+| `toold reload`                                                | Reload config, reconnect changed servers                                |
 
 All commands (except `stop`) auto-start the daemon if not running. Daemon auto-exits after idle timeout (default 5 min).
 
@@ -78,6 +78,7 @@ Format is intentionally compatible with `claude_desktop_config.json` `mcpServers
 - `headers` allows custom HTTP headers (e.g. auth tokens) for remote servers.
 
 Daemon settings:
+
 ```json
 {
   "daemon": {
@@ -98,18 +99,20 @@ Daemon settings:
 When toold connects to upstream MCP servers as a client, it declares these capabilities during `initialize`:
 
 **Declared (supported):**
-- `tasks`: `{ list: {}, cancel: {} }` — toold can track and cancel long-running tasks
+
+- `tasks`: `{ list: {}, cancel: {} }` – toold can track and cancel long-running tasks
 
 **Not declared (unsupported):**
-- `sampling` — CLI callers cannot perform LLM sampling on behalf of servers
-- `elicitation` — CLI callers cannot interactively collect user input
-- `roots` — toold does not provide filesystem root paths to servers
+
+- `sampling` – CLI callers cannot perform LLM sampling on behalf of servers
+- `elicitation` – CLI callers cannot interactively collect user input
+- `roots` – toold does not provide filesystem root paths to servers
 
 After handshake, toold stores each server's `ServerCapabilities` and `serverInfo` (including `name`, `version`, `title`, `description`, `icons`, `websiteUrl`) and the negotiated `protocolVersion`.
 
 ## Features Not Supported
 
-toold is a CLI proxy — it cannot relay server-initiated requests back to a non-interactive caller:
+toold is a CLI proxy – it cannot relay server-initiated requests back to a non-interactive caller:
 
 1. **Elicitation** (`elicitation/create`): Servers may request user input. toold does NOT register an elicitation handler. Tool calls that trigger elicitation will fail with an error indicating the capability is unavailable.
 
@@ -200,6 +203,7 @@ toold/
 ```
 
 **Tooling choices:**
+
 - **pnpm** as package manager
 - **obuild** for bundling (single entry point: `src/cli.ts`)
 - **Prettier** for formatting (`.prettierrc`: semi, singleQuote, trailingComma es5, printWidth 100)
@@ -212,6 +216,7 @@ toold/
 ## Key Implementation Details
 
 ### Server Manager
+
 - Uses SDK's `Client` + `StdioClientTransport` (stdio servers) or `StreamableHTTPClientTransport` (HTTP servers)
 - On connect: negotiates capabilities, stores `serverInfo` (name, version, title, description, icons, websiteUrl) and `ServerCapabilities`
 - After handshake: calls `listTools()`, `listResources()`, `listPrompts()` to build index
@@ -220,6 +225,7 @@ toold/
 - Periodic `ping()` health checks
 
 ### Lazy Start Flow
+
 1. CLI command runs → tries to connect to Unix socket
 2. Socket not found → CLI forks a daemon process in background
 3. Daemon starts, creates socket, connects to MCP servers, signals ready
@@ -228,7 +234,9 @@ toold/
 6. After `idleTimeout` ms with no requests → daemon shuts down, removes socket + PID file
 
 ### Daemon IPC Protocol
+
 CLI → daemon uses JSON-RPC 2.0 methods:
+
 - `servers/list`, `tools/list`, `tools/call`, `tools/info`, `tools/grep`
 - `resources/list`, `resources/read`
 - `prompts/list`, `prompts/get`
@@ -237,18 +245,22 @@ CLI → daemon uses JSON-RPC 2.0 methods:
 - `config/reload`, `daemon/status`
 
 ### Content Types in Tool Results
+
 Tool call results (`tools/call`) can contain multiple content types:
-- `text` — plain text, displayed directly
-- `image` — base64 image data, shown as `[Image: mimeType, size]` in CLI
-- `audio` — base64 audio data, shown as `[Audio: mimeType, size]` in CLI
-- `resource_link` — URI reference to a resource, shown as `Resource: name (uri)` in CLI
-- `resource` — embedded resource with text/blob data
-- `structuredContent` — typed JSON matching `outputSchema`, displayed as formatted JSON
+
+- `text` – plain text, displayed directly
+- `image` – base64 image data, shown as `[Image: mimeType, size]` in CLI
+- `audio` – base64 audio data, shown as `[Audio: mimeType, size]` in CLI
+- `resource_link` – URI reference to a resource, shown as `Resource: name (uri)` in CLI
+- `resource` – embedded resource with text/blob data
+- `structuredContent` – typed JSON matching `outputSchema`, displayed as formatted JSON
 
 All content types pass through unchanged in `--json` output.
 
 ### Tasks (Experimental)
+
 Some upstream tools declare `execution.taskSupport` ("required", "optional", or "forbidden"):
+
 - `taskSupport: "required"`: `toold call` uses task-based flow automatically. Without `--async`, blocks and polls until completion. With `--async`, returns task handle immediately.
 - `taskSupport: "optional"`: immediate execution by default; `--async` flag triggers task mode.
 - `taskSupport: "forbidden"` or absent: standard synchronous execution.
@@ -256,6 +268,7 @@ Some upstream tools declare `execution.taskSupport` ("required", "optional", or 
 Task flow: `tools/call` returns `CreateTaskResult` with `taskId` → poll with `tasks/get` → fetch result with `tasks/result` → cancel with `tasks/cancel`.
 
 ### Error Handling
+
 - Server fails to connect → log, mark as `error`, continue with others
 - Daemon not running → auto-start it (lazy start)
 - Stale PID/socket → detect dead PID, clean up, spawn fresh daemon

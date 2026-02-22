@@ -1,7 +1,7 @@
 ---
 import "../styles/landing.css";
 
-const title = "toold — Your agent wastes tokens on tools. Fix it.";
+const title = "toold – Your agent wastes tokens on tools. Fix it.";
 const description =
   "toold moves MCP tools to a background daemon so your agent's context stays clean and instructions get followed.";
 
@@ -11,7 +11,7 @@ const asciiLogo = `  _              _     _
  | || (_) | (_) | | (_| |
   \\__\\___/ \\___/|_|\\__,_|`;
 
-const codeDiscovery = `<span class="ln"> 1</span> <span class="comment"># find the tool you need — not all 200</span>
+const codeDiscovery = `<span class="ln"> 1</span> <span class="comment"># find the tool you need – not all 200</span>
 <span class="ln"> 2</span> <span class="dollar">$</span> toold grep <span class="str">"read"</span>
 <span class="ln"> 3</span> <span class="output">  filesystem/read_file      Read file contents</span>
 <span class="ln"> 4</span> <span class="output">  postgres/query            Read data via SQL</span>
@@ -20,7 +20,7 @@ const codeDiscovery = `<span class="ln"> 1</span> <span class="comment"># find t
 <span class="ln"> 7</span> <span class="dollar">$</span> toold info filesystem/read_file
 <span class="ln"> 8</span> <span class="output">  path (string, required)   File path to read</span>
 <span class="ln"> 9</span>
-<span class="ln">10</span> <span class="comment"># call it — only the result enters the LLM</span>
+<span class="ln">10</span> <span class="comment"># call it – only the result enters the LLM</span>
 <span class="ln">11</span> <span class="dollar">$</span> toold call filesystem/read_file \\
 <span class="ln">12</span>     <span class="str">'{"path": "/tmp/config.json"}'</span>`;
 
@@ -362,7 +362,9 @@ const codeAfter = `<span class="kw">⛁ </span><span class="flag">⛁ </span><sp
           <div
             class="feature-card bg-surface border border-edge rounded-lg p-6 hover:border-edge-light transition-all animate-in"
           >
-            <div class="text-sm mb-3 text-brand leading-none">98% fewer tokens</div>
+            <div class="text-sm mb-3 text-brand leading-none">
+              98% fewer tokens
+            </div>
             <h3 class="text-[13px] font-semibold mb-2 text-fg">
               Lazy discovery
             </h3>

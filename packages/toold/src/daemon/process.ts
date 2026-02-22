@@ -67,7 +67,7 @@ function acquireLock(): boolean {
     return true;
   } catch (err) {
     if ((err as NodeJS.ErrnoException).code === 'EEXIST') {
-      // Lock file exists — check if the holder is still alive
+      // Lock file exists – check if the holder is still alive
       try {
         const lockPid = parseInt(fs.readFileSync(lockPath, 'utf-8').trim(), 10);
         if (!Number.isFinite(lockPid) || !isProcessAlive(lockPid)) {
@@ -115,7 +115,7 @@ export async function cleanupStaleFiles(): Promise<void> {
   const pid = getDaemonPid();
 
   if (pid !== null && !isProcessAlive(pid)) {
-    // PID file exists but process is dead — stale
+    // PID file exists but process is dead – stale
     try {
       fs.unlinkSync(pidPath);
     } catch {
@@ -131,7 +131,7 @@ export async function cleanupStaleFiles(): Promise<void> {
   }
 
   if (pid !== null && isProcessAlive(pid) && !isTooldProcess(pid)) {
-    // PID exists and alive, but not an toold process — stale PID file
+    // PID exists and alive, but not an toold process – stale PID file
     try {
       fs.unlinkSync(pidPath);
     } catch {

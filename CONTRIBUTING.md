@@ -25,11 +25,11 @@ The project uses Prettier for formatting. A pre-commit hook runs automatically v
 
 ## Project Structure
 
-- `src/cli/` — CLI commands and client
-- `src/daemon/` — Background daemon (socket server, process management)
-- `src/core/` — Server management, config loading, types
-- `src/utils/` — Path utilities, logging
-- `specs/` — Design specifications
+- `src/cli/` – CLI commands and client
+- `src/daemon/` – Background daemon (socket server, process management)
+- `src/core/` – Server management, config loading, types
+- `src/utils/` – Path utilities, logging
+- `specs/` – Design specifications
 
 ## Running Tests
 
@@ -52,6 +52,7 @@ Before making significant changes, review the relevant spec in `specs/`. The spe
 ## Reporting Issues
 
 Please include:
+
 - toold version (`toold --version`)
 - Node.js version (`node --version`)
 - OS and architecture

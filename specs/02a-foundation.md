@@ -13,8 +13,15 @@ Iteration 1 (project setup) complete.
 ### 1. Core types (`src/core/types.ts`)
 
 Import SDK types directly where possible:
+
 ```typescript
-import type { Tool, Resource, Prompt, Implementation, ServerCapabilities } from '@modelcontextprotocol/sdk/types.js';
+import type {
+  Tool,
+  Resource,
+  Prompt,
+  Implementation,
+  ServerCapabilities,
+} from '@modelcontextprotocol/sdk/types.js';
 ```
 
 Define shared config and status types:
@@ -38,7 +45,7 @@ type ServerConfig = StdioServerConfig | HttpServerConfig;
 
 // Daemon configuration
 type DaemonConfig = {
-  idleTimeout?: number;    // default: 300000 (5 min)
+  idleTimeout?: number; // default: 300000 (5 min)
   connectTimeout?: number; // default: 30000 (30s)
   requestTimeout?: number; // default: 60000 (60s)
 };
@@ -58,20 +65,21 @@ type ServerState = {
   config: ServerConfig;
   status: ServerConnectionStatus;
   error?: string;
-  serverInfo?: Implementation;      // name, version, title, description, icons, websiteUrl
+  serverInfo?: Implementation; // name, version, title, description, icons, websiteUrl
   capabilities?: ServerCapabilities; // tools, resources, prompts, logging, completions, tasks
-  protocolVersion?: string;          // negotiated protocol version
-  instructions?: string;             // optional server instructions
+  protocolVersion?: string; // negotiated protocol version
+  instructions?: string; // optional server instructions
 };
 ```
 
 Export a type guard to distinguish config types:
+
 ```typescript
 function isStdioConfig(config: ServerConfig): config is StdioServerConfig;
 function isHttpConfig(config: ServerConfig): config is HttpServerConfig;
 ```
 
-Note: The SDK's `Tool` type already includes `title`, `icons`, `outputSchema`, `annotations` (readOnlyHint, destructiveHint, idempotentHint, openWorldHint), and `execution` (taskSupport). The SDK's `Resource` type includes `title`, `size`, `icons`, `annotations` (audience, priority, lastModified). The SDK's `Prompt` type includes `title`, `icons`. Use these types directly — do not redefine them.
+Note: The SDK's `Tool` type already includes `title`, `icons`, `outputSchema`, `annotations` (readOnlyHint, destructiveHint, idempotentHint, openWorldHint), and `execution` (taskSupport). The SDK's `Resource` type includes `title`, `size`, `icons`, `annotations` (audience, priority, lastModified). The SDK's `Prompt` type includes `title`, `icons`. Use these types directly – do not redefine them.
 
 ### 2. Config loader (`src/core/config.ts`)
 

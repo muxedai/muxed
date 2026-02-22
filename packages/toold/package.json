@@ -1,7 +1,7 @@
 {
   "name": "toold",
   "version": "0.1.0",
-  "description": "MCP server daemon and aggregator CLI — aggregate all your Model Context Protocol servers behind a single background daemon with lazy start, auto-reconnect, and idle shutdown",
+  "description": "MCP server daemon and aggregator CLI – aggregate all your Model Context Protocol servers behind a single background daemon with lazy start, auto-reconnect, and idle shutdown",
   "type": "module",
   "exports": {
     ".": {

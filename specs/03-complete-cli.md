@@ -6,7 +6,7 @@ Add remaining CLI commands and polish the interface: `grep`, `resources`, `read`
 
 ## Prerequisites
 
-Iteration 2d (CLI) complete — full MVP is operational.
+Iteration 2d (CLI) complete – full MVP is operational.
 
 ## Steps
 
@@ -65,24 +65,28 @@ Iteration 2d (CLI) complete — full MVP is operational.
 ### 8. Task commands
 
 **`tasks` command** (`src/cli/commands/tasks.ts`):
+
 - Optional server filter argument
 - Send `tasks/list` to daemon
 - Display: taskId, status (working/completed/failed/cancelled/input_required), server name
 - Support `--json` output
 
 **`task` command** (`src/cli/commands/task.ts`):
+
 - Accept `<taskId>` argument
 - Send `tasks/get` to daemon
 - Display task status, progress info (including `message` field if present)
 - Support `--json` output
 
 **`task-result` command** (`src/cli/commands/task-result.ts`):
+
 - Accept `<taskId>` argument
 - Send `tasks/result` to daemon
-- Display task result (same formatting as `call` output — all content types + structuredContent)
+- Display task result (same formatting as `call` output – all content types + structuredContent)
 - Support `--json` output
 
 **`task-cancel` command** (`src/cli/commands/task-cancel.ts`):
+
 - Accept `<taskId>` argument
 - Send `tasks/cancel` to daemon
 - Confirm cancellation, display final task state
@@ -90,6 +94,7 @@ Iteration 2d (CLI) complete — full MVP is operational.
 ### 9. Update `call` command with `--async` and task support
 
 Update `src/cli/commands/call.ts`:
+
 - Add `--async` flag for task-based execution
 - For tools with `execution.taskSupport: "required"`: automatically use task mode
   - Without `--async`: block and poll until completion, showing progress (with `message` field)
@@ -101,18 +106,21 @@ Update `src/cli/commands/call.ts`:
 ### 10. stdin support for `call`
 
 Update `src/cli/commands/call.ts`:
+
 - When args is `-`, read JSON from stdin
 - Pipe stdin to JSON.parse, then proceed as normal
 
 ### 11. `--json` flag on all listing commands
 
 Ensure `servers`, `tools`, `info`, `grep`, `resources`, `prompts`, `completions`, `tasks`, `task`, `task-result`, `status` all support `--json`:
+
 - When `--json` is set, output raw JSON from daemon response (preserving all fields: icons, annotations, etc.)
 - When not set, use human-readable formatter
 
 ### 12. Add daemon-side handlers
 
 Add to `src/daemon/server.ts`:
+
 - `tools/grep` handler: regex match against tool names, titles, and descriptions
 - `resources/list` handler: aggregate resources from all servers (with title, icons, annotations)
 - `resources/read` handler: delegate to specific server
@@ -128,6 +136,7 @@ Add to `src/daemon/server.ts`:
 ### 13. Add to server-pool
 
 Update `src/core/server-pool.ts`:
+
 - `listAllResources(server?)`: aggregate resources with server prefix, preserving title, icons, annotations
 - `readResource(server, uri)`: delegate to specific server
 - `listAllPrompts(server?)`: aggregate prompts with server prefix, preserving title, icons
@@ -142,6 +151,7 @@ Update `src/core/server-pool.ts`:
 ### 14. Add to server-manager
 
 Update `src/core/server-manager.ts`:
+
 - `listResources()`: return full SDK Resource objects (with title, icons, annotations). Cache and refresh on connect and `listChanged`.
 - `readResource(uri)`: delegate to `client.readResource()`
 - `listPrompts()`: return full SDK Prompt objects (with title, icons). Cache and refresh on connect and `listChanged`.

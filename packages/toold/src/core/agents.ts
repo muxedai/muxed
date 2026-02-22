@@ -309,7 +309,7 @@ export function mergeServers(
   }
 
   for (const [name, entries] of byName) {
-    // Already in toold config — skip
+    // Already in toold config – skip
     if (name in existingServers) {
       if (!skipped.includes(name)) skipped.push(name);
       continue;
@@ -324,7 +324,7 @@ export function mergeServers(
       merged[name] = unique[0]!.config;
       imported.push(name);
     } else {
-      // Conflict: same name, different configs — leave unresolved
+      // Conflict: same name, different configs – leave unresolved
       unresolvedConflicts.push({ name, options: unique });
     }
   }

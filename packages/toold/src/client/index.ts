@@ -28,7 +28,7 @@ export type {
 } from '../core/types.js';
 export { TooldError } from './socket.js';
 
-/** Tool type map — empty by default, populated by `toold typegen`. */
+/** Tool type map – empty by default, populated by `toold typegen`. */
 export interface TooldToolMap {}
 
 type HasTools = keyof TooldToolMap extends never ? false : true;

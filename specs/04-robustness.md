@@ -47,6 +47,7 @@ Iteration 3 (complete CLI) complete.
 ### 5. Stale daemon detection
 
 Improve `src/daemon/process.ts`:
+
 - On startup, check for stale socket files (socket exists but no process at PID)
 - Verify PID is actually an toold process (check process name or command)
 - Clean up and proceed if stale
@@ -72,12 +73,13 @@ Improve `src/daemon/process.ts`:
 
 - When a server disconnects or crashes, mark any tracked tasks for that server as unreachable
 - On reconnection, re-query task status if the server maintains task state
-- Tasks are server-side state — if the server loses state on restart, tasks are lost. Report this to CLI callers.
+- Tasks are server-side state – if the server loses state on restart, tasks are lost. Report this to CLI callers.
 - Clean up stale task references after a configurable expiry period
 
 ### 9. Streamable HTTP transport resilience
 
 For HTTP-connected upstream servers:
+
 - Handle connection drops: `StreamableHTTPClientTransport` has built-in reconnection
 - Session management: store `MCP-Session-Id` assigned by the server, include in subsequent requests
 - If session expires (server returns HTTP 404 for the session), re-initialize the connection from scratch

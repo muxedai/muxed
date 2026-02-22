@@ -15,11 +15,13 @@ Iteration 2c (daemon) complete.
 Handles daemon communication from the CLI side.
 
 **`ensureDaemon(configPath?: string): Promise<void>`**
+
 - Call `isDaemonRunning()`
 - If not running: call `cleanupStaleFiles()` then `daemonize(configPath)`
 - Retry socket connection with short backoff (100ms, 200ms, 400ms) to wait for daemon readiness
 
 **`sendRequest(method: string, params?: object): Promise<unknown>`**
+
 - Connect to Unix socket at `getSocketPath()`
 - Send JSON-RPC 2.0 request (JSON + newline)
 - Read response (buffer until newline)
@@ -29,6 +31,7 @@ Handles daemon communication from the CLI side.
 - Close connection after each request (short-lived connections)
 
 **Error handling:**
+
 - Socket not found → suggest running `toold status` to check
 - Connection refused → daemon may have crashed, suggest restart
 - Timeout → suggest `--timeout` flag or check server health
@@ -38,20 +41,24 @@ Handles daemon communication from the CLI side.
 Formats daemon responses for human-readable CLI output. All formatters accept the raw data and return a string. The CLI commands handle writing to stdout.
 
 **`formatServers(servers: ServerState[]): string`**
+
 - Table with columns: Name, Title, Status, Protocol
-- `title` from serverInfo (if available), otherwise `—`
+- `title` from serverInfo (if available), otherwise `–`
 - Status: connected/error/closed with appropriate styling
 - Protocol: negotiated protocolVersion
 
 **`formatTools(tools: Array<{ server: string; tool: Tool }>): string`**
+
 - Table with columns: Tool, Title, Description, Hints
 - Tool: `server/name`
-- Title: `tool.title` or `—`
+- Title: `tool.title` or `–`
 - Description: truncated to ~60 chars
 - Hints: tags like `[read-only]`, `[destructive]`, `[idempotent]` from `annotations`
 
 **`formatToolInfo(server: string, tool: Tool): string`**
+
 - Detailed view:
+
   ```
   server/toolName
   Title: ...
@@ -71,6 +78,7 @@ Formats daemon responses for human-readable CLI output. All formatters accept th
   ```
 
 **`formatCallResult(result: CallToolResult): string`**
+
 - Iterate over `result.content` array, format each block:
   - `type: "text"` → output `text` directly
   - `type: "image"` → `[Image: ${mimeType}]`
@@ -85,53 +93,62 @@ Formats daemon responses for human-readable CLI output. All formatters accept th
 - If `result.isError` is true, prefix with `Error: `
 
 **`formatStatus(status: DaemonStatus): string`**
+
 - Show: PID, uptime (human-readable), server count
 - Then per-server summary: name, title, status, capabilities list
 
 **`formatJson(data: unknown): string`**
-- `JSON.stringify(data, null, 2)` — used for all `--json` output
+
+- `JSON.stringify(data, null, 2)` – used for all `--json` output
 
 ### 3. CLI commands
 
 Each command in `src/cli/commands/`. Every command (except `stop`) calls `ensureDaemon()` first.
 
-**`servers.ts`** — `toold servers [--json]`
+**`servers.ts`** – `toold servers [--json]`
+
 - `ensureDaemon()`
 - `sendRequest('servers/list')`
 - Output: `formatServers()` or `formatJson()`
 
-**`tools.ts`** — `toold tools [server] [--json]`
+**`tools.ts`** – `toold tools [server] [--json]`
+
 - `ensureDaemon()`
 - `sendRequest('tools/list', { server })` (server is optional)
 - Output: `formatTools()` or `formatJson()`
 
-**`info.ts`** — `toold info <server/tool> [--json]`
+**`info.ts`** – `toold info <server/tool> [--json]`
+
 - `ensureDaemon()`
 - `sendRequest('tools/info', { name: serverTool })`
 - Output: `formatToolInfo()` or `formatJson()`
 
-**`call.ts`** — `toold call <server/tool> [json] [--timeout ms]`
+**`call.ts`** – `toold call <server/tool> [json] [--timeout ms]`
+
 - `ensureDaemon()`
-- Parse JSON args from positional argument (or `-` for stdin — just note this, stdin is added in iteration 3)
+- Parse JSON args from positional argument (or `-` for stdin – just note this, stdin is added in iteration 3)
 - `sendRequest('tools/call', { name: serverTool, arguments: parsedArgs })`
 - Output: `formatCallResult()` or `formatJson()`
 - Support `--timeout` flag passed through to daemon
 
-**`stop.ts`** — `toold stop`
+**`stop.ts`** – `toold stop`
+
 - Try `sendRequest('daemon/stop')`
 - If socket not found: report "Daemon is not running"
 - On success: report "Daemon stopped"
-- Do NOT call `ensureDaemon()` — that would start one just to stop it
+- Do NOT call `ensureDaemon()` – that would start one just to stop it
 
-**`status.ts`** — `toold status [--json]`
+**`status.ts`** – `toold status [--json]`
+
 - First check `isDaemonRunning()`. If not running: report "Daemon is not running" and exit
 - If running: `sendRequest('daemon/status')`
 - Output: `formatStatus()` or `formatJson()`
-- Do NOT call `ensureDaemon()` — status should report whether daemon is up, not start one
+- Do NOT call `ensureDaemon()` – status should report whether daemon is up, not start one
 
 ### 4. CLI entry point (`src/cli/index.ts`)
 
 Wire up Commander:
+
 ```typescript
 const program = new Command();
 program.name('toold').description('MCP Server Proxy/Aggregator').version('0.1.0');
@@ -153,6 +170,7 @@ Pass `--config` option through to `ensureDaemon()` calls.
 ### 5. Main entry (`src/cli.ts`)
 
 Update the existing placeholder:
+
 ```typescript
 if (process.argv.includes('--daemon')) {
   // Daemon mode (forked by daemonize())

@@ -25,7 +25,7 @@ async function runAutoTypegen(serverPool: ServerPool, logger: Logger): Promise<v
     fs.writeFileSync(outputPath, content, 'utf-8');
     logger.info(`Auto-generated ${tools.length} tool types → ${outputPath}`);
   } catch {
-    // Not installed as a dependency or no node_modules — skip silently
+    // Not installed as a dependency or no node_modules – skip silently
     logger.debug('Skipping auto-typegen (toold not resolvable as a dependency)');
   }
 }

@@ -93,7 +93,7 @@ export const initCommand = new Command('init')
         return;
       }
 
-      // 2. Determine toold config path — single merged config
+      // 2. Determine toold config path – single merged config
       const hasLocalConfigs = discovered.some((d) => d.agent.scope === 'local');
       const tooldPath = getTooldConfigPath(hasLocalConfigs ? 'local' : 'global', configPath);
 

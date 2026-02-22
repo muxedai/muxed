@@ -13,11 +13,11 @@ The CLI is great for agents and shell scripts, but JS/TS users need a programmat
 
 ## Design Principles
 
-1. **Thin client** — the API is a typed wrapper over the daemon's JSON-RPC socket. No MCP protocol logic lives in the client; the daemon owns all connections.
-2. **Auto-start** — calling `connect()` lazily starts the daemon if not running, same as the CLI.
-3. **1:1 with daemon methods** — every JSON-RPC method the daemon exposes gets a corresponding typed method. No hidden magic.
-4. **Zero new dependencies** — the client uses `node:net` (already used by `cli/client.ts`). Types come from `@modelcontextprotocol/sdk/types.js` which is already a dependency.
-5. **Separate entry point** — the API ships as `toold/client` (or `toold`), distinct from the CLI bundle. The CLI remains the `toold` bin; the library is an importable module.
+1. **Thin client** – the API is a typed wrapper over the daemon's JSON-RPC socket. No MCP protocol logic lives in the client; the daemon owns all connections.
+2. **Auto-start** – calling `connect()` lazily starts the daemon if not running, same as the CLI.
+3. **1:1 with daemon methods** – every JSON-RPC method the daemon exposes gets a corresponding typed method. No hidden magic.
+4. **Zero new dependencies** – the client uses `node:net` (already used by `cli/client.ts`). Types come from `@modelcontextprotocol/sdk/types.js` which is already a dependency.
+5. **Separate entry point** – the API ships as `toold/client` (or `toold`), distinct from the CLI bundle. The CLI remains the `toold` bin; the library is an importable module.
 
 ## Public API
 
@@ -236,24 +236,25 @@ src/
     index.ts          # createClient(), McpdClient class, McpdError, type re-exports
 ```
 
-Single file. The client is simple — it wraps `ensureDaemon()` + `sendRequest()` (already in `cli/client.ts`) with typed methods. The socket logic from `cli/client.ts` gets extracted into a shared module both the CLI and the library client can use.
+Single file. The client is simple – it wraps `ensureDaemon()` + `sendRequest()` (already in `cli/client.ts`) with typed methods. The socket logic from `cli/client.ts` gets extracted into a shared module both the CLI and the library client can use.
 
 ### Refactor Plan
 
 1. **Extract socket logic** from `src/cli/client.ts` into `src/client/socket.ts`:
-   - `ensureDaemon(configPath?)` — unchanged
-   - `sendRequest(method, params?)` — unchanged
+   - `ensureDaemon(configPath?)` – unchanged
+   - `sendRequest(method, params?)` – unchanged
    - These become shared between CLI commands and the library client
 
-2. **Create `src/client/index.ts`** — the public API:
-   - `createClient(options?)` — calls `ensureDaemon()`, returns `McpdClient`
-   - `McpdClient` class — typed methods that delegate to `sendRequest()`
-   - `McpdError` class — wraps JSON-RPC errors
+2. **Create `src/client/index.ts`** – the public API:
+   - `createClient(options?)` – calls `ensureDaemon()`, returns `McpdClient`
+   - `McpdClient` class – typed methods that delegate to `sendRequest()`
+   - `McpdError` class – wraps JSON-RPC errors
    - Re-exports types from `core/types.ts` and `@modelcontextprotocol/sdk/types.js`
 
 3. **Update CLI commands** to import from `src/client/socket.ts` instead of `src/cli/client.ts`
 
 4. **Add package.json exports**:
+
    ```json
    {
      "exports": {
@@ -270,8 +271,8 @@ Single file. The client is simple — it wraps `ensureDaemon()` + `sendRequest()
    ```
 
 5. **Update build.config.mjs** to produce two bundles:
-   - `dist/cli.mjs` — the CLI (existing)
-   - `dist/client.mjs` + `dist/client.d.mts` — the library (new, with type declarations)
+   - `dist/cli.mjs` – the CLI (existing)
+   - `dist/client.mjs` + `dist/client.d.mts` – the library (new, with type declarations)
 
 6. **Update `files` in package.json** to include `dist` (already does)
 
@@ -305,8 +306,8 @@ Each method is 1-5 lines: build params, call `sendRequest`, cast the result. No 
 
 The library needs `.d.mts` type declarations. Options:
 
-- **obuild `declaration: true`** — if supported, simplest approach
-- **tsc `--emitDeclarationOnly`** — run as a separate build step targeting just `src/client/index.ts`
+- **obuild `declaration: true`** – if supported, simplest approach
+- **tsc `--emitDeclarationOnly`** – run as a separate build step targeting just `src/client/index.ts`
 
 Either way, the types are derived from the source. No manual `.d.ts` files.
 

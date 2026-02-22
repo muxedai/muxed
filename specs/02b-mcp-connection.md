@@ -15,16 +15,18 @@ Iteration 2a (foundation) complete.
 Wraps a single MCP server connection. One instance per configured server.
 
 **Constructor:**
+
 - Takes `name: string` and `config: ServerConfig`
 - Initializes internal state: `status`, `serverInfo`, `capabilities`, `protocolVersion`, `tools` cache
 
 **`connect(connectTimeout?: number): Promise<void>`**
+
 - Create transport based on config type:
   - `StdioServerConfig` → `StdioClientTransport` with `{ command, args, env, cwd }` from config. The SDK spawns the child process.
   - `HttpServerConfig` → `StreamableHTTPClientTransport` with `{ url }` from config. Pass custom `headers` via `requestInit` if present.
 - Create SDK `Client` with:
   - `Implementation` info: `{ name: 'toold', version: '<read from package.json or hardcode>' }`
-  - Client capabilities: `{ tasks: { list: {}, cancel: {} } }` — explicitly no `sampling`, `elicitation`, or `roots`
+  - Client capabilities: `{ tasks: { list: {}, cancel: {} } }` – explicitly no `sampling`, `elicitation`, or `roots`
 - Call `client.connect(transport)` which performs the `initialize` handshake
   - This requests protocol version `2025-11-25`
 - After successful connect, store:
@@ -38,25 +40,31 @@ Wraps a single MCP server connection. One instance per configured server.
 - On error during connect: set `status = 'error'`, store error message, do NOT throw (caller decides retry policy)
 
 **`disconnect(): Promise<void>`**
+
 - Call `client.close()` which closes transport and cleans up
 - Set `status = 'closed'`
 
 **`listTools(): Tool[]`**
+
 - Return cached tools array (full SDK `Tool` objects including title, icons, outputSchema, annotations, execution)
 
 **`refreshTools(): Promise<void>`** (private)
+
 - Call `client.listTools()` (handles pagination internally in the SDK)
 - Store full `Tool` objects in cache
 
 **`callTool(name: string, args: Record<string, unknown>, timeout?: number): Promise<CallToolResult>`**
+
 - Delegate to `client.callTool({ name, arguments: args })` with optional timeout via `AbortSignal.timeout()`
-- Return the full SDK `CallToolResult` — includes `content` array (text, image, audio, resource_link, resource types) and optional `structuredContent`
-- Do NOT filter or transform the result — pass through as-is
+- Return the full SDK `CallToolResult` – includes `content` array (text, image, audio, resource_link, resource types) and optional `structuredContent`
+- Do NOT filter or transform the result – pass through as-is
 
 **`getStatus(): ServerConnectionStatus`**
+
 - Return current status
 
 **`getState(): ServerState`**
+
 - Return full state object: name, config, status, error, serverInfo, capabilities, protocolVersion, instructions
 
 ### 2. Server Pool (`src/core/server-pool.ts`)
@@ -64,26 +72,32 @@ Wraps a single MCP server connection. One instance per configured server.
 Manages all `ServerManager` instances. Single instance per daemon.
 
 **`connectAll(config: McpdConfig): Promise<void>`**
+
 - Create one `ServerManager` per entry in `config.mcpServers`
 - Connect all in parallel with `Promise.allSettled()` (don't fail if some servers fail to connect)
 - Log results: which connected, which failed
 
 **`disconnectAll(): Promise<void>`**
+
 - Disconnect all managers in parallel
 
 **`getServer(name: string): ServerManager | undefined`**
+
 - Get a specific server manager by name
 
 **`listServers(): ServerState[]`**
+
 - Return `getState()` from each manager
 
 **`listAllTools(server?: string): Array<{ server: string; tool: Tool }>`**
+
 - If `server` is specified, return tools from that server only
 - Otherwise, aggregate tools from all connected servers
 - Each entry includes the server name and the full `Tool` object
-- Tools are identified as `server/toolName` in the CLI layer (not here — this returns raw data)
+- Tools are identified as `server/toolName` in the CLI layer (not here – this returns raw data)
 
 **`findTool(serverTool: string): { manager: ServerManager; tool: Tool } | undefined`**
+
 - Parse `server/tool` string (split on first `/`)
 - Find the manager, then find the tool in its cache
 - Return both for the caller to use
