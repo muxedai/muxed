@@ -1,0 +1,4 @@
+- [ ] Tunable configuration for connected MCPs (included, excluded tools and prompts)
+- [ ] Dynamic prompt discovery
+- [ ] Output formatting
+- [ ] Plugin system: intercept and modify tools
