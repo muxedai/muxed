@@ -26,6 +26,7 @@ function makeAgent(overrides: Partial<AgentDef> = {}): AgentDef {
     scope: 'local',
     configPath: () => '/tmp/test',
     serversKey: 'mcpServers',
+    codingAgent: true,
     ...overrides,
   };
 }
@@ -279,7 +280,7 @@ describe('modifyAgentConfig', () => {
     const modified = readJson(configPath) as Record<string, unknown>;
     expect(modified.otherConfig).toBe(true);
     const mcpServers = modified.mcpServers as Record<string, unknown>;
-    expect(mcpServers.muxed).toEqual({ command: 'npx', args: ['muxed@latest', 'proxy'] });
+    expect(mcpServers.muxed).toEqual({ command: 'npx', args: ['muxed@latest', 'mcp'] });
     expect(mcpServers.foo).toBeUndefined();
     expect(mcpServers.bar).toBeUndefined();
   });
@@ -318,7 +319,7 @@ describe('modifyAgentConfig', () => {
     expect(servers.muxed).toEqual({
       type: 'stdio',
       command: 'npx',
-      args: ['muxed@latest', 'proxy'],
+      args: ['muxed@latest', 'mcp'],
     });
   });
 

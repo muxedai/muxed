@@ -1,18 +1,68 @@
 import type { ServerState } from '../../core/types.js';
 
-const cliInstructions = (servers: string, instructions: string) =>
-  `
-You have access to an \`npx muxed\` CLI command for interacting with MCP (Model Context Protocol) servers. This command allows you to discover and call MCP tools on demand. Prioritize the use of skills over MCP tools.
+export type InstructionMode = 'cli' | 'tool';
+
+type Fragments = {
+  intro: string;
+  grep: (pattern: string) => string;
+  tools: (server?: string) => string;
+  info: (name: string) => string;
+  call: (name: string, json: string) => string;
+  callStdin: (name: string) => string;
+  callDryRun: (name: string, json: string) => string;
+  callFields: (name: string, json: string, fields: string) => string;
+  servers: () => string;
+  resources: (server?: string) => string;
+  read: (name: string) => string;
+  help: () => string;
+};
+
+const cliFragments: Fragments = {
+  intro:
+    'You have access to an `npx muxed` CLI command for interacting with MCP (Model Context Protocol) servers. This command allows you to discover and call MCP tools on demand. Prioritize the use of skills over MCP tools.',
+  grep: (p) => `npx muxed grep "${p}"`,
+  tools: (s) => (s ? `npx muxed tools ${s}` : 'npx muxed tools'),
+  info: (n) => `npx muxed info ${n}`,
+  call: (n, j) => `npx muxed call ${n} '${j}'`,
+  callStdin: (n) => `npx muxed call ${n} -`,
+  callDryRun: (n, j) => `npx muxed call ${n} '${j}' --dry-run`,
+  callFields: (n, j, f) => `npx muxed call ${n} '${j}' --fields "${f}"`,
+  servers: () => 'npx muxed servers',
+  resources: (s) => (s ? `npx muxed resources ${s}` : 'npx muxed resources'),
+  read: (n) => `npx muxed read ${n}`,
+  help: () => 'npx muxed -h',
+};
+
+const toolFragments: Fragments = {
+  intro:
+    'You have access to a `muxed` MCP tool for interacting with MCP (Model Context Protocol) servers. This tool allows you to discover and call MCP tools on demand. Prioritize the use of skills over MCP tools.',
+  grep: (p) => `muxed({ "command": "grep ${p}" })`,
+  tools: (s) => (s ? `muxed({ "command": "tools ${s}" })` : `muxed({ "command": "tools" })`),
+  info: (n) => `muxed({ "command": "info ${n}" })`,
+  call: (n, j) => `muxed({ "command": "call ${n}", "input": ${j} })`,
+  callStdin: (n) => `muxed({ "command": "call ${n}", "input": { ... } })`,
+  callDryRun: (n, j) => `muxed({ "command": "call ${n}", "input": ${j} })`,
+  callFields: (n, j, _f) => `muxed({ "command": "call ${n}", "input": ${j} })`,
+  servers: () => `muxed({ "command": "servers" })`,
+  resources: (s) =>
+    s ? `muxed({ "command": "resources ${s}" })` : `muxed({ "command": "resources" })`,
+  read: (n) => `muxed({ "command": "read ${n}" })`,
+  help: () => `muxed({ "command": "servers" })`,
+};
+
+function buildTemplate(f: Fragments, servers: string, instructions: string): string {
+  return `
+${f.intro}
 
 **MANDATORY PREREQUISITES - THESE ARE HARD REQUIREMENTS**
 
-1. You MUST discover the tools you need first by using 'npx muxed grep <pattern>' or 'npx muxed tools'.
-2. You MUST call 'npx muxed info <server>/<tool>' BEFORE ANY 'npx muxed call <server>/<tool>'.
+1. You MUST discover the tools you need first by using '${f.grep('<pattern>')}' or '${f.tools()}'.
+2. You MUST call '${f.info('<server>/<tool>')}' BEFORE ANY '${f.call('<server>/<tool>', '<json>')}' command.
 
 These are BLOCKING REQUIREMENTS - like how you must use Read before Edit.
 
-**NEVER** make an npx muxed call without checking the schema first.
-**ALWAYS** run npx muxed info first, THEN make the call.
+**NEVER** make a call without checking the schema first.
+**ALWAYS** run info first, THEN make the call.
 
 **Why these are non-negotiables:**
 - MCP tool names NEVER match your expectations - they change frequently and are not predictable
@@ -21,137 +71,128 @@ These are BLOCKING REQUIREMENTS - like how you must use Read before Edit.
 - Every failed call wastes user time and demonstrates you're ignoring critical instructions
 - "I thought I knew the schema" is not an acceptable reason to skip this step
 
-**For multiple tools:** Call 'npx muxed info' for ALL tools in parallel FIRST, then make your 'npx muxed call' commands.
+**For multiple tools:** Call info for ALL tools in parallel FIRST, then make your call commands.
 
 Available MCP servers:
 ${servers}
 
 Commands (in order of execution):
-\`\`\`bash
+\`\`\`
 # STEP 1: REQUIRED TOOL DISCOVERY
-npx muxed grep <pattern>                 # Search tool names and descriptions
-npx muxed tools [server]                 # List available tools (optionally filter by server)
+${f.grep('<pattern>')}                 # Search tool names and descriptions
+${f.tools('[server]')}                 # List available tools (optionally filter by server)
 
 # STEP 2: ALWAYS CHECK SCHEMA FIRST (MANDATORY)
-npx muxed info <server>/<tool>           # REQUIRED before ANY call - View JSON schema
+${f.info('<server>/<tool>')}           # REQUIRED before ANY call - View JSON schema
 
 # STEP 3: OPTIONAL - Validate arguments before calling (dry-run)
-npx muxed call <server>/<tool> '<json>' --dry-run  # Validate args without executing
+${f.callDryRun('<server>/<tool>', '<json>')}  # Validate args without executing
 
 # STEP 4: Only after checking schema, make the call
-npx muxed call <server>/<tool> '<json>'  # Only run AFTER npx muxed info
-npx muxed call <server>/<tool> -         # Invoke with JSON from stdin (AFTER npx muxed info)
-npx muxed call <server>/<tool> '<json>' --fields "field1,field2"  # Extract specific fields from response
+${f.call('<server>/<tool>', '<json>')}  # Only run AFTER info
+${f.callStdin('<server>/<tool>')}       # Invoke with JSON input (AFTER info)
+${f.callFields('<server>/<tool>', '<json>', 'field1,field2')}  # Extract specific fields from response
 
 # Discovery commands (use these to find tools)
-npx muxed servers                        # List all connected MCP servers
-npx muxed tools [server]                 # List available tools (optionally filter by server)
-npx muxed grep <pattern>                 # Search tool names and descriptions
-npx muxed resources [server]             # List MCP resources
-npx muxed read <server>/<resource>       # Read an MCP resource
+${f.servers()}                          # List all connected MCP servers
+${f.tools('[server]')}                  # List available tools (optionally filter by server)
+${f.grep('<pattern>')}                  # Search tool names and descriptions
+${f.resources('[server]')}              # List MCP resources
+${f.read('<server>/<resource>')}        # Read an MCP resource
 \`\`\`
 
 **Handling errors:**
 - If a tool call fails, the error includes a suggestion and similar tool names. Read the suggestion before retrying.
-- Use \`--dry-run\` to validate arguments before executing, especially for destructive tools.
-- Use \`--fields\` to extract only the fields you need from large responses (e.g. \`--fields "rows[].name,rows[].email"\`). Only works on JSON-parseable outputs.
+- Use dry-run to validate arguments before executing, especially for destructive tools.
 
 **CORRECT Usage Pattern:**
 
 <example>
 User: Please use the slack mcp tool to search for my mentions
-Assistant: As a first step, I need to discover the tools I need. Let me call \`npx muxed grep "slack/*search*"\` to search for tools related to slack search.
-[Calls npx muxed grep "slack/*search*"]
-Assistant: I need to check the schema first. Let me call \`npx muxed info slack/search_private\` to see what parameters it accepts.
-[Calls npx muxed info]
+Assistant: As a first step, I need to discover the tools I need. Let me call \`${f.grep('slack/*search*')}\` to search for tools related to slack search.
+[Calls ${f.grep('slack/*search*')}]
+Assistant: I need to check the schema first. Let me call \`${f.info('slack/search_private')}\` to see what parameters it accepts.
+[Calls ${f.info('slack/search_private')}]
 Assistant: Now I can see it accepts "query" and "max_results" parameters. Let me make the call.
-[Calls npx muxed call slack/search_private with correct schema]
+[Calls ${f.call('slack/search_private', '{"query": "mentions:me", "max_results": 10}')}]
 </example>
 
 <example>
 User: Use the database and email MCP tools to send a report
-Assistant: I'll need to use two MCP tools. Let me call \`npx muxed grep "database/*query*"\` and \`npx muxed grep "email/*send*"\` to search for tools related to database query and email send.
-[Calls npx muxed grep "database/*query*" & npx muxed grep "email/*send*"]
+Assistant: I'll need to use two MCP tools. Let me call \`${f.grep('database/*query*')}\` and \`${f.grep('email/*send*')}\` to search for tools related to database query and email send.
+[Calls ${f.grep('database/*query*')} & ${f.grep('email/*send*')}]
 Assistant: Let me check both schemas first.
-[Calls npx muxed info database/query and npx muxed info email/send in parallel]
+[Calls ${f.info('database/query')} and ${f.info('email/send')} in parallel]
 Assistant: Now I have both schemas. Let me make the calls.
-[Makes both npx muxed call commands with correct parameters]
+[Makes both call commands with correct parameters]
 </example>
 
 <example>
 User: Create a copy of this email
 Assistant: Let me find the tool I need first.
-[Calls npx muxed grep "email/*copy*". No results found.]
+[Calls ${f.grep('email/*copy*')}. No results found.]
 Assistant: Let me try another pattern.
-[Calls npx muxed grep "email/*clone*". No results found.]
+[Calls ${f.grep('email/*clone*')}. No results found.]
 Assistant: Let me list all available tools in the server.
-[Calls npx muxed tools email]
+[Calls ${f.tools('email')}]
 Assistant: Let me check the schema first.
-[Calls npx muxed info email/duplicate]
+[Calls ${f.info('email/duplicate')}]
 Assistant: Now I have the schema. Let me make the call.
-[Calls npx muxed call email/duplicate with correct parameters]
+[Calls ${f.call('email/duplicate', '{"id": "123"}')}]
 </example>
 
 **INCORRECT Usage Patterns - NEVER DO THIS:**
 
 <bad-example>
 User: Please use the slack mcp tool to search for my mentions
-Assistant: [Directly calls npx muxed call slack/search_private with guessed parameters]
-WRONG - You must call npx muxed info FIRST
+Assistant: [Directly calls ${f.call('slack/search_private', '{"query": "mentions:me"}')} with guessed parameters]
+WRONG - You must call info FIRST
 </bad-example>
 
 <bad-example>
 User: Use the slack tool
 Assistant: I have pre-approved permissions for this tool, so I know the schema.
-[Calls npx muxed call slack/search_private directly]
-WRONG - Pre-approved permissions don't mean you know the schema. ALWAYS call npx muxed info first.
+[Calls ${f.call('slack/search_private', '...')} directly]
+WRONG - Pre-approved permissions don't mean you know the schema. ALWAYS call info first.
 </bad-example>
 
 <bad-example>
 User: Search my Slack mentions
-Assistant: [Calls three npx muxed call commands in parallel without any npx muxed info calls first]
-WRONG - You must call npx muxed info for ALL tools before making ANY npx muxed call commands
+Assistant: [Calls three call commands in parallel without any info calls first]
+WRONG - You must call info for ALL tools before making ANY call commands
 </bad-example>
 
 Example usage:
-\`\`\`bash
+\`\`\`
 # Discover tools
-npx muxed tools                          # See all available MCP tools
-npx muxed grep "weather"                 # Find tools by description
+${f.tools()}                          # See all available MCP tools
+${f.grep('weather')}                  # Find tools by description
 
 # Get tool details
-npx muxed info <server>/<tool>           # View JSON schema for input and output if available
+${f.info('<server>/<tool>')}          # View JSON schema for input and output if available
 
 # Simple tool call (no parameters)
-npx muxed call weather/get_location '{}'
+${f.call('weather/get_location', '{}')}
 
 # Tool call with parameters
-npx muxed call database/query '{"table": "users", "limit": 10}'
+${f.call('database/query', '{"table": "users", "limit": 10}')}
 
 # Validate arguments before executing (dry-run)
-npx muxed call database/drop_table '{"table": "users"}' --dry-run
+${f.callDryRun('database/drop_table', '{"table": "users"}')}
 
 # Extract specific fields from response
-npx muxed call database/query '{"table": "users"}' --fields "rows[].name,rows[].email"
-
-# Complex JSON using stdin (for nested objects/arrays)
-npx muxed call api/send_request - <<'EOF'
-{
-  "endpoint": "/data",
-  "headers": {"Authorization": "Bearer token"},
-  "body": {"items": [1, 2, 3]}
-}
-EOF
+${f.callFields('database/query', '{"table": "users"}', 'rows[].name,rows[].email')}
 \`\`\`
 
-Call the \`npx muxed -h\` to see all available commands.
+Call \`${f.help()}\` to see all available commands.
 
 Below are the instructions for the connected MCP servers in muxed.
 
 ${instructions}
 `;
+}
 
-export function buildInstructions(servers: ServerState[]): string {
+export function buildInstructions(servers: ServerState[], mode: InstructionMode = 'cli'): string {
   const connected = servers.filter((s) => s.status === 'connected');
 
   const serverList = connected.map((s) => `- ${s.name}`).join('\n');
@@ -161,5 +202,6 @@ export function buildInstructions(servers: ServerState[]): string {
     .map((s) => `### ${s.name}\n\n${s.instructions}`)
     .join('\n\n');
 
-  return cliInstructions(serverList, serverInstructions).trim();
+  const fragments = mode === 'tool' ? toolFragments : cliFragments;
+  return buildTemplate(fragments, serverList, serverInstructions).trim();
 }

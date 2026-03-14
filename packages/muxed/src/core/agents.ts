@@ -26,6 +26,7 @@ export type AgentDef = {
   scope: 'local' | 'global';
   configPath: () => string | null;
   serversKey: 'mcpServers' | 'servers';
+  codingAgent: boolean;
 };
 
 // Discovered config from an agent
@@ -72,30 +73,35 @@ export function getAgentDefs(): AgentDef[] {
       scope: 'local' as const,
       configPath: () => path.join(cwd, '.mcp.json'),
       serversKey: 'mcpServers' as const,
+      codingAgent: true,
     },
     {
       name: 'cursor',
       scope: 'local' as const,
       configPath: () => path.join(cwd, '.cursor', 'mcp.json'),
       serversKey: 'mcpServers' as const,
+      codingAgent: true,
     },
     {
       name: 'vscode',
       scope: 'local' as const,
       configPath: () => path.join(cwd, '.vscode', 'mcp.json'),
       serversKey: 'servers' as const,
+      codingAgent: true,
     },
     {
       name: 'roo-code',
       scope: 'local' as const,
       configPath: () => path.join(cwd, '.roo', 'mcp.json'),
       serversKey: 'mcpServers' as const,
+      codingAgent: true,
     },
     {
       name: 'amazon-q',
       scope: 'local' as const,
       configPath: () => path.join(cwd, '.amazonq', 'mcp.json'),
       serversKey: 'mcpServers' as const,
+      codingAgent: true,
     },
 
     // --- Global (user-level) ---
@@ -108,24 +114,28 @@ export function getAgentDefs(): AgentDef[] {
           ['Claude', 'claude_desktop_config.json']
         ),
       serversKey: 'mcpServers' as const,
+      codingAgent: false,
     },
     {
       name: 'cursor',
       scope: 'global' as const,
       configPath: () => path.join(home, '.cursor', 'mcp.json'),
       serversKey: 'mcpServers' as const,
+      codingAgent: true,
     },
     {
       name: 'windsurf',
       scope: 'global' as const,
       configPath: () => path.join(home, '.codeium', 'windsurf', 'mcp_config.json'),
       serversKey: 'mcpServers' as const,
+      codingAgent: true,
     },
     {
       name: 'vscode',
       scope: 'global' as const,
       configPath: () => xdgOrMacPath(['Code', 'User', 'mcp.json'], ['Code', 'User', 'mcp.json']),
       serversKey: 'servers' as const,
+      codingAgent: true,
     },
     {
       name: 'cline',
@@ -150,6 +160,7 @@ export function getAgentDefs(): AgentDef[] {
           ]
         ),
       serversKey: 'mcpServers' as const,
+      codingAgent: true,
     },
     {
       name: 'roo-code',
@@ -174,12 +185,14 @@ export function getAgentDefs(): AgentDef[] {
           ]
         ),
       serversKey: 'mcpServers' as const,
+      codingAgent: true,
     },
     {
       name: 'amazon-q',
       scope: 'global' as const,
       configPath: () => path.join(home, '.aws', 'amazonq', 'mcp.json'),
       serversKey: 'mcpServers' as const,
+      codingAgent: true,
     },
   ];
 }
@@ -360,11 +373,13 @@ export function writeMuxedConfig(configPath: string, servers: Record<string, Ser
 
 // Get the muxed replacement entry for an agent (to be injected after removing original servers)
 function getMuxedEntry(agent: AgentDef): Record<string, unknown> {
+  const args = agent.codingAgent ? ['muxed@latest', 'mcp'] : ['muxed@latest', 'mcp', '--tools'];
+
   if (agent.serversKey === 'servers') {
     // VS Code format
-    return { type: 'stdio', command: 'npx', args: ['muxed@latest', 'proxy'] };
+    return { type: 'stdio', command: 'npx', args };
   }
-  return { command: 'npx', args: ['muxed@latest', 'proxy'] };
+  return { command: 'npx', args };
 }
 
 // Backup and modify an agent config file:
