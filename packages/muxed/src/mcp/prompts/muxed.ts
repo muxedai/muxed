@@ -35,19 +35,20 @@ const cliFragments: Fragments = {
 
 const toolFragments: Fragments = {
   intro:
-    'You have access to a `muxed` MCP tool for interacting with MCP (Model Context Protocol) servers. This tool allows you to discover and call MCP tools on demand. Prioritize the use of skills over MCP tools.',
-  grep: (p) => `muxed({ "command": "grep ${p}" })`,
-  tools: (s) => (s ? `muxed({ "command": "tools ${s}" })` : `muxed({ "command": "tools" })`),
-  info: (n) => `muxed({ "command": "info ${n}" })`,
-  call: (n, j) => `muxed({ "command": "call ${n}", "input": ${j} })`,
-  callStdin: (n) => `muxed({ "command": "call ${n}", "input": { ... } })`,
-  callDryRun: (n, j) => `muxed({ "command": "call ${n}", "input": ${j} })`,
-  callFields: (n, j, _f) => `muxed({ "command": "call ${n}", "input": ${j} })`,
-  servers: () => `muxed({ "command": "servers" })`,
+    'You have access to a `muxed:exec` MCP tool for interacting with MCP (Model Context Protocol) servers. This tool allows you to discover and call MCP tools on demand. Prioritize the use of skills over MCP tools.',
+  grep: (p) => `muxed:exec({ "command": "grep ${p}" })`,
+  tools: (s) =>
+    s ? `muxed:exec({ "command": "tools ${s}" })` : `muxed:exec({ "command": "tools" })`,
+  info: (n) => `muxed:exec({ "command": "info ${n}" })`,
+  call: (n, j) => `muxed:exec({ "command": "call ${n}", "input": ${j} })`,
+  callStdin: (n) => `muxed:exec({ "command": "call ${n}", "input": { ... } })`,
+  callDryRun: (n, j) => `muxed:exec({ "command": "call ${n}", "input": ${j} })`,
+  callFields: (n, j, _f) => `muxed:exec({ "command": "call ${n}", "input": ${j} })`,
+  servers: () => `muxed:exec({ "command": "servers" })`,
   resources: (s) =>
-    s ? `muxed({ "command": "resources ${s}" })` : `muxed({ "command": "resources" })`,
-  read: (n) => `muxed({ "command": "read ${n}" })`,
-  help: () => `muxed({ "command": "servers" })`,
+    s ? `muxed:exec({ "command": "resources ${s}" })` : `muxed:exec({ "command": "resources" })`,
+  read: (n) => `muxed:exec({ "command": "read ${n}" })`,
+  help: () => `muxed:exec({ "command": "servers" })`,
 };
 
 function buildTemplate(f: Fragments, servers: string, instructions: string): string {

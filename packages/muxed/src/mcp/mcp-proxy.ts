@@ -23,7 +23,7 @@ export async function startMcpProxy(options?: {
 
   if (options?.proxyTools) {
     server.tool(
-      'muxed',
+      'exec',
       'Interact with MCP servers: discover, inspect, and call tools. Commands: servers, tools [server], grep <pattern>, info <server/tool>, call <server/tool>, resources [server], read <server/resource>',
       {
         command: z
