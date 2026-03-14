@@ -4,25 +4,46 @@ import os from 'node:os';
 import crypto from 'node:crypto';
 import { PostHog } from 'posthog-node';
 
-const ID_FILE = path.join(os.homedir(), '.config', 'muxed', '.analytics_id');
+const TELEMETRY_FILE = path.join(os.homedir(), '.config', 'muxed', 'telemetry');
 
-function getOrCreateDistinctId(): string {
+// Random per-session ID — not persisted, not linkable across sessions
+const sessionId = crypto.randomUUID();
+
+function isTelemetryEnabled(): boolean {
+  // Standard env var (https://consoledonottrack.com)
+  if (process.env.DO_NOT_TRACK === '1') return false;
+  if (process.env.MUXED_TELEMETRY === '0') return false;
+
   try {
-    if (fs.existsSync(ID_FILE)) {
-      return fs.readFileSync(ID_FILE, 'utf-8').trim();
+    if (fs.existsSync(TELEMETRY_FILE)) {
+      const value = fs.readFileSync(TELEMETRY_FILE, 'utf-8').trim();
+      return value !== 'off';
     }
-    const id = crypto.randomUUID();
-    fs.mkdirSync(path.dirname(ID_FILE), { recursive: true });
-    fs.writeFileSync(ID_FILE, id, 'utf-8');
-    return id;
   } catch {
-    return 'anonymous';
+    // If we can't read the file, default to enabled
   }
+
+  return true;
+}
+
+export function setTelemetryEnabled(enabled: boolean): void {
+  try {
+    const dir = path.dirname(TELEMETRY_FILE);
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(TELEMETRY_FILE, enabled ? 'on' : 'off', 'utf-8');
+  } catch {
+    // Best-effort
+  }
+}
+
+export function getTelemetryStatus(): 'on' | 'off' {
+  return isTelemetryEnabled() ? 'on' : 'off';
 }
 
 let _client: PostHog | null = null;
 
 function getClient(): PostHog | null {
+  if (!isTelemetryEnabled()) return null;
   if (_client) return _client;
   const token = process.env.POSTHOG_PROJECT_TOKEN;
   const host = process.env.POSTHOG_HOST;
@@ -39,8 +60,7 @@ export function capture(event: string, properties?: Record<string, unknown>): vo
   try {
     const client = getClient();
     if (!client) return;
-    const distinctId = getOrCreateDistinctId();
-    client.capture({ distinctId, event, properties: properties ?? {} });
+    client.capture({ distinctId: sessionId, event, properties: properties ?? {} });
   } catch {
     // Never break the CLI
   }
