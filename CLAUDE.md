@@ -1,3 +1,7 @@
+# Code style
+
+Use kebab case for JS and TS.
+
 <!-- rtk-instructions v2 -->
 
 # RTK (Rust Token Killer) - Token-Optimized Commands

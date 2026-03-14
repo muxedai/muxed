@@ -1,4 +1,5 @@
-@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap");
+@import "@fontsource-variable/inter";
+@import "@fontsource-variable/jetbrains-mono";
 
 @layer base, starlight, theme, components, utilities;
 
@@ -21,10 +22,10 @@
   --color-accent-950: #1e1b4b;
 
   /* Gray: dark terminal backgrounds */
-  --color-gray-50: #e8e8ec;
-  --color-gray-100: #c4c4ca;
-  --color-gray-200: #8e8e96;
-  --color-gray-300: #5a5a62;
+  --color-gray-50: #f0f0f4;
+  --color-gray-100: #d8d8de;
+  --color-gray-200: #a8a8b0;
+  --color-gray-300: #70707a;
   --color-gray-400: #36363e;
   --color-gray-500: #2a2a30;
   --color-gray-600: #24242a;
@@ -33,6 +34,6 @@
   --color-gray-900: #0c0c0e;
   --color-gray-950: #080809;
 
-  --font-sans: "JetBrains Mono", "SF Mono", "Fira Code", monospace;
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
   --font-mono: "JetBrains Mono", "SF Mono", "Fira Code", monospace;
 }
