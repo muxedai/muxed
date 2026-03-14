@@ -1,6 +1,7 @@
 import { Command } from 'commander';
 import { ensureDaemon, sendRequest } from '../client.js';
 import { formatCallResult, formatJson } from '../formatter.js';
+import { capture, shutdown } from '../../analytics.js';
 
 type CallResult = {
   content: Array<{
@@ -62,6 +63,8 @@ export const callCommand = new Command('call')
         }
       }
 
+      const [server, tool] = serverTool.split('/');
+
       // Check tool's task support to decide execution mode
       if (opts.async) {
         // Async mode: use task-based execution
@@ -69,6 +72,9 @@ export const callCommand = new Command('call')
           name: serverTool,
           arguments: parsedArgs,
         })) as { taskId: string; status: string; server: string };
+
+        capture('tool_called', { server, tool, async: true });
+        await shutdown();
 
         if (opts.json) {
           console.log(formatJson(taskResult));
@@ -87,6 +93,8 @@ export const callCommand = new Command('call')
       }
 
       const result = (await sendRequest('tools/call', params)) as CallResult;
+      capture('tool_called', { server, tool, async: false, is_error: result.isError ?? false });
+      await shutdown();
       console.log(opts.json ? formatJson(result) : formatCallResult(result));
     }
   );

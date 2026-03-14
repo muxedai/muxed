@@ -1,5 +1,6 @@
 ---
 import "../styles/landing.css";
+import PostHog from "../components/posthog.astro";
 
 const title = "muxed – Your agent wastes tokens on tools. Fix it.";
 const description =
@@ -71,6 +72,7 @@ const codeAfter = `<span class="kw">⛁ </span><span class="flag">⛁ </span><sp
     <meta property="og:description" content={description} />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://muxed.dev" />
+    <PostHog />
   </head>
   <body
     class="font-mono bg-page text-fg text-sm leading-[1.6] antialiased overflow-x-hidden"
@@ -713,6 +715,7 @@ const codeAfter = `<span class="kw">⛁ </span><span class="flag">⛁ </span><sp
           .writeText("npx muxed init")
           .then(function () {
             copyHint.textContent = "copied!";
+            window.posthog?.capture("install_command_copied");
             setTimeout(function () {
               copyHint.textContent = "click to copy";
             }, 2000);
@@ -724,6 +727,26 @@ const codeAfter = `<span class="kw">⛁ </span><span class="flag">⛁ </span><sp
             }, 2000);
           });
       });
+
+      // Track CTA and GitHub link clicks
+      document
+        .querySelectorAll("a[href='/getting-started/installation/']")
+        .forEach(function (el) {
+          el.addEventListener("click", function () {
+            window.posthog?.capture("get_started_clicked", {
+              location: el.textContent.trim(),
+            });
+          });
+        });
+      document
+        .querySelectorAll("a[href='https://github.com/skoob13/muxed']")
+        .forEach(function (el) {
+          el.addEventListener("click", function () {
+            window.posthog?.capture("github_link_clicked", {
+              location: el.textContent.trim(),
+            });
+          });
+        });
 
       // Scroll-triggered entrance animations
       var observer = new IntersectionObserver(
