@@ -237,10 +237,16 @@ Auto-discover MCP servers from agent configs (Claude Desktop, Cursor, etc.) and 
 ### `muxed mcp`
 
 ```
-muxed mcp
+muxed mcp [--proxy-tools]
 ```
 
 Without a subcommand, starts the stdio MCP proxy. This is the entry point used by editors connecting to muxed as an MCP server.
+
+| Flag | Description |
+|---|---|
+| `--proxy-tools` | Expose a proxy MCP tool for clients without bash access (e.g. Claude Desktop) |
+
+By default, `muxed mcp` injects instructions that teach coding agents to use CLI commands. With `--proxy-tools`, it also registers a single `muxed` tool that wraps discovery and calling into MCP tool calls — needed for clients like Claude Desktop that can't run shell commands.
 
 ### `muxed mcp add`
 
