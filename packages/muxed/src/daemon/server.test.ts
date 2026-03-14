@@ -308,7 +308,9 @@ describe('createDaemonServer', () => {
     expect(result.errors.length).toBeGreaterThan(0);
   });
 
-  it('rejects tools/call with invalid arguments via Zod validation', async () => {
+  // --- Zod validation on tools/call ---
+
+  it('rejects tools/call with missing required arguments', async () => {
     const response = await sendRequest(testSocketPath, {
       jsonrpc: '2.0',
       id: 13,
@@ -319,8 +321,126 @@ describe('createDaemonServer', () => {
     const error = response.error as { code: number; message: string; data?: unknown };
     expect(error.code).toBe(-32602);
     expect(error.message).toContain('Invalid arguments');
+    const data = error.data as { code: string; context?: { validationErrors?: string[] } };
+    expect(data.code).toBe('INVALID_ARGUMENTS');
+    expect(data.context?.validationErrors).toBeDefined();
+    expect(data.context!.validationErrors!.length).toBeGreaterThan(0);
+  });
+
+  it('rejects tools/call with wrong argument type', async () => {
+    const response = await sendRequest(testSocketPath, {
+      jsonrpc: '2.0',
+      id: 14,
+      method: 'tools/call',
+      params: { name: 'everything/echo', arguments: { message: 12345 } },
+    });
+
+    const error = response.error as { code: number; message: string; data?: unknown };
+    expect(error.code).toBe(-32602);
+    expect(error.message).toContain('Invalid arguments');
+    const data = error.data as { code: string; suggestion?: string };
+    expect(data.code).toBe('INVALID_ARGUMENTS');
+    expect(data.suggestion).toContain('muxed info');
+  });
+
+  it('allows tools/call with valid arguments', async () => {
+    const response = await sendRequest(testSocketPath, {
+      jsonrpc: '2.0',
+      id: 15,
+      method: 'tools/call',
+      params: { name: 'everything/echo', arguments: { message: 'test' } },
+    });
+
+    expect(response.error).toBeUndefined();
+    const result = response.result as { content: Array<{ type: string; text: string }> };
+    expect(result.content[0]!.text).toContain('test');
+  });
+
+  // --- Zod validation on tools/call-async ---
+
+  it('rejects tools/call-async with missing required arguments', async () => {
+    const response = await sendRequest(testSocketPath, {
+      jsonrpc: '2.0',
+      id: 16,
+      method: 'tools/call-async',
+      params: { name: 'everything/echo', arguments: {} },
+    });
+
+    const error = response.error as { code: number; message: string; data?: unknown };
+    expect(error.code).toBe(-32602);
+    expect(error.message).toContain('Invalid arguments');
     const data = error.data as { code: string };
     expect(data.code).toBe('INVALID_ARGUMENTS');
+  });
+
+  it('rejects tools/call-async with wrong argument type', async () => {
+    const response = await sendRequest(testSocketPath, {
+      jsonrpc: '2.0',
+      id: 17,
+      method: 'tools/call-async',
+      params: { name: 'everything/echo', arguments: { message: [1, 2, 3] } },
+    });
+
+    const error = response.error as { code: number; message: string; data?: unknown };
+    expect(error.code).toBe(-32602);
+    const data = error.data as { code: string };
+    expect(data.code).toBe('INVALID_ARGUMENTS');
+  });
+
+  // --- Dry-run vs call consistency ---
+
+  it('dry-run and call reject the same invalid arguments', async () => {
+    const invalidArgs = { message: { nested: 'object' } };
+
+    const [validateResp, callResp] = await Promise.all([
+      sendRequest(testSocketPath, {
+        jsonrpc: '2.0',
+        id: 18,
+        method: 'tools/validate',
+        params: { name: 'everything/echo', arguments: invalidArgs },
+      }),
+      sendRequest(testSocketPath, {
+        jsonrpc: '2.0',
+        id: 19,
+        method: 'tools/call',
+        params: { name: 'everything/echo', arguments: invalidArgs },
+      }),
+    ]);
+
+    // Dry-run returns validation result (not an error)
+    const validateResult = validateResp.result as { valid: boolean; errors: string[] };
+    expect(validateResult.valid).toBe(false);
+    expect(validateResult.errors.length).toBeGreaterThan(0);
+
+    // Call returns an error
+    const callError = callResp.error as { code: number; data?: { code: string } };
+    expect(callError.code).toBe(-32602);
+    expect(callError.data?.code).toBe('INVALID_ARGUMENTS');
+  });
+
+  it('dry-run and call both accept valid arguments', async () => {
+    const validArgs = { message: 'hello' };
+
+    const [validateResp, callResp] = await Promise.all([
+      sendRequest(testSocketPath, {
+        jsonrpc: '2.0',
+        id: 20,
+        method: 'tools/validate',
+        params: { name: 'everything/echo', arguments: validArgs },
+      }),
+      sendRequest(testSocketPath, {
+        jsonrpc: '2.0',
+        id: 21,
+        method: 'tools/call',
+        params: { name: 'everything/echo', arguments: validArgs },
+      }),
+    ]);
+
+    const validateResult = validateResp.result as { valid: boolean };
+    expect(validateResult.valid).toBe(true);
+
+    expect(callResp.error).toBeUndefined();
+    expect(callResp.result).toBeDefined();
   });
 
   it('returns error for tools/info with nonexistent tool', async () => {
