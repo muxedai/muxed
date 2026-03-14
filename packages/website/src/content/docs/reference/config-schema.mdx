@@ -2,3 +2,183 @@
 title: Config Schema
 description: Full schema reference for muxed.config.json.
 ---
+
+Complete reference for the `muxed.config.json` configuration file.
+
+## Top-level: `MuxedConfig`
+
+```typescript
+type MuxedConfig = {
+  mcpServers: Record<string, ServerConfig>;
+  daemon?: DaemonConfig;
+  mergeClaudeConfig?: boolean;
+};
+```
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `mcpServers` | `Record<string, ServerConfig>` | yes | Object where keys are server names and values are server configs |
+| `daemon` | `DaemonConfig` | no | Daemon settings |
+| `mergeClaudeConfig` | `boolean` | no | When `true`, auto-merges servers from Claude Desktop config |
+
+## `ServerConfig`
+
+A union of `StdioServerConfig | HttpServerConfig`. Each server entry is either a local stdio process or a remote HTTP server.
+
+### `StdioServerConfig`
+
+For local MCP servers started as child processes.
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `command` | `string` | yes | Command to run (e.g., `"npx"`) |
+| `args` | `string[]` | no | Command arguments |
+| `env` | `Record<string, string>` | no | Environment variables |
+| `cwd` | `string` | no | Working directory |
+
+### `HttpServerConfig`
+
+For remote MCP servers over HTTP.
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `url` | `string` | yes | Server URL (e.g., `"https://mcp.example.com/mcp"`) |
+| `transport` | `"streamable-http"` \| `"sse"` | no | Transport type. Default: `"streamable-http"` |
+| `headers` | `Record<string, string>` | no | Custom HTTP headers (e.g., auth tokens) |
+| `sessionId` | `string` | no | Existing session ID for reconnection |
+| `reconnection` | `ReconnectionConfig` | no | Reconnection behavior |
+| `auth` | `OAuthConfig` | no | OAuth authentication |
+
+### `ReconnectionConfig`
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `maxDelay` | `number` | — | Maximum delay between reconnection attempts (ms) |
+| `initialDelay` | `number` | — | Initial delay before first retry (ms) |
+| `growFactor` | `number` | — | Multiplier for exponential backoff |
+| `maxRetries` | `number` | — | Maximum number of reconnection attempts |
+
+### OAuth
+
+`OAuthConfig` is a union of `ClientCredentialsAuth | AuthorizationCodeAuth`.
+
+#### `ClientCredentialsAuth`
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `type` | `"client_credentials"` | yes | OAuth flow type |
+| `clientId` | `string` | yes | OAuth client ID |
+| `clientSecret` | `string` | yes | OAuth client secret |
+| `scope` | `string` | no | OAuth scope |
+
+#### `AuthorizationCodeAuth`
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `type` | `"authorization_code"` | yes | OAuth flow type |
+| `clientId` | `string` | no | OAuth client ID |
+| `clientSecret` | `string` | no | OAuth client secret |
+| `scope` | `string` | no | OAuth scope |
+| `callbackPort` | `number` | no | Port for OAuth callback (0-65535) |
+
+## `DaemonConfig`
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `idleTimeout` | `number` | `300000` (5 min) | Daemon shuts down after this many ms idle |
+| `connectTimeout` | `number` | `30000` (30s) | Timeout for connecting to MCP servers |
+| `requestTimeout` | `number` | `60000` (60s) | Default timeout for tool calls |
+| `healthCheckInterval` | `number` | `30000` (30s) | Periodic health check ping interval |
+| `maxRestartAttempts` | `number` | `-1` (unlimited) | Max restart attempts for crashed servers |
+| `maxTotalTimeout` | `number` | `300000` (5 min) | Max total wait for blocking calls with progress |
+| `taskExpiryTimeout` | `number` | `3600000` (1 hr) | Clean up stale task references after this |
+| `logLevel` | `"debug"` \| `"info"` \| `"warn"` \| `"error"` | `"info"` | Logging level |
+| `shutdownTimeout` | `number` | `10000` (10s) | Max wait for in-flight requests during shutdown |
+| `http.enabled` | `boolean` | `false` | Enable HTTP JSON-RPC listener |
+| `http.port` | `number` | `3100` | HTTP listener port |
+| `http.host` | `string` | `"127.0.0.1"` | HTTP listener bind address |
+
+## Config file resolution
+
+muxed resolves configuration in the following order:
+
+1. **Explicit path** via `--config <path>`
+2. **`muxed.config.json`** in the current working directory
+3. **`~/.config/muxed/config.json`** (global)
+4. **Empty fallback** (no servers configured)
+
+Global config is merged as a base -- project-level config takes precedence.
+
+## `mergeClaudeConfig`
+
+When set to `true`, muxed reads Claude Desktop's config and merges its `mcpServers` as a base. Servers defined in your muxed config take precedence on name conflicts.
+
+Claude Desktop config location:
+
+- **macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`
+- **Linux:** `~/.config/Claude/claude_desktop_config.json`
+
+## Examples
+
+### Minimal config (one stdio server)
+
+```json
+{
+  "mcpServers": {
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/home/user"]
+    }
+  }
+}
+```
+
+### Full config with all options
+
+```json
+{
+  "mcpServers": {
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/home/user"],
+      "env": { "NODE_ENV": "production" },
+      "cwd": "/home/user"
+    },
+    "remote-api": {
+      "url": "https://mcp.example.com/mcp",
+      "transport": "streamable-http",
+      "headers": { "Authorization": "Bearer token123" },
+      "sessionId": "existing-session",
+      "reconnection": {
+        "maxDelay": 30000,
+        "initialDelay": 1000,
+        "growFactor": 1.5,
+        "maxRetries": 5
+      },
+      "auth": {
+        "type": "client_credentials",
+        "clientId": "my-client",
+        "clientSecret": "my-secret",
+        "scope": "read write"
+      }
+    }
+  },
+  "daemon": {
+    "idleTimeout": 600000,
+    "connectTimeout": 30000,
+    "requestTimeout": 120000,
+    "healthCheckInterval": 30000,
+    "maxRestartAttempts": 10,
+    "maxTotalTimeout": 300000,
+    "taskExpiryTimeout": 3600000,
+    "logLevel": "debug",
+    "shutdownTimeout": 15000,
+    "http": {
+      "enabled": true,
+      "port": 3100,
+      "host": "127.0.0.1"
+    }
+  },
+  "mergeClaudeConfig": true
+}
+```
