@@ -40,6 +40,7 @@ export default defineConfig({
           label: "Guides",
           items: [
             { label: "Claude Code", slug: "guides/claude-code" },
+            { label: "Claude Desktop", slug: "guides/claude-desktop" },
             { label: "Cursor & Windsurf", slug: "guides/cursor-windsurf" },
             { label: "Custom Agents", slug: "guides/custom-agents" },
             { label: "Programmatic API", slug: "guides/programmatic-api" },

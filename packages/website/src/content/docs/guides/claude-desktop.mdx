@@ -1,0 +1,86 @@
+---
+title: Claude Desktop
+description: Use muxed with Claude Desktop for on-demand MCP tool access.
+---
+
+Claude Desktop is a chat-first client — it doesn't have a terminal, so it can't run CLI commands like `muxed call`. Instead, muxed exposes a single **proxy tool** that lets Claude Desktop discover, inspect, and call tools through normal MCP tool calls.
+
+## How it works
+
+When you run `muxed mcp --proxy-tools`, muxed starts an MCP server that registers a single `muxed` tool. This tool accepts a `command` string and an optional `input` object:
+
+```
+command: "servers"              → list connected servers
+command: "tools"                → list all available tools
+command: "tools email"          → list tools from the email server
+command: "grep weather"         → search tools by name/description
+command: "info slack/search"    → show full schema for a tool
+command: "call slack/search"    → call a tool (pass args via input)
+```
+
+The `input` parameter is a JSON object passed directly as tool arguments, so the model never needs to escape JSON inside a string.
+
+## Setup
+
+### 1. Configure your servers
+
+If you already have servers in Claude Desktop's config, run `muxed init` to import them:
+
+```bash
+muxed init
+```
+
+Or add servers manually:
+
+```bash
+muxed mcp add my-server npx some-mcp-server --scope global
+```
+
+### 2. Add muxed to Claude Desktop
+
+Edit your Claude Desktop config file:
+
+- **macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`
+- **Linux:** `~/.config/Claude/claude_desktop_config.json`
+
+```json
+{
+  "mcpServers": {
+    "muxed": {
+      "command": "npx",
+      "args": ["muxed@latest", "mcp", "--proxy-tools"]
+    }
+  }
+}
+```
+
+The `--proxy-tools` flag tells muxed to expose the proxy tool instead of just injecting instructions.
+
+### 3. Use it
+
+In Claude Desktop, the model sees a single `muxed` tool. When it needs to interact with your MCP servers, it calls this tool with commands like:
+
+- `muxed("tools")` — discover what's available
+- `muxed("grep database")` — find relevant tools
+- `muxed("info postgres/query")` — check the schema
+- `muxed("call postgres/query", { sql: "SELECT ..." })` — execute the call
+
+All your servers are accessible through one tool, keeping Claude Desktop's tool list clean.
+
+## Why `--proxy-tools`?
+
+Coding agents like Claude Code and Cursor have bash access — they can run `muxed grep`, `muxed call`, etc. as CLI commands. They don't need a proxy tool; instructions alone are enough.
+
+Claude Desktop can only interact through MCP tool calls. The `--proxy-tools` flag bridges this gap by wrapping the same CLI capabilities into a single MCP tool.
+
+| Client | Mode | How it works |
+|---|---|---|
+| Claude Code | `muxed mcp` | Injected instructions teach the agent CLI commands |
+| Cursor / Windsurf | `muxed mcp` | Same — CLI commands via terminal |
+| Claude Desktop | `muxed mcp --proxy-tools` | Proxy tool over stdio |
+
+## Next steps
+
+- [Quick Start](/getting-started/quick-start/) — Your first tool call in under a minute
+- [Configuration](/getting-started/configuration/) — Full config options
+- [CLI Reference](/reference/cli-commands/) — All available commands
