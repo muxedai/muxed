@@ -59,7 +59,7 @@
     "dev": "node src/cli.ts",
     "format": "prettier --write 'src/**/*.ts'",
     "format:check": "prettier --check 'src/**/*.ts'",
-    "publish": "tsc --noEmit && prettier --check 'src/**/*.ts' && pnpm build && cp ../../README.md .",
+    "publish": "tsc --noEmit && prettier --check 'src/**/*.ts' && pnpm build && cp ../../README.md . && npm publish",
     "test": "vitest",
     "type-check": "tsc --noEmit"
   },
