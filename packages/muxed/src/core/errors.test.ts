@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest';
+import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 import {
   findSimilarTools,
   toolNotFoundError,
@@ -11,14 +12,11 @@ import {
 
 describe('findSimilarTools', () => {
   const tools = [
-    { server: 'slack', tool: { name: 'search_messages' } },
-    { server: 'slack', tool: { name: 'search_files' } },
-    { server: 'slack', tool: { name: 'send_message' } },
-    { server: 'github', tool: { name: 'search_issues' } },
-  ] as Array<{
-    server: string;
-    tool: { name: string; description?: string; inputSchema: unknown };
-  }>;
+    { server: 'slack', tool: { name: 'search_messages', inputSchema: { type: 'object' } } },
+    { server: 'slack', tool: { name: 'search_files', inputSchema: { type: 'object' } } },
+    { server: 'slack', tool: { name: 'send_message', inputSchema: { type: 'object' } } },
+    { server: 'github', tool: { name: 'search_issues', inputSchema: { type: 'object' } } },
+  ] as Array<{ server: string; tool: Tool }>;
 
   it('finds similar tool names', () => {
     const similar = findSimilarTools('slack/search_msgs', tools);
