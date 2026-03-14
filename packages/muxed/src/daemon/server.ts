@@ -74,7 +74,11 @@ export function createDaemonServer(serverPool: ServerPool, config: MuxedConfig):
 
       case 'tools/list': {
         const server = (params as { server?: string } | undefined)?.server;
-        return { jsonrpc: '2.0', id, result: serverPool.listAllTools(server) };
+        const tools = serverPool.listAllTools(server).map(({ server, tool }) => ({
+          server,
+          tool: { name: tool.name, title: tool.title, annotations: tool.annotations },
+        }));
+        return { jsonrpc: '2.0', id, result: tools };
       }
 
       case 'tools/call': {
