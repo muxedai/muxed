@@ -2,3 +2,192 @@
 title: Configuration
 description: Configure muxed with muxed.config.json or reuse your existing claude_desktop_config.json.
 ---
+
+muxed is configured through a JSON file that defines which MCP servers to connect to and how the daemon should behave. The format is intentionally compatible with the `mcpServers` section of `claude_desktop_config.json`, so you can reuse your existing config without changes.
+
+## Config file locations
+
+muxed looks for configuration in two places:
+
+- **Project-level:** `muxed.config.json` in the project root
+- **Global:** `~/.config/muxed/config.json`
+
+## Config file discovery order
+
+When muxed starts, it resolves configuration in the following order:
+
+1. Explicit `--config <path>` flag
+2. `muxed.config.json` in the current working directory
+3. `~/.config/muxed/config.json` (global)
+4. Empty fallback (no servers)
+
+Global config is merged as a base — project config takes precedence for servers with the same name. This lets you define shared servers globally and override or extend them per-project.
+
+## Server configuration
+
+muxed supports two types of MCP servers: stdio servers (local processes) and HTTP servers (remote endpoints).
+
+### Stdio servers
+
+Stdio servers run as local child processes. muxed spawns the command and communicates over stdin/stdout.
+
+```json
+{
+  "mcpServers": {
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/home/user/projects"],
+      "env": {},
+      "cwd": "/optional/working/directory"
+    }
+  }
+}
+```
+
+| Field | Description |
+|-------|-------------|
+| `command` | The executable to run |
+| `args` | Array of command-line arguments |
+| `env` | Environment variables to set for the process |
+| `cwd` | Optional working directory for the process |
+
+### HTTP servers
+
+HTTP servers connect to remote MCP endpoints over the network.
+
+```json
+{
+  "mcpServers": {
+    "remote-api": {
+      "url": "https://mcp.example.com/mcp",
+      "transport": "streamable-http",
+      "headers": { "Authorization": "Bearer ..." },
+      "sessionId": "optional-existing-session-id",
+      "reconnection": {
+        "maxDelay": 30000,
+        "initialDelay": 1000,
+        "growFactor": 1.5,
+        "maxRetries": 2
+      }
+    }
+  }
+}
+```
+
+| Field | Description |
+|-------|-------------|
+| `url` | The HTTP endpoint URL |
+| `transport` | Transport type (e.g., `"streamable-http"`) |
+| `headers` | Optional HTTP headers to include with requests |
+| `sessionId` | Optional existing session ID to resume |
+| `reconnection` | Optional reconnection settings (see fields below) |
+| `reconnection.maxDelay` | Maximum delay between reconnection attempts (ms) |
+| `reconnection.initialDelay` | Initial delay before first reconnection attempt (ms) |
+| `reconnection.growFactor` | Multiplier applied to delay after each failed attempt |
+| `reconnection.maxRetries` | Maximum number of reconnection attempts |
+
+## OAuth authentication
+
+HTTP servers can authenticate using OAuth. Add an `auth` block inside the server configuration.
+
+### Client credentials
+
+Use this flow for machine-to-machine authentication where no user interaction is needed.
+
+```json
+{
+  "auth": {
+    "type": "client_credentials",
+    "clientId": "...",
+    "clientSecret": "...",
+    "scope": "optional-scope"
+  }
+}
+```
+
+### Authorization code
+
+Use this flow when user consent is required. muxed will open a browser and listen for the callback on the specified port.
+
+```json
+{
+  "auth": {
+    "type": "authorization_code",
+    "clientId": "...",
+    "clientSecret": "...",
+    "callbackPort": 8080,
+    "scope": "optional-scope"
+  }
+}
+```
+
+## Daemon settings
+
+The `daemon` block controls how the muxed daemon operates. All fields are optional and have sensible defaults.
+
+```json
+{
+  "daemon": {
+    "idleTimeout": 300000,
+    "connectTimeout": 30000,
+    "requestTimeout": 60000,
+    "healthCheckInterval": 30000,
+    "maxRestartAttempts": -1,
+    "maxTotalTimeout": 300000,
+    "taskExpiryTimeout": 3600000,
+    "logLevel": "info",
+    "shutdownTimeout": 10000,
+    "http": {
+      "enabled": false,
+      "port": 3100,
+      "host": "127.0.0.1"
+    }
+  }
+}
+```
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `idleTimeout` | number | 300000 (5 min) | Shut down daemon after this many ms of inactivity |
+| `connectTimeout` | number | 30000 (30s) | Timeout for connecting to MCP servers |
+| `requestTimeout` | number | 60000 (60s) | Default timeout for tool calls |
+| `healthCheckInterval` | number | 30000 (30s) | Interval for periodic health check pings |
+| `maxRestartAttempts` | number | -1 (unlimited) | Max auto-restart attempts for crashed servers |
+| `maxTotalTimeout` | number | 300000 (5 min) | Max total wait time for blocking calls |
+| `taskExpiryTimeout` | number | 3600000 (1 hr) | Clean up stale task references after this |
+| `logLevel` | string | "info" | Log level: debug, info, warn, error |
+| `shutdownTimeout` | number | 10000 (10s) | Wait for in-flight requests during shutdown |
+| `http.enabled` | boolean | false | Enable the HTTP JSON-RPC listener |
+| `http.port` | number | 3100 | HTTP listener port |
+| `http.host` | string | "127.0.0.1" | HTTP listener host |
+
+## Merging Claude Desktop config
+
+If you already have MCP servers configured in Claude Desktop, you can have muxed automatically merge them in. Set `mergeClaudeConfig` at the top level of your muxed config:
+
+```json
+{
+  "mergeClaudeConfig": true,
+  "mcpServers": {
+    "my-project-server": {
+      "command": "node",
+      "args": ["server.js"]
+    }
+  }
+}
+```
+
+When enabled, servers from your Claude Desktop config serve as a base. Any servers defined in your muxed config take precedence if they share the same name.
+
+## Config management CLI
+
+muxed provides CLI commands for managing your configuration without editing JSON by hand.
+
+- **`muxed init`** — Auto-discover MCP servers from agent configs and generate a muxed config file.
+- **`muxed mcp add <name> <command-or-url> [args...]`** — Add a server to your config.
+- **`muxed mcp remove <name>`** — Remove a server from your config.
+- **`muxed mcp list`** — List all configured servers.
+
+## Compatibility note
+
+The config format is intentionally compatible with the `mcpServers` section of `claude_desktop_config.json`. If you have an existing Claude Desktop config, you can copy the `mcpServers` block directly into `muxed.config.json` and it will work as-is. Alternatively, enable `mergeClaudeConfig` to pull servers in automatically.

@@ -1,17 +1,18 @@
-@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600;700&display=swap");
+@import "@fontsource-variable/inter";
+@import "@fontsource-variable/jetbrains-mono";
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "JetBrains Mono", "SF Mono", "Fira Code", monospace;
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
   --font-mono: "JetBrains Mono", "SF Mono", "Fira Code", monospace;
 
   --color-page: #0c0c0e;
   --color-surface: #141417;
   --color-raised: #1c1c21;
   --color-hover: #24242a;
-  --color-fg: #e8e8ec;
-  --color-fg-muted: #8e8e96;
-  --color-fg-faint: #5a5a62;
+  --color-fg: #f0f0f4;
+  --color-fg-muted: #a8a8b0;
+  --color-fg-faint: #70707a;
   --color-brand: #818cf8;
   --color-brand-dim: #6366f1;
   --color-green: #5ec269;

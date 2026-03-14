@@ -2,3 +2,356 @@
 title: Programmatic API
 description: Use the muxed JavaScript/TypeScript API to manage MCP servers programmatically.
 ---
+
+The `muxed` package exposes a full JavaScript/TypeScript client for managing MCP servers, calling tools, reading resources, and controlling the daemon — all programmatically.
+
+## Installation
+
+```bash
+npm install muxed
+```
+
+## Import paths
+
+```typescript
+import { createClient } from 'muxed';
+// or
+import { createClient } from 'muxed/client';
+```
+
+## Creating a client
+
+```typescript
+import { createClient } from 'muxed';
+
+const client = await createClient();
+// or with options:
+const client = await createClient({
+  configPath: './muxed.config.json',
+  autoStart: true, // default: true — starts daemon if not running
+});
+```
+
+### `CreateClientOptions`
+
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `configPath` | `string` | — | Path to `muxed.config.json`. Uses default resolution if omitted. |
+| `autoStart` | `boolean` | `true` | Auto-starts the daemon if not running. Set to `false` to throw if the daemon is not running. |
+
+## API reference
+
+### Tools
+
+#### `client.tools(server?)`
+
+List all tools, optionally filtered by server name.
+
+```typescript
+const tools = await client.tools();
+const tools = await client.tools('filesystem');
+// Returns: Array<{ server: string; tool: Tool }>
+```
+
+#### `client.tool(toolPath)`
+
+Get a single tool's schema by its fully qualified name.
+
+```typescript
+const tool = await client.tool('filesystem/read_file');
+// Returns: Tool
+```
+
+#### `client.grep(query)`
+
+Search tools by name or description.
+
+```typescript
+const matches = await client.grep('search');
+// Returns: Array<{ server: string; tool: Tool }>
+```
+
+#### `client.call(toolPath, args?, options?)`
+
+Call a tool and wait for the result.
+
+```typescript
+const result = await client.call('filesystem/read_file', { path: '/tmp/file.txt' });
+// Returns: CallResult
+```
+
+Pass a timeout (in milliseconds) to limit how long the call can take:
+
+```typescript
+const result = await client.call('server/tool', args, { timeout: 5000 });
+```
+
+#### `client.callAsync(toolPath, args?)`
+
+Call a tool asynchronously. Returns a task handle you can poll for completion.
+
+```typescript
+const task = await client.callAsync('analytics/export', { range: '30d' });
+// Returns: TaskHandle { taskId, server, status }
+```
+
+### Resources
+
+#### `client.resources(server?)`
+
+List resources, optionally filtered by server name.
+
+```typescript
+const resources = await client.resources();
+const resources = await client.resources('server-name');
+// Returns: Array<{ server: string; resource: Resource }>
+```
+
+#### `client.read(server, uri)`
+
+Read a resource by server name and URI.
+
+```typescript
+const content = await client.read('server-name', 'resource://uri');
+// Returns: ReadResourceResult
+```
+
+### Prompts
+
+#### `client.prompts(server?)`
+
+List prompts, optionally filtered by server name.
+
+```typescript
+const prompts = await client.prompts();
+const prompts = await client.prompts('server-name');
+// Returns: Array<{ server: string; prompt: Prompt }>
+```
+
+#### `client.prompt(server, name, args?)`
+
+Get a prompt result by server name and prompt name.
+
+```typescript
+const result = await client.prompt('server-name', 'prompt-name', { arg: 'value' });
+// Returns: GetPromptResult
+```
+
+### Completions
+
+#### `client.complete(server, ref, argument)`
+
+Request argument completions from a server.
+
+```typescript
+const result = await client.complete(
+  'server-name',
+  { type: 'ref/prompt', name: 'prompt-name' },
+  { name: 'argument', value: 'partial-value' }
+);
+// Returns: CompleteResult
+```
+
+### Tasks
+
+#### `client.tasks(server?)`
+
+List tasks, optionally filtered by server name.
+
+```typescript
+const tasks = await client.tasks();
+const tasks = await client.tasks('server-name');
+// Returns: Array<{ server: string; tasks: Array<Record<string, unknown>> }>
+```
+
+#### `client.task(server, taskId)`
+
+Get the status of a specific task.
+
+```typescript
+const status = await client.task('server-name', 'task-id');
+```
+
+#### `client.taskResult(server, taskId)`
+
+Get the result of a completed task.
+
+```typescript
+const result = await client.taskResult('server-name', 'task-id');
+```
+
+#### `client.taskCancel(server, taskId)`
+
+Cancel a running task.
+
+```typescript
+const cancelled = await client.taskCancel('server-name', 'task-id');
+```
+
+### Daemon
+
+#### `client.servers()`
+
+List all configured servers and their state.
+
+```typescript
+const servers = await client.servers();
+// Returns: ServerState[]
+```
+
+#### `client.status()`
+
+Get the current daemon status.
+
+```typescript
+const status = await client.status();
+// Returns: DaemonStatus { pid, uptime, serverCount, servers }
+```
+
+#### `client.reload()`
+
+Reload the daemon configuration. Returns a summary of what changed.
+
+```typescript
+const changes = await client.reload();
+// Returns: ReloadResult { added, removed, changed }
+```
+
+#### `client.stop()`
+
+Stop the daemon process.
+
+```typescript
+await client.stop();
+```
+
+#### `client.close()`
+
+Close the client connection. Call this when you are done using the client.
+
+```typescript
+client.close();
+```
+
+## Key types
+
+### `CallResult`
+
+```typescript
+type CallResult = {
+  content: Array<{
+    type: string;
+    text?: string;
+    mimeType?: string;
+    data?: string;
+    name?: string;
+    uri?: string;
+    resource?: { text?: string; blob?: string; mimeType?: string };
+  }>;
+  structuredContent?: Record<string, unknown>;
+  isError?: boolean;
+};
+```
+
+### `CallOptions`
+
+```typescript
+type CallOptions = { timeout?: number };
+```
+
+### `TaskHandle`
+
+```typescript
+type TaskHandle = { taskId: string; server: string; status: string };
+```
+
+### Exported types
+
+The following types are available as named exports from the `muxed` package:
+
+`Tool`, `Resource`, `Prompt`, `ServerState`, `ServerConfig`, `DaemonStatus`, `ReloadResult`, `TaskHandle`, `MuxedError`
+
+## Type generation with `muxed typegen`
+
+Run `muxed typegen` to generate TypeScript types from your live MCP tool schemas:
+
+```bash
+muxed typegen
+```
+
+This generates `muxed.generated.d.ts` in `node_modules/muxed/` using module augmentation on the `MuxedToolMap` interface. After running typegen:
+
+- `call()` gets autocomplete on tool names
+- Arguments are typed based on the tool's `inputSchema`
+- Results are typed based on the tool's `outputSchema` (when available)
+- Tool and property descriptions become JSDoc comments
+- Unknown tools fall back to untyped `CallResult`
+
+Uses `json-schema-to-typescript` for schema conversion. Refresh with `muxed typegen` when tools change — same workflow as `prisma generate`.
+
+## Error handling
+
+```typescript
+import { createClient, MuxedError } from 'muxed';
+
+const client = await createClient();
+try {
+  await client.call('server/nonexistent-tool');
+} catch (err) {
+  if (err instanceof MuxedError) {
+    console.error(`RPC error ${err.code}: ${err.message}`);
+    // err.data may contain additional details
+  }
+}
+```
+
+`MuxedError` is thrown for JSON-RPC errors (tool not found, server not found, etc.). Standard `Error` is thrown for transport failures.
+
+## Usage examples
+
+### List tools and call one
+
+```typescript
+const client = await createClient();
+const tools = await client.tools();
+console.log(`Found ${tools.length} tools`);
+
+const result = await client.call('filesystem/read_file', { path: '/etc/hostname' });
+console.log(result.content[0]?.text);
+client.close();
+```
+
+### Search and invoke
+
+```typescript
+const client = await createClient();
+const matches = await client.grep('search');
+for (const { server, tool } of matches) {
+  console.log(`${server}/${tool.name}: ${tool.description}`);
+}
+```
+
+### Parallel calls
+
+```typescript
+const client = await createClient();
+const [users, tickets] = await Promise.all([
+  client.call('posthog/query-run', { query: { kind: 'HogQLQuery', query: 'SELECT ...' } }),
+  client.call('intercom/search-conversations', { query: 'billing', limit: 10 }),
+]);
+```
+
+### Async tasks
+
+```typescript
+const client = await createClient();
+const handle = await client.callAsync('server/long-running-tool', { input: 'data' });
+
+let status = await client.task(handle.server, handle.taskId);
+while (status.status !== 'completed' && status.status !== 'failed') {
+  await new Promise(r => setTimeout(r, 1000));
+  status = await client.task(handle.server, handle.taskId);
+}
+
+const result = await client.taskResult(handle.server, handle.taskId);
+```

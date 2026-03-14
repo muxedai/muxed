@@ -3,4 +3,45 @@ title: Overview
 description: One daemon to manage them all. The optimization layer for your MCP infrastructure.
 ---
 
-muxed is the optimization layer for your MCP infrastructure. It runs as a background daemon that aggregates Model Context Protocol servers, keeping tool schemas out of your model's context window so agents run faster, pick the right tool, and give better results.
+muxed is a background daemon and CLI that sits between your AI agent and your MCP servers. It aggregates multiple Model Context Protocol servers into a single endpoint, keeps tool schemas out of your model's context window, and lets agents discover and call tools on demand.
+
+## The problem
+
+MCP tools are expensive in ways that compound quickly:
+
+- **98.7% token overhead** on intermediate tool results ([Anthropic research](https://arxiv.org/abs/2502.09207)) — nearly all tokens returned by tools are noise the model has to parse but never uses.
+- **20–30% of context consumed by tool schemas** before the agent writes a single token — every tool definition competes with your actual instructions for attention.
+- **2–3 server limit before accuracy collapses** ([Cloudflare research](https://blog.cloudflare.com/mcp-research)) — as you add servers, the model picks the wrong tool more often and your designed trajectories fall apart.
+
+These aren't edge cases. They're the default behavior of any agent that loads MCP tools directly into its prompt.
+
+## How muxed fixes this
+
+### Lazy discovery
+
+Tools stay in the daemon, not in the prompt. Agents discover tools on demand with `muxed grep` and `muxed info`, pulling only what they need for the current step.
+
+### Background daemon
+
+Servers stay warm between calls. No cold starts, no repeated connection negotiation, no waiting for servers to spin up every time an agent needs a tool.
+
+### CLI + Node.js API
+
+Call tools from shell scripts or TypeScript with typed results. muxed works anywhere — not just inside agent frameworks.
+
+### Context reclamation
+
+By offloading tool schemas to muxed, your agent's context window is freed for skills, prompts, and the actual task. Fewer schemas means more room for the content that drives correct behavior.
+
+## Context engineering, not just plumbing
+
+Skills, prompts, and default tools are deterministic — models always execute them. MCP tools compete for attention, and the more you add, the less your designed trajectories get followed. Every tool schema in the prompt is a distraction from the instructions you actually wrote.
+
+Offloading tools to muxed is context engineering at the infrastructure level. Instead of stuffing every tool into the prompt and hoping the model picks correctly, you keep tools out of context by default and let the agent pull them in only when needed. The result: your carefully designed prompts and skills stay in control.
+
+## Where to go next
+
+- [Installation](/getting-started/installation/) — Install muxed
+- [Quick Start](/getting-started/quick-start/) — Your first tool call
+- [Claude Code Guide](/guides/claude-code/) — Use muxed with Claude Code
+- [CLI Reference](/reference/cli-commands/) — All commands

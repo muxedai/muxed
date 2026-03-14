@@ -17,6 +17,7 @@ import { taskCancelCommand } from './commands/task-cancel.js';
 import { initCommand } from './commands/init.js';
 import { mcpCommand } from './commands/mcp.js';
 import { typegenCommand } from './commands/typegen.js';
+import { telemetryCommand } from './commands/telemetry.js';
 
 export function runCli(): void {
   const program = new Command();
@@ -52,6 +53,7 @@ export function runCli(): void {
   program.addCommand(initCommand);
   program.addCommand(mcpCommand);
   program.addCommand(typegenCommand);
+  program.addCommand(telemetryCommand);
 
   program.commandsGroup('Daemon:');
   program.addCommand(daemonCommand);

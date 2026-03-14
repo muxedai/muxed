@@ -8,3 +8,4 @@ coverage
 **/bin/_chunks/
 packages/*/README.md
 .claude/skills/posthog-*
+.pnpm-store/
