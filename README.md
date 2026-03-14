@@ -103,6 +103,8 @@ The format is intentionally compatible with the `mcpServers` section of `claude_
 | `muxed tools [server]`                          | List available tools (with annotations)              |
 | `muxed info <server/tool>`                      | Tool schema details (inputSchema, outputSchema)      |
 | `muxed call <server/tool> [json]`               | Invoke a tool                                        |
+| `muxed call ... --dry-run`                      | Validate arguments without executing                 |
+| `muxed call ... --fields <paths>`               | Extract specific fields from the response            |
 | `muxed grep <pattern>`                          | Search tool names, titles, and descriptions          |
 | `muxed resources [server]`                      | List resources                                       |
 | `muxed read <server/resource>`                  | Read a resource                                      |
@@ -116,6 +118,49 @@ The format is intentionally compatible with the `mcpServers` section of `claude_
 | `muxed init`                                    | Generate config from discovered MCP servers          |
 
 All commands support `--json` for machine-readable output.
+
+## Agent-Friendly Features
+
+### Structured Errors with Recovery Suggestions
+
+When a tool call fails, muxed returns structured error data with actionable suggestions and fuzzy-matched similar tool names — so agents can self-correct instead of guessing.
+
+```bash
+muxed call slack/search_msgs '{}' --json
+# {
+#   "code": -32602,
+#   "message": "Tool not found: slack/search_msgs",
+#   "data": {
+#     "code": "TOOL_NOT_FOUND",
+#     "suggestion": "Did you mean: slack/search_messages, slack/search_files? Run 'muxed grep <pattern>' to search available tools.",
+#     "context": { "similarTools": ["slack/search_messages", "slack/search_files"] }
+#   }
+# }
+```
+
+Error codes include `TOOL_NOT_FOUND`, `SERVER_NOT_FOUND`, `SERVER_NOT_CONNECTED`, `INVALID_FORMAT`, `MISSING_PARAMETER`, `INVALID_ARGUMENTS`, and `TIMEOUT`.
+
+### Dry-Run Validation
+
+Validate arguments against a tool's schema without executing the call. Catches mistakes before wasting tokens on failed calls.
+
+```bash
+muxed call postgres/query '{"sql": "DROP TABLE users"}' --dry-run
+# Validation: passed
+# Warnings:
+#   - Tool is marked as destructive.
+#   - Tool is not marked as idempotent.
+```
+
+### Response Field Filtering
+
+Extract only the fields you need from tool responses. Reduces context window consumption when responses are large. Only applies to JSON-parseable outputs — non-JSON text is returned unchanged.
+
+```bash
+muxed call postgres/query '{"sql": "SELECT * FROM users"}' --fields "rows[].name,rows[].email"
+```
+
+Supports dot-notation paths (`data.user.name`) and array extraction (`rows[].field`). Works on `structuredContent` and JSON embedded in text content blocks.
 
 ## Node.js API
 
@@ -132,6 +177,15 @@ const tools = await client.grep('search');
 // Call a tool
 const result = await client.call('filesystem/read_file', {
   path: '/tmp/config.json',
+});
+
+// Validate before calling (dry-run)
+const check = await client.validate('postgres/query', { sql: 'DROP TABLE users' });
+// check.valid, check.errors, check.warnings
+
+// Call with field filtering
+const filtered = await client.call('postgres/query', { sql: 'SELECT * FROM users' }, {
+  fields: ['rows[].name', 'rows[].email'],
 });
 
 // Parallel calls across servers
@@ -225,9 +279,12 @@ If you're using `mcp-remote` to connect Claude Desktop or ChatGPT to remote MCP 
 | CLI interface                         | ✅    | ❌         | ❌        | ❌      | ✅      |
 | Auto-reconnect / health checks        | ✅    | ❌         | ❌        | ✅      | ✅      |
 | MCP 2025-11-25                        | ✅    | Partial    | Partial   | Partial | Partial |
-| Task support                          | ✅    | ❌         | ❌        | ❌      |
-| Zero config start                     | ✅    | ❌         | ❌        | ❌      |
-| Config compatible with Claude Desktop | ✅    | ❌         | ✅        | ❌      |
+| Task support                          | ✅    | ❌         | ❌        | ❌      |         |
+| Dry-run validation                    | ✅    | ❌         | ❌        | ❌      | ❌      |
+| Structured errors with suggestions    | ✅    | ❌         | ❌        | ❌      | ❌      |
+| Response field filtering              | ✅    | ❌         | ❌        | ❌      | ❌      |
+| Zero config start                     | ✅    | ❌         | ❌        | ❌      |         |
+| Config compatible with Claude Desktop | ✅    | ❌         | ✅        | ❌      |         |
 
 ## Development
 

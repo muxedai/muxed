@@ -86,6 +86,34 @@ Pass a timeout (in milliseconds) to limit how long the call can take:
 const result = await client.call('server/tool', args, { timeout: 5000 });
 ```
 
+Extract specific fields from the response to reduce context window usage:
+
+```typescript
+const result = await client.call('db/query', { sql: 'SELECT * FROM users' }, {
+  fields: ['rows[].name', 'rows[].email'],
+});
+```
+
+Field filtering only applies to JSON-parseable content (`structuredContent` or text blocks with valid JSON). Non-JSON responses are returned unchanged.
+
+#### `client.validate(toolPath, args?)`
+
+Validate arguments against a tool's schema without executing the call (dry-run mode).
+
+```typescript
+const result = await client.validate('postgres/query', { sql: 'DROP TABLE users' });
+// Returns: ValidationResult { valid, errors, warnings, tool? }
+
+if (!result.valid) {
+  console.error('Validation errors:', result.errors);
+}
+for (const warning of result.warnings) {
+  console.warn(warning); // e.g. "Tool is marked as destructive."
+}
+```
+
+Checks required fields, unknown fields, type mismatches, and enum values. Warnings include tool annotation hints (destructive, not idempotent, not read-only).
+
 #### `client.callAsync(toolPath, args?)`
 
 Call a tool asynchronously. Returns a task handle you can poll for completion.
@@ -256,7 +284,21 @@ type CallResult = {
 ### `CallOptions`
 
 ```typescript
-type CallOptions = { timeout?: number };
+type CallOptions = {
+  timeout?: number;
+  fields?: string[];
+};
+```
+
+### `ValidationResult`
+
+```typescript
+type ValidationResult = {
+  valid: boolean;
+  errors: string[];
+  warnings: string[];
+  tool?: { name: string; annotations?: Record<string, unknown> };
+};
 ```
 
 ### `TaskHandle`
@@ -269,7 +311,7 @@ type TaskHandle = { taskId: string; server: string; status: string };
 
 The following types are available as named exports from the `muxed` package:
 
-`Tool`, `Resource`, `Prompt`, `ServerState`, `ServerConfig`, `DaemonStatus`, `ReloadResult`, `TaskHandle`, `MuxedError`
+`Tool`, `Resource`, `Prompt`, `ServerState`, `ServerConfig`, `DaemonStatus`, `ReloadResult`, `TaskHandle`, `ValidationResult`, `MuxedError`
 
 ## Type generation with `muxed typegen`
 
@@ -300,12 +342,32 @@ try {
 } catch (err) {
   if (err instanceof MuxedError) {
     console.error(`RPC error ${err.code}: ${err.message}`);
-    // err.data may contain additional details
+    // err.data contains structured error info
+    const data = err.data as { code: string; suggestion: string; context?: Record<string, unknown> };
+    console.error(`Error code: ${data.code}`);       // e.g. "TOOL_NOT_FOUND"
+    console.error(`Suggestion: ${data.suggestion}`);  // e.g. "Did you mean: server/similar_tool?"
+    if (data.context?.similarTools) {
+      console.error(`Similar tools: ${(data.context.similarTools as string[]).join(', ')}`);
+    }
   }
 }
 ```
 
 `MuxedError` is thrown for JSON-RPC errors (tool not found, server not found, etc.). Standard `Error` is thrown for transport failures.
+
+### Structured error codes
+
+All errors include a machine-readable `code` in `err.data`:
+
+| Code | Description |
+|------|-------------|
+| `TOOL_NOT_FOUND` | Tool doesn't exist (includes fuzzy-matched similar tool names) |
+| `SERVER_NOT_FOUND` | Server doesn't exist (includes available server names) |
+| `SERVER_NOT_CONNECTED` | Server exists but isn't connected |
+| `INVALID_FORMAT` | Tool name is not in `server/tool` format |
+| `MISSING_PARAMETER` | Required parameter not provided |
+| `INVALID_ARGUMENTS` | Arguments failed schema validation |
+| `TIMEOUT` | Tool call exceeded timeout |
 
 ## Usage examples
 

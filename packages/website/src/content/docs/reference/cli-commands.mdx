@@ -55,7 +55,7 @@ Show the detailed schema for a specific tool, including:
 ### `muxed call`
 
 ```
-muxed call <server/tool> [json] [--timeout <ms>] [--async] [--json]
+muxed call <server/tool> [json] [--timeout <ms>] [--async] [--dry-run] [--fields <paths>] [--json]
 ```
 
 Invoke a tool with optional JSON arguments.
@@ -66,6 +66,8 @@ Invoke a tool with optional JSON arguments.
 | `-` | Read JSON arguments from stdin (useful for piping) |
 | `--timeout <ms>` | Override the default request timeout |
 | `--async` | Return a task handle instead of blocking (for async-capable tools) |
+| `--dry-run` | Validate arguments against the tool's schema without executing the call |
+| `--fields <paths>` | Comma-separated dot-notation paths to extract from the response |
 | `--json` | Output result as JSON (useful for piping to `jq` or other tools) |
 
 **Examples:**
@@ -82,6 +84,51 @@ muxed call analytics/export '{"range": "30d"}' --async
 
 # With a custom timeout
 muxed call slow-server/generate '{}' --timeout 120000
+
+# Validate arguments without executing (dry-run)
+muxed call postgres/query '{"sql": "DROP TABLE users"}' --dry-run
+
+# Extract specific fields from the response
+muxed call postgres/query '{"sql": "SELECT * FROM users"}' --fields "rows[].name,rows[].email"
+```
+
+#### Dry-run mode
+
+The `--dry-run` flag validates arguments against the tool's `inputSchema` without calling the MCP server. It returns:
+
+- **Validation errors** — missing required fields, unknown fields, type mismatches, invalid enum values
+- **Warnings** — tool annotations such as destructive, not idempotent, not read-only
+
+This is useful for agents to verify tool calls before executing them, avoiding wasted tokens on failed calls with hallucinated parameters.
+
+```bash
+muxed call postgres/query '{}' --dry-run
+# Validation: failed
+#   - Missing required field: sql
+#
+# Warnings:
+#   - Tool is marked as destructive.
+
+muxed call postgres/query '{"sql": "SELECT 1"}' --dry-run --json
+# { "valid": true, "errors": [], "warnings": ["Tool is not marked as idempotent."], "tool": { ... } }
+```
+
+The exit code is `1` when validation fails.
+
+#### Response field filtering
+
+The `--fields` flag extracts specific fields from JSON-parseable responses using dot-notation paths. This reduces the amount of data that enters the agent's context window.
+
+- Only applies to JSON-parseable content (`structuredContent` or text blocks containing valid JSON)
+- Non-JSON text, images, audio, and other content types are returned unchanged
+- Supports array extraction with `[]` syntax: `rows[].name` extracts the `name` field from each element of the `rows` array
+
+```bash
+# Extract only names and emails from query results
+muxed call db/query '{"sql": "SELECT * FROM users"}' --fields "rows[].name,rows[].email"
+
+# Extract a nested field
+muxed call api/get-user '{"id": 1}' --fields "data.name,data.email"
 ```
 
 ### `muxed grep`
@@ -308,6 +355,23 @@ muxed daemon status [--json]
 ```
 
 Show daemon status including PID, uptime, server count, and per-server connection details.
+
+## Structured errors
+
+All error responses include structured error data with recovery suggestions. When using `--json`, errors include a `data` field with:
+
+- **`code`** — machine-readable error code: `TOOL_NOT_FOUND`, `SERVER_NOT_FOUND`, `SERVER_NOT_CONNECTED`, `INVALID_FORMAT`, `MISSING_PARAMETER`, `INVALID_ARGUMENTS`, `TIMEOUT`
+- **`suggestion`** — a human-readable recovery suggestion (e.g., "Did you mean: slack/search_messages?")
+- **`context`** — additional data such as `similarTools` (fuzzy-matched tool names) or `availableServers`
+
+In human-readable mode, the suggestion and context are printed directly:
+
+```bash
+muxed call slack/search_msgs '{}'
+# Error: Tool not found: slack/search_msgs
+# Suggestion: Did you mean: slack/search_messages, slack/search_files? Run 'muxed grep <pattern>' to search available tools.
+# Similar tools: slack/search_messages, slack/search_files
+```
 
 ## Notes
 

@@ -56,15 +56,16 @@ When starting, muxed checks for stale state left behind by a previously crashed 
 
 ## JSON-RPC methods
 
-The daemon exposes 18 methods over the JSON-RPC interface:
+The daemon exposes 19 methods over the JSON-RPC interface:
 
 | Method | Description |
 |--------|-------------|
 | `servers/list` | List all servers with status and capabilities |
 | `tools/list` | List tools (optionally filtered by server) |
 | `tools/info` | Get a specific tool's schema |
-| `tools/call` | Invoke a tool |
+| `tools/call` | Invoke a tool (supports `fields` param for response filtering) |
 | `tools/call-async` | Invoke a tool asynchronously (returns task handle) |
+| `tools/validate` | Validate arguments against tool schema without executing |
 | `tools/grep` | Search tools by pattern |
 | `resources/list` | List resources |
 | `resources/read` | Read a resource |
@@ -79,6 +80,56 @@ The daemon exposes 18 methods over the JSON-RPC interface:
 | `daemon/status` | Daemon status (PID, uptime, servers) |
 | `config/reload` | Reload config, reconnect changed servers |
 | `daemon/stop` | Shut down the daemon |
+
+## Structured errors
+
+All JSON-RPC error responses include structured error data in the `error.data` field, designed to help agents self-correct:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "error": {
+    "code": -32602,
+    "message": "Tool not found: slack/search_msgs",
+    "data": {
+      "code": "TOOL_NOT_FOUND",
+      "suggestion": "Did you mean: slack/search_messages? Run 'muxed grep <pattern>' to search available tools.",
+      "context": { "similarTools": ["slack/search_messages", "slack/search_files"] }
+    }
+  }
+}
+```
+
+Error codes: `TOOL_NOT_FOUND`, `SERVER_NOT_FOUND`, `SERVER_NOT_CONNECTED`, `INVALID_FORMAT`, `MISSING_PARAMETER`, `INVALID_ARGUMENTS`, `TIMEOUT`.
+
+Fuzzy matching uses Levenshtein distance to suggest similar tool names when a tool is not found.
+
+## Tool validation (`tools/validate`)
+
+The `tools/validate` method validates arguments against a tool's `inputSchema` without executing the call. This enables dry-run validation for agents to check their arguments before spending tokens on a real call.
+
+**Request:**
+```json
+{ "method": "tools/validate", "params": { "name": "server/tool", "arguments": { "key": "value" } } }
+```
+
+**Response:**
+```json
+{ "result": { "valid": true, "errors": [], "warnings": ["Tool is marked as destructive."], "tool": { ... } } }
+```
+
+Validation checks: required fields, unknown fields, type mismatches, enum values. Warnings include tool annotation hints (destructive, not idempotent, not read-only).
+
+## Response field filtering
+
+The `tools/call` method accepts an optional `fields` parameter — an array of dot-notation paths to extract from the response. This reduces response size for agents with limited context budgets.
+
+```json
+{ "method": "tools/call", "params": { "name": "db/query", "arguments": { "sql": "SELECT * FROM users" }, "fields": ["rows[].name", "rows[].email"] } }
+```
+
+Filtering only applies to JSON-parseable content (`structuredContent` or text blocks containing valid JSON). Non-JSON text, images, and other content types are returned unchanged.
 
 ## Optional HTTP listener
 
