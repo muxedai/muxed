@@ -6,7 +6,7 @@ import tailwindcss from "@tailwindcss/vite";
 import svelte from "@astrojs/svelte";
 
 export default defineConfig({
-  site: "https://muxed.dev",
+  site: "https://muxed.ai",
   vite: {
     plugins: [tailwindcss()],
   },
@@ -15,6 +15,9 @@ export default defineConfig({
       title: "muxed",
       tagline: "One daemon to manage them all",
       customCss: ["./src/styles/global.css"],
+      components: {
+        Head: "./src/components/head.astro",
+      },
       plugins: [starlightLlmsTxt()],
       social: [
         {

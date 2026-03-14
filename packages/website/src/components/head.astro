@@ -1,0 +1,11 @@
+---
+import type { Props } from "@astrojs/starlight/props";
+import Default from "@astrojs/starlight/components/Head.astro";
+
+import interWoff2 from "@fontsource-variable/inter/files/inter-latin-wght-normal.woff2?url";
+import jetbrainsMonoWoff2 from "@fontsource-variable/jetbrains-mono/files/jetbrains-mono-latin-wght-normal.woff2?url";
+---
+
+<Default {...Astro.props}><slot /></Default>
+<link rel="preload" as="font" type="font/woff2" href={interWoff2} crossorigin="anonymous" />
+<link rel="preload" as="font" type="font/woff2" href={jetbrainsMonoWoff2} crossorigin="anonymous" />
