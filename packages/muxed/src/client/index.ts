@@ -45,6 +45,8 @@ export type CreateClientOptions = {
 export type CallOptions = {
   /** Request timeout in milliseconds. */
   timeout?: number;
+  /** Dot-notation field paths to extract from the response. */
+  fields?: string[];
 };
 
 export type CallResult = {
@@ -78,6 +80,16 @@ export type ReloadResult = {
   added: string[];
   removed: string[];
   changed: string[];
+};
+
+export type ValidationResult = {
+  valid: boolean;
+  errors: string[];
+  warnings: string[];
+  tool?: {
+    name: string;
+    annotations?: Record<string, unknown>;
+  };
 };
 
 export type TaskStatus = Record<string, unknown>;
@@ -129,7 +141,15 @@ export class MuxedClient {
       name,
       arguments: args ?? {},
       ...(options?.timeout ? { timeout: options.timeout } : {}),
+      ...(options?.fields ? { fields: options.fields } : {}),
     })) as K extends keyof MuxedToolMap ? MuxedToolMap[K]['output'] : CallResult;
+  }
+
+  async validate(name: string, args?: Record<string, unknown>): Promise<ValidationResult> {
+    return (await this.#send('tools/validate', {
+      name,
+      arguments: args ?? {},
+    })) as ValidationResult;
   }
 
   async callAsync(name: string, args?: Record<string, unknown>): Promise<TaskHandle> {

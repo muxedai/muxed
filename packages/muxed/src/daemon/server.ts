@@ -4,6 +4,8 @@ import type { MuxedConfig } from '../core/types.js';
 import { loadConfig } from '../core/config.js';
 import { getSocketPath } from '../utils/paths.js';
 import { getLogger } from '../utils/logger.js';
+import { missingParameterError, toErrorData } from '../core/errors.js';
+import { filterFields } from '../core/field-filter.js';
 import fs from 'node:fs';
 
 type JsonRpcRequest = {
@@ -71,50 +73,85 @@ export function createDaemonServer(serverPool: ServerPool, config: MuxedConfig):
 
       case 'tools/call': {
         const p = params as
-          | { name?: string; arguments?: Record<string, unknown>; timeout?: number }
+          | {
+              name?: string;
+              arguments?: Record<string, unknown>;
+              timeout?: number;
+              fields?: string[];
+            }
           | undefined;
         if (!p?.name) {
+          const err = missingParameterError('name');
           return {
             jsonrpc: '2.0',
             id,
-            error: { code: -32602, message: 'Missing required parameter: name' },
+            error: { code: -32602, message: err.message, data: toErrorData(err) },
           };
         }
 
-        const found = serverPool.findTool(p.name);
-        if (!found) {
+        const found = serverPool.findToolOrError(p.name);
+        if (!found.ok) {
           return {
             jsonrpc: '2.0',
             id,
-            error: { code: -32602, message: `Tool not found: ${p.name}` },
+            error: { code: -32602, message: found.error.message, data: toErrorData(found.error) },
           };
         }
 
         const timeout = clientTimeout ?? p.timeout ?? requestTimeout;
-        const result = await found.manager.callTool(found.tool.name, p.arguments ?? {}, timeout);
-        return { jsonrpc: '2.0', id, result };
+        const callResult = await found.manager.callTool(
+          found.tool.name,
+          p.arguments ?? {},
+          timeout
+        );
+
+        if (p.fields && p.fields.length > 0) {
+          return {
+            jsonrpc: '2.0',
+            id,
+            result: filterFields(callResult as Record<string, unknown>, p.fields),
+          };
+        }
+
+        return { jsonrpc: '2.0', id, result: callResult };
       }
 
       case 'tools/info': {
         const p = params as { name?: string } | undefined;
         if (!p?.name) {
+          const err = missingParameterError('name');
           return {
             jsonrpc: '2.0',
             id,
-            error: { code: -32602, message: 'Missing required parameter: name' },
+            error: { code: -32602, message: err.message, data: toErrorData(err) },
           };
         }
 
-        const found = serverPool.findTool(p.name);
-        if (!found) {
+        const found = serverPool.findToolOrError(p.name);
+        if (!found.ok) {
           return {
             jsonrpc: '2.0',
             id,
-            error: { code: -32602, message: `Tool not found: ${p.name}` },
+            error: { code: -32602, message: found.error.message, data: toErrorData(found.error) },
           };
         }
 
         return { jsonrpc: '2.0', id, result: found.tool };
+      }
+
+      case 'tools/validate': {
+        const p = params as { name?: string; arguments?: Record<string, unknown> } | undefined;
+        if (!p?.name) {
+          const err = missingParameterError('name');
+          return {
+            jsonrpc: '2.0',
+            id,
+            error: { code: -32602, message: err.message, data: toErrorData(err) },
+          };
+        }
+
+        const validation = serverPool.validateToolArgs(p.name, p.arguments ?? {});
+        return { jsonrpc: '2.0', id, result: validation };
       }
 
       case 'auth/status': {
@@ -297,26 +334,37 @@ export function createDaemonServer(serverPool: ServerPool, config: MuxedConfig):
       case 'tools/call-async': {
         const p = params as { name?: string; arguments?: Record<string, unknown> } | undefined;
         if (!p?.name) {
+          const err = missingParameterError('name');
           return {
             jsonrpc: '2.0',
             id,
-            error: { code: -32602, message: 'Missing required parameter: name' },
+            error: { code: -32602, message: err.message, data: toErrorData(err) },
           };
         }
 
-        const found = serverPool.findTool(p.name);
-        if (!found) {
+        const foundAsync = serverPool.findToolOrError(p.name);
+        if (!foundAsync.ok) {
           return {
             jsonrpc: '2.0',
             id,
-            error: { code: -32602, message: `Tool not found: ${p.name}` },
+            error: {
+              code: -32602,
+              message: foundAsync.error.message,
+              data: toErrorData(foundAsync.error),
+            },
           };
         }
 
-        const taskHandle = await found.manager.callToolWithTask(found.tool.name, p.arguments ?? {});
-        // Track the task for cleanup
-        serverPool.trackTask(taskHandle.taskId, found.manager.name);
-        return { jsonrpc: '2.0', id, result: { ...taskHandle, server: found.manager.name } };
+        const taskHandle = await foundAsync.manager.callToolWithTask(
+          foundAsync.tool.name,
+          p.arguments ?? {}
+        );
+        serverPool.trackTask(taskHandle.taskId, foundAsync.manager.name);
+        return {
+          jsonrpc: '2.0',
+          id,
+          result: { ...taskHandle, server: foundAsync.manager.name },
+        };
       }
 
       case 'config/reload': {

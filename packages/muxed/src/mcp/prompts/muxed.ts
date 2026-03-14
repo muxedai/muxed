@@ -35,9 +35,13 @@ npx muxed tools [server]                 # List available tools (optionally filt
 # STEP 2: ALWAYS CHECK SCHEMA FIRST (MANDATORY)
 npx muxed info <server>/<tool>           # REQUIRED before ANY call - View JSON schema
 
-# STEP 3: Only after checking schema, make the call
+# STEP 3: OPTIONAL - Validate arguments before calling (dry-run)
+npx muxed call <server>/<tool> '<json>' --dry-run  # Validate args without executing
+
+# STEP 4: Only after checking schema, make the call
 npx muxed call <server>/<tool> '<json>'  # Only run AFTER npx muxed info
 npx muxed call <server>/<tool> -         # Invoke with JSON from stdin (AFTER npx muxed info)
+npx muxed call <server>/<tool> '<json>' --fields "field1,field2"  # Extract specific fields from response
 
 # Discovery commands (use these to find tools)
 npx muxed servers                        # List all connected MCP servers
@@ -46,6 +50,11 @@ npx muxed grep <pattern>                 # Search tool names and descriptions
 npx muxed resources [server]             # List MCP resources
 npx muxed read <server>/<resource>       # Read an MCP resource
 \`\`\`
+
+**Handling errors:**
+- If a tool call fails, the error includes a suggestion and similar tool names. Read the suggestion before retrying.
+- Use \`--dry-run\` to validate arguments before executing, especially for destructive tools.
+- Use \`--fields\` to extract only the fields you need from large responses (e.g. \`--fields "rows[].name,rows[].email"\`). Only works on JSON-parseable outputs.
 
 **CORRECT Usage Pattern:**
 
@@ -118,6 +127,12 @@ npx muxed call weather/get_location '{}'
 
 # Tool call with parameters
 npx muxed call database/query '{"table": "users", "limit": 10}'
+
+# Validate arguments before executing (dry-run)
+npx muxed call database/drop_table '{"table": "users"}' --dry-run
+
+# Extract specific fields from response
+npx muxed call database/query '{"table": "users"}' --fields "rows[].name,rows[].email"
 
 # Complex JSON using stdin (for nested objects/arrays)
 npx muxed call api/send_request - <<'EOF'

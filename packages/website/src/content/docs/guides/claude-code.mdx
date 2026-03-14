@@ -76,6 +76,37 @@ When connected as an MCP server, muxed injects instructions into the agent's con
 
 This pattern means the agent never needs all tool schemas loaded at once. It pulls in exactly what it needs for the current step and moves on.
 
+### Validate before calling
+
+Agents can use `--dry-run` to validate arguments before executing a tool call. This catches parameter mistakes early, avoiding wasted tokens on failed calls with hallucinated arguments:
+
+```bash
+muxed call server/tool '{"args": "..."}' --dry-run
+```
+
+If validation fails, the agent gets back specific error messages (missing fields, wrong types) and can fix the call before retrying.
+
+### Reduce response size
+
+When tool responses are large, agents can use `--fields` to extract only the fields they need:
+
+```bash
+muxed call db/query '{"sql": "SELECT * FROM users"}' --fields "rows[].name,rows[].email"
+```
+
+This keeps the context window focused on the data the agent actually needs for its current step.
+
+### Self-correcting errors
+
+When a tool call fails, muxed returns structured errors with recovery suggestions and fuzzy-matched similar tool names. Instead of the agent guessing what went wrong, it gets actionable guidance:
+
+```bash
+muxed call slack/search_msgs '{}' --json
+# Returns: code "TOOL_NOT_FOUND", suggestion with similar tools like "slack/search_messages"
+```
+
+The agent can parse the error, find the correct tool name, and retry — all without round-tripping through the model for error analysis.
+
 ## Context window comparison
 
 **Before muxed:** Roughly 30% of the context window is consumed by MCP tool schemas. That leaves 70% for skills, prompts, and the actual task. Every tool definition competes with your instructions for the model's attention, and adding more servers makes the problem worse.
