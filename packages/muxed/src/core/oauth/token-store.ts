@@ -1,3 +1,4 @@
+import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import type { OAuthTokens } from '@modelcontextprotocol/sdk/shared/auth.js';
@@ -14,12 +15,16 @@ function sanitizeName(name: string): string {
   return name.replace(/[^a-zA-Z0-9_-]/g, '_');
 }
 
+function hashName(name: string): string {
+  return crypto.createHash('sha256').update(name).digest('hex').slice(0, 8);
+}
+
 function getAuthDir(): string {
   return path.join(getMuxedDir(), 'auth');
 }
 
 function getStorePath(serverName: string): string {
-  return path.join(getAuthDir(), `${sanitizeName(serverName)}.json`);
+  return path.join(getAuthDir(), `${sanitizeName(serverName)}-${hashName(serverName)}.json`);
 }
 
 function ensureAuthDir(): void {
@@ -94,9 +99,8 @@ export class TokenStore {
   }
 
   clearAll(): void {
-    const filePath = getStorePath(this.serverName);
     try {
-      fs.unlinkSync(filePath);
+      fs.unlinkSync(getStorePath(this.serverName));
     } catch {
       // Ignore if doesn't exist
     }

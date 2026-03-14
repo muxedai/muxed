@@ -397,5 +397,5 @@ export function modifyAgentConfig(
 export function getMuxedConfigPath(scope: 'local' | 'global', explicitPath?: string): string {
   if (explicitPath) return explicitPath;
   if (scope === 'local') return path.join(process.cwd(), 'muxed.config.json');
-  return path.join(home, '.config', 'muxed', 'config.json');
+  return path.join(home, '.muxed', 'config.json');
 }

@@ -118,7 +118,7 @@ const DAEMON_DEFAULTS = {
 };
 
 function getGlobalConfigPath(): string {
-  return path.join(os.homedir(), '.config', 'muxed', 'config.json');
+  return path.join(os.homedir(), '.muxed', 'config.json');
 }
 
 function findConfigFile(configPath?: string): string | null {

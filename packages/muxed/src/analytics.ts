@@ -4,7 +4,7 @@ import os from 'node:os';
 import crypto from 'node:crypto';
 import { PostHog } from 'posthog-node';
 
-const TELEMETRY_FILE = path.join(os.homedir(), '.config', 'muxed', 'telemetry');
+const TELEMETRY_FILE = path.join(os.homedir(), '.muxed', 'telemetry');
 
 // Random per-session ID — not persisted, not linkable across sessions
 const sessionId = crypto.randomUUID();

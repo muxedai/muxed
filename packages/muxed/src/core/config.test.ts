@@ -67,7 +67,7 @@ describe('loadConfig', () => {
     // Use a cwd where no config exists, and no global config
     const origCwd = process.cwd();
     process.chdir(tmpDir);
-    const globalPath = path.join(os.homedir(), '.config', 'muxed', 'config.json');
+    const globalPath = path.join(os.homedir(), '.muxed', 'config.json');
     const hadGlobal = fs.existsSync(globalPath);
     const originalGlobal = hadGlobal ? fs.readFileSync(globalPath, 'utf-8') : null;
     if (hadGlobal) fs.unlinkSync(globalPath);
@@ -269,7 +269,7 @@ describe('loadConfig', () => {
 
   it('merges global config servers into project config', () => {
     // Write a fake global config
-    const globalDir = path.join(os.homedir(), '.config', 'muxed');
+    const globalDir = path.join(os.homedir(), '.muxed');
     const globalPath = path.join(globalDir, 'config.json');
     const hadGlobalConfig = fs.existsSync(globalPath);
     const originalGlobalContent = hadGlobalConfig ? fs.readFileSync(globalPath, 'utf-8') : null;
@@ -311,7 +311,7 @@ describe('loadConfig', () => {
   });
 
   it('does not merge global config when loading the global config itself', () => {
-    const globalDir = path.join(os.homedir(), '.config', 'muxed');
+    const globalDir = path.join(os.homedir(), '.muxed');
     const globalPath = path.join(globalDir, 'config.json');
     const hadGlobalConfig = fs.existsSync(globalPath);
     const originalGlobalContent = hadGlobalConfig ? fs.readFileSync(globalPath, 'utf-8') : null;

@@ -353,6 +353,6 @@ describe('getMuxedConfigPath', () => {
 
   it('returns home-based path for global scope', () => {
     const result = getMuxedConfigPath('global');
-    expect(result).toBe(path.join(os.homedir(), '.config', 'muxed', 'config.json'));
+    expect(result).toBe(path.join(os.homedir(), '.muxed', 'config.json'));
   });
 });
