@@ -1,6 +1,11 @@
 import { Command } from 'commander';
-import { ensureDaemon, sendRequest } from '../client.js';
-import { formatCallResult, formatJson } from '../formatter.js';
+import { ensureDaemon, sendRequest, MuxedError } from '../client.js';
+import {
+  formatCallResult,
+  formatJson,
+  formatStructuredError,
+  formatValidation,
+} from '../formatter.js';
 import { capture, shutdown } from '../../analytics.js';
 
 type CallResult = {
@@ -15,6 +20,13 @@ type CallResult = {
   }>;
   structuredContent?: Record<string, unknown>;
   isError?: boolean;
+};
+
+type ValidationResult = {
+  valid: boolean;
+  errors: string[];
+  warnings: string[];
+  tool?: { name: string; annotations?: Record<string, unknown> };
 };
 
 function readStdin(): Promise<string> {
@@ -35,12 +47,20 @@ export const callCommand = new Command('call')
   .argument('[json]', 'JSON arguments (use - for stdin)')
   .option('--timeout <ms>', 'Request timeout in milliseconds')
   .option('--async', 'Use task-based execution (return task handle immediately)')
+  .option('--dry-run', 'Validate arguments against tool schema without executing')
+  .option('--fields <paths>', 'Comma-separated dot-notation paths to extract from response')
   .option('--json', 'Output as JSON')
   .action(
     async (
       serverTool: string,
       jsonArgs: string | undefined,
-      opts: { json?: boolean; timeout?: string; async?: boolean }
+      opts: {
+        json?: boolean;
+        timeout?: string;
+        async?: boolean;
+        dryRun?: boolean;
+        fields?: string;
+      }
     ) => {
       const configPath = callCommand.parent?.opts().config as string | undefined;
       await ensureDaemon(configPath);
@@ -65,36 +85,127 @@ export const callCommand = new Command('call')
 
       const [server, tool] = serverTool.split('/');
 
-      // Check tool's task support to decide execution mode
-      if (opts.async) {
-        // Async mode: use task-based execution
-        const taskResult = (await sendRequest('tools/call-async', {
-          name: serverTool,
-          arguments: parsedArgs,
-        })) as { taskId: string; status: string; server: string };
+      // Dry-run mode: validate without executing
+      if (opts.dryRun) {
+        try {
+          const result = (await sendRequest('tools/validate', {
+            name: serverTool,
+            arguments: parsedArgs,
+          })) as ValidationResult;
 
-        capture('tool_called', { server, tool, async: true });
-        await shutdown();
+          capture('tool_validated', { server, tool, valid: result.valid });
+          await shutdown();
 
-        if (opts.json) {
-          console.log(formatJson(taskResult));
-        } else {
-          console.log(`Task created: ${taskResult.taskId} (status: ${taskResult.status})`);
+          if (opts.json) {
+            console.log(formatJson(result));
+          } else {
+            console.log(formatValidation(result));
+          }
+
+          if (!result.valid) process.exit(1);
+        } catch (err) {
+          if (err instanceof MuxedError && err.data) {
+            const errorData = err.data as {
+              code?: string;
+              suggestion?: string;
+              context?: Record<string, unknown>;
+            };
+            if (opts.json) {
+              console.log(formatJson({ code: err.code, message: err.message, data: err.data }));
+            } else {
+              console.error(
+                formatStructuredError({ code: err.code, message: err.message, data: errorData })
+              );
+            }
+          } else {
+            console.error(err instanceof Error ? err.message : 'Validation failed');
+          }
+          await shutdown();
+          process.exit(1);
         }
         return;
       }
 
-      const params: Record<string, unknown> = {
-        name: serverTool,
-        arguments: parsedArgs,
-      };
-      if (opts.timeout) {
-        params.timeout = parseInt(opts.timeout, 10);
+      // Async mode
+      if (opts.async) {
+        try {
+          const taskResult = (await sendRequest('tools/call-async', {
+            name: serverTool,
+            arguments: parsedArgs,
+          })) as { taskId: string; status: string; server: string };
+
+          capture('tool_called', { server, tool, async: true });
+          await shutdown();
+
+          if (opts.json) {
+            console.log(formatJson(taskResult));
+          } else {
+            console.log(`Task created: ${taskResult.taskId} (status: ${taskResult.status})`);
+          }
+        } catch (err) {
+          if (err instanceof MuxedError && err.data) {
+            const errorData = err.data as {
+              code?: string;
+              suggestion?: string;
+              context?: Record<string, unknown>;
+            };
+            if (opts.json) {
+              console.log(formatJson({ code: err.code, message: err.message, data: err.data }));
+            } else {
+              console.error(
+                formatStructuredError({ code: err.code, message: err.message, data: errorData })
+              );
+            }
+          } else {
+            console.error(err instanceof Error ? err.message : 'Call failed');
+          }
+          await shutdown();
+          process.exit(1);
+        }
+        return;
       }
 
-      const result = (await sendRequest('tools/call', params)) as CallResult;
-      capture('tool_called', { server, tool, async: false, is_error: result.isError ?? false });
-      await shutdown();
-      console.log(opts.json ? formatJson(result) : formatCallResult(result));
+      // Normal call
+      try {
+        const callParams: Record<string, unknown> = {
+          name: serverTool,
+          arguments: parsedArgs,
+        };
+        if (opts.timeout) {
+          callParams.timeout = parseInt(opts.timeout, 10);
+        }
+        if (opts.fields) {
+          callParams.fields = opts.fields.split(',').map((f) => f.trim());
+        }
+
+        const result = (await sendRequest('tools/call', callParams)) as CallResult;
+        capture('tool_called', {
+          server,
+          tool,
+          async: false,
+          is_error: result.isError ?? false,
+        });
+        await shutdown();
+        console.log(opts.json ? formatJson(result) : formatCallResult(result));
+      } catch (err) {
+        if (err instanceof MuxedError && err.data) {
+          const errorData = err.data as {
+            code?: string;
+            suggestion?: string;
+            context?: Record<string, unknown>;
+          };
+          if (opts.json) {
+            console.log(formatJson({ code: err.code, message: err.message, data: err.data }));
+          } else {
+            console.error(
+              formatStructuredError({ code: err.code, message: err.message, data: errorData })
+            );
+          }
+        } else {
+          console.error(err instanceof Error ? err.message : 'Call failed');
+        }
+        await shutdown();
+        process.exit(1);
+      }
     }
   );

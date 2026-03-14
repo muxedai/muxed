@@ -2,6 +2,14 @@ import type { Tool, Resource, Prompt } from '@modelcontextprotocol/sdk/types.js'
 import type { MuxedConfig, ServerState, TrackedTask } from './types.js';
 import { ServerManager } from './server-manager.js';
 import { getLogger } from '../utils/logger.js';
+import {
+  type StructuredError,
+  findSimilarTools,
+  toolNotFoundError,
+  serverNotFoundError,
+  serverNotConnectedError,
+  invalidFormatError,
+} from './errors.js';
 
 export class ServerPool {
   private servers = new Map<string, ServerManager>();
@@ -143,6 +151,123 @@ export class ServerPool {
     if (!tool) return undefined;
 
     return { manager, tool };
+  }
+
+  /**
+   * Like findTool but returns a structured error on failure instead of undefined.
+   * Used by daemon handlers to provide actionable error messages.
+   */
+  findToolOrError(
+    serverTool: string
+  ): { ok: true; manager: ServerManager; tool: Tool } | { ok: false; error: StructuredError } {
+    const slashIndex = serverTool.indexOf('/');
+    if (slashIndex === -1) {
+      return { ok: false, error: invalidFormatError(serverTool) };
+    }
+
+    const serverName = serverTool.slice(0, slashIndex);
+    const toolName = serverTool.slice(slashIndex + 1);
+
+    const manager = this.servers.get(serverName);
+    if (!manager) {
+      const availableServers = [...this.servers.keys()];
+      return { ok: false, error: serverNotFoundError(serverName, availableServers) };
+    }
+
+    if (manager.getStatus() !== 'connected') {
+      return { ok: false, error: serverNotConnectedError(serverName) };
+    }
+
+    const tool = manager.listTools().find((t) => t.name === toolName);
+    if (!tool) {
+      const allTools = this.listAllTools();
+      const similar = findSimilarTools(serverTool, allTools);
+      return { ok: false, error: toolNotFoundError(serverTool, similar) };
+    }
+
+    return { ok: true, manager, tool };
+  }
+
+  /**
+   * Validate tool arguments against the tool's inputSchema without executing.
+   * Returns validation result with warnings about tool annotations.
+   */
+  validateToolArgs(
+    serverTool: string,
+    args: Record<string, unknown>
+  ): {
+    valid: boolean;
+    errors: string[];
+    warnings: string[];
+    tool?: Tool;
+  } {
+    const found = this.findToolOrError(serverTool);
+    if (!found.ok) {
+      return { valid: false, errors: [found.error.message], warnings: [] };
+    }
+
+    const { tool } = found;
+    const errors: string[] = [];
+    const warnings: string[] = [];
+
+    // Validate against inputSchema
+    const schema = tool.inputSchema as {
+      type?: string;
+      properties?: Record<string, unknown>;
+      required?: string[];
+    };
+
+    if (schema && schema.type === 'object') {
+      // Check required fields
+      if (schema.required) {
+        for (const field of schema.required) {
+          if (!(field in args)) {
+            errors.push(`Missing required field: ${field}`);
+          }
+        }
+      }
+
+      // Check for unknown fields
+      if (schema.properties) {
+        for (const key of Object.keys(args)) {
+          if (!(key in schema.properties)) {
+            errors.push(`Unknown field: ${key}`);
+          }
+        }
+
+        // Basic type validation for provided fields
+        for (const [key, value] of Object.entries(args)) {
+          const propSchema = schema.properties[key] as
+            | { type?: string; enum?: unknown[] }
+            | undefined;
+          if (!propSchema) continue;
+
+          if (propSchema.type) {
+            const actualType = Array.isArray(value) ? 'array' : typeof value;
+            if (propSchema.type !== actualType && value !== null) {
+              errors.push(`Field '${key}' expected type '${propSchema.type}', got '${actualType}'`);
+            }
+          }
+
+          if (propSchema.enum && !propSchema.enum.includes(value)) {
+            errors.push(`Field '${key}' must be one of: ${propSchema.enum.map(String).join(', ')}`);
+          }
+        }
+      }
+    }
+
+    // Add annotation warnings
+    if (tool.annotations?.destructiveHint) {
+      warnings.push('Tool is marked as destructive.');
+    }
+    if (!tool.annotations?.idempotentHint) {
+      warnings.push('Tool is not marked as idempotent.');
+    }
+    if (tool.annotations?.readOnlyHint === false) {
+      warnings.push('Tool may modify data (not read-only).');
+    }
+
+    return { valid: errors.length === 0, errors, warnings, tool };
   }
 
   grepTools(pattern: string): Array<{ server: string; tool: Tool }> {
