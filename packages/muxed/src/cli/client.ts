@@ -1,1 +1,1 @@
-export { ensureDaemon, sendRequest } from '../client/socket.js';
+export { ensureDaemon, sendRequest, MuxedError } from '../client/socket.js';

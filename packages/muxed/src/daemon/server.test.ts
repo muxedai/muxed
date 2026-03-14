@@ -241,9 +241,14 @@ describe('createDaemonServer', () => {
       params: { name: 'nonexistent/tool' },
     });
 
-    const error = response.error as { code: number; message: string };
+    const error = response.error as { code: number; message: string; data?: unknown };
     expect(error.code).toBe(-32602);
-    expect(error.message).toContain('Tool not found');
+    expect(error.message).toContain('Server not found: nonexistent');
+    // Structured error should include suggestion data
+    expect(error.data).toBeDefined();
+    const data = error.data as { code: string; suggestion: string };
+    expect(data.code).toBe('SERVER_NOT_FOUND');
+    expect(data.suggestion).toBeTruthy();
   });
 
   it('returns error for tools/call missing name param', async () => {
@@ -259,6 +264,50 @@ describe('createDaemonServer', () => {
     expect(error.message).toContain('Missing required parameter');
   });
 
+  it('returns structured error for tool not found on known server', async () => {
+    const response = await sendRequest(testSocketPath, {
+      jsonrpc: '2.0',
+      id: 10,
+      method: 'tools/call',
+      params: { name: 'everything/nonexistent_tool' },
+    });
+
+    const error = response.error as { code: number; message: string; data?: unknown };
+    expect(error.code).toBe(-32602);
+    expect(error.message).toContain('Tool not found: everything/nonexistent_tool');
+    const data = error.data as { code: string; suggestion: string };
+    expect(data.code).toBe('TOOL_NOT_FOUND');
+    expect(data.suggestion).toBeTruthy();
+  });
+
+  it('responds to tools/validate with valid args', async () => {
+    const response = await sendRequest(testSocketPath, {
+      jsonrpc: '2.0',
+      id: 11,
+      method: 'tools/validate',
+      params: { name: 'everything/echo', arguments: { message: 'hello' } },
+    });
+
+    expect(response.error).toBeUndefined();
+    const result = response.result as { valid: boolean; errors: string[]; warnings: string[] };
+    expect(result.valid).toBe(true);
+    expect(result.errors).toHaveLength(0);
+  });
+
+  it('responds to tools/validate with missing required field', async () => {
+    const response = await sendRequest(testSocketPath, {
+      jsonrpc: '2.0',
+      id: 12,
+      method: 'tools/validate',
+      params: { name: 'everything/echo', arguments: {} },
+    });
+
+    expect(response.error).toBeUndefined();
+    const result = response.result as { valid: boolean; errors: string[]; warnings: string[] };
+    expect(result.valid).toBe(false);
+    expect(result.errors.length).toBeGreaterThan(0);
+  });
+
   it('returns error for tools/info with nonexistent tool', async () => {
     const response = await sendRequest(testSocketPath, {
       jsonrpc: '2.0',
@@ -267,8 +316,11 @@ describe('createDaemonServer', () => {
       params: { name: 'nonexistent/tool' },
     });
 
-    const error = response.error as { code: number; message: string };
+    const error = response.error as { code: number; message: string; data?: unknown };
     expect(error.code).toBe(-32602);
-    expect(error.message).toContain('Tool not found');
+    expect(error.message).toContain('Server not found: nonexistent');
+    const data = error.data as { code: string; suggestion: string };
+    expect(data.code).toBe('SERVER_NOT_FOUND');
+    expect(data.suggestion).toBeTruthy();
   });
 });

@@ -461,6 +461,63 @@ export function formatMcpServerList(
   return formatTable(headers, rows);
 }
 
+export function formatStructuredError(error: {
+  code: number;
+  message: string;
+  data?: { code?: string; suggestion?: string; context?: Record<string, unknown> };
+}): string {
+  const lines: string[] = [];
+  lines.push(`Error: ${error.message}`);
+
+  if (error.data?.suggestion) {
+    lines.push(`Suggestion: ${error.data.suggestion}`);
+  }
+
+  if (error.data?.context?.similarTools) {
+    const similar = error.data.context.similarTools as string[];
+    if (similar.length > 0) {
+      lines.push(`Similar tools: ${similar.join(', ')}`);
+    }
+  }
+
+  if (error.data?.context?.availableServers) {
+    const servers = error.data.context.availableServers as string[];
+    if (servers.length > 0) {
+      lines.push(`Available servers: ${servers.join(', ')}`);
+    }
+  }
+
+  return lines.join('\n');
+}
+
+export function formatValidation(result: {
+  valid: boolean;
+  errors: string[];
+  warnings: string[];
+  tool?: { name: string; annotations?: Record<string, unknown> };
+}): string {
+  const lines: string[] = [];
+
+  if (result.valid) {
+    lines.push('Validation: passed');
+  } else {
+    lines.push('Validation: failed');
+    for (const err of result.errors) {
+      lines.push(`  - ${err}`);
+    }
+  }
+
+  if (result.warnings.length > 0) {
+    lines.push('');
+    lines.push('Warnings:');
+    for (const warn of result.warnings) {
+      lines.push(`  - ${warn}`);
+    }
+  }
+
+  return lines.join('\n');
+}
+
 export function formatJson(data: unknown): string {
   return JSON.stringify(data, null, 2);
 }
