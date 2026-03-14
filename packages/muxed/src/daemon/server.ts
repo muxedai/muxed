@@ -6,6 +6,7 @@ import { getSocketPath } from '../utils/paths.js';
 import { getLogger } from '../utils/logger.js';
 import {
   missingParameterError,
+  invalidArgumentsError,
   timeoutError,
   isTimeoutError,
   toErrorData,
@@ -100,6 +101,17 @@ export function createDaemonServer(serverPool: ServerPool, config: MuxedConfig):
             jsonrpc: '2.0',
             id,
             error: { code: -32602, message: found.error.message, data: toErrorData(found.error) },
+          };
+        }
+
+        // Validate arguments against inputSchema before executing
+        const validation = serverPool.validateToolArgs(p.name, p.arguments ?? {});
+        if (!validation.valid && !validation.unsupported) {
+          const err = invalidArgumentsError(p.name, validation.errors);
+          return {
+            jsonrpc: '2.0',
+            id,
+            error: { code: -32602, message: err.message, data: toErrorData(err) },
           };
         }
 
@@ -369,6 +381,17 @@ export function createDaemonServer(serverPool: ServerPool, config: MuxedConfig):
               message: foundAsync.error.message,
               data: toErrorData(foundAsync.error),
             },
+          };
+        }
+
+        // Validate arguments against inputSchema before executing
+        const asyncValidation = serverPool.validateToolArgs(p.name, p.arguments ?? {});
+        if (!asyncValidation.valid && !asyncValidation.unsupported) {
+          const err = invalidArgumentsError(p.name, asyncValidation.errors);
+          return {
+            jsonrpc: '2.0',
+            id,
+            error: { code: -32602, message: err.message, data: toErrorData(err) },
           };
         }
 
