@@ -15,6 +15,7 @@ import {
 export class ServerPool {
   private servers = new Map<string, ServerManager>();
   private trackedTasks = new Map<string, TrackedTask>();
+  private zodSchemaCache = new Map<string, z.ZodType | 'unsupported'>();
   private taskExpiryTimer: ReturnType<typeof setInterval> | undefined;
   private taskExpiryTimeout: number = 3_600_000;
 
@@ -51,6 +52,7 @@ export class ServerPool {
 
   async disconnectAll(): Promise<void> {
     this.stopTaskExpiry();
+    this.zodSchemaCache.clear();
     await Promise.allSettled([...this.servers.values()].map((manager) => manager.disconnect()));
   }
 
@@ -190,6 +192,25 @@ export class ServerPool {
   }
 
   /**
+   * Convert a JSON Schema to a Zod schema, caching the result.
+   * Returns 'unsupported' for schemas that z.fromJSONSchema cannot handle.
+   */
+  private getZodSchema(inputSchema: Record<string, unknown>): z.ZodType | 'unsupported' {
+    const key = JSON.stringify(inputSchema);
+    const cached = this.zodSchemaCache.get(key);
+    if (cached !== undefined) return cached;
+
+    try {
+      const zodSchema = z.fromJSONSchema(inputSchema);
+      this.zodSchemaCache.set(key, zodSchema);
+      return zodSchema;
+    } catch {
+      this.zodSchemaCache.set(key, 'unsupported');
+      return 'unsupported';
+    }
+  }
+
+  /**
    * Validate tool arguments against the tool's inputSchema without executing.
    * Uses Zod's fromJSONSchema for full JSON Schema validation.
    * Returns validation result with warnings about tool annotations.
@@ -216,26 +237,24 @@ export class ServerPool {
     const errors: string[] = [];
     const warnings: string[] = [];
 
-    // Validate against inputSchema using Zod's JSON Schema converter
+    // Validate against inputSchema using cached Zod schema
     if (tool.inputSchema) {
-      try {
-        const zodSchema = z.fromJSONSchema(tool.inputSchema as Record<string, unknown>);
-        const result = zodSchema.safeParse(args);
-        if (!result.success) {
-          for (const issue of result.error.issues) {
-            const path = issue.path.length > 0 ? issue.path.join('.') : '';
-            const prefix = path ? `Field '${path}': ` : '';
-            errors.push(`${prefix}${issue.message}`);
-          }
-        }
-      } catch (err) {
+      const zodSchema = this.getZodSchema(tool.inputSchema as Record<string, unknown>);
+      if (zodSchema === 'unsupported') {
         getLogger().warn(
-          `Could not convert inputSchema for ${serverTool}: ${err instanceof Error ? err.message : 'unknown error'}`,
+          `Could not convert inputSchema for ${serverTool}: unsupported schema`,
           serverTool.split('/')[0]
         );
-        // Schema can't be parsed — annotation warnings still apply
         this.addAnnotationWarnings(tool, warnings);
         return { valid: true, errors: [], warnings, unsupported: true, tool };
+      }
+      const result = zodSchema.safeParse(args);
+      if (!result.success) {
+        for (const issue of result.error.issues) {
+          const path = issue.path.length > 0 ? issue.path.join('.') : '';
+          const prefix = path ? `Field '${path}': ` : '';
+          errors.push(`${prefix}${issue.message}`);
+        }
       }
     }
 
