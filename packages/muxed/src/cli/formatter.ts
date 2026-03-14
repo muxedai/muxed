@@ -494,11 +494,17 @@ export function formatValidation(result: {
   valid: boolean;
   errors: string[];
   warnings: string[];
+  unsupported?: boolean;
   tool?: { name: string; annotations?: Record<string, unknown> };
 }): string {
   const lines: string[] = [];
 
-  if (result.valid) {
+  if (result.unsupported) {
+    lines.push(
+      'Validation: unsupported (tool schema uses features not supported by dry-run validation)'
+    );
+    lines.push('The call will be forwarded to the MCP server without pre-validation.');
+  } else if (result.valid) {
     lines.push('Validation: passed');
   } else {
     lines.push('Validation: failed');

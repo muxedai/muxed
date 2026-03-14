@@ -86,6 +86,8 @@ export type ValidationResult = {
   valid: boolean;
   errors: string[];
   warnings: string[];
+  /** True when the tool's schema uses features not supported by dry-run validation. */
+  unsupported?: boolean;
   tool?: {
     name: string;
     annotations?: Record<string, unknown>;

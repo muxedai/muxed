@@ -26,6 +26,7 @@ type ValidationResult = {
   valid: boolean;
   errors: string[];
   warnings: string[];
+  unsupported?: boolean;
   tool?: { name: string; annotations?: Record<string, unknown> };
 };
 

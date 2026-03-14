@@ -193,6 +193,9 @@ export class ServerPool {
    * Validate tool arguments against the tool's inputSchema without executing.
    * Uses Zod's fromJSONSchema for full JSON Schema validation.
    * Returns validation result with warnings about tool annotations.
+   *
+   * When the schema can't be parsed by Zod, returns `unsupported: true`.
+   * Callers should bypass validation in that case (let the MCP server handle it).
    */
   validateToolArgs(
     serverTool: string,
@@ -201,6 +204,7 @@ export class ServerPool {
     valid: boolean;
     errors: string[];
     warnings: string[];
+    unsupported?: boolean;
     tool?: Tool;
   } {
     const found = this.findToolOrError(serverTool);
@@ -225,15 +229,21 @@ export class ServerPool {
           }
         }
       } catch (err) {
-        // If fromJSONSchema fails (unsupported schema features), log and skip
         getLogger().warn(
           `Could not convert inputSchema for ${serverTool}: ${err instanceof Error ? err.message : 'unknown error'}`,
           serverTool.split('/')[0]
         );
+        // Schema can't be parsed — annotation warnings still apply
+        this.addAnnotationWarnings(tool, warnings);
+        return { valid: true, errors: [], warnings, unsupported: true, tool };
       }
     }
 
-    // Add annotation warnings
+    this.addAnnotationWarnings(tool, warnings);
+    return { valid: errors.length === 0, errors, warnings, tool };
+  }
+
+  private addAnnotationWarnings(tool: Tool, warnings: string[]): void {
     if (tool.annotations?.destructiveHint) {
       warnings.push('Tool is marked as destructive.');
     }
@@ -243,8 +253,6 @@ export class ServerPool {
     if (tool.annotations?.readOnlyHint === false) {
       warnings.push('Tool may modify data (not read-only).');
     }
-
-    return { valid: errors.length === 0, errors, warnings, tool };
   }
 
   grepTools(pattern: string): Array<{ server: string; tool: Tool }> {
