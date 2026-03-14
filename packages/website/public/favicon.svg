@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <rect width="32" height="32" rx="4" fill="#0c0c0e"/>
+  <!--
+    ASCII-art M drawn as a path:
+      __  __
+     |  \/  |
+     | |\/| |
+     | |  | |
+     |_|  |_|
+    Each "pixel" is a 2x2 unit on a 8-col x 5-row grid, centered in 32x32.
+  -->
+  <g fill="#818cf8" transform="translate(5,5)">
+    <!-- Row 0:  __  __ (underscores at cols 1-2, 5-6) -->
+    <rect x="3"  y="0" width="5" height="1.5"/>
+    <rect x="14" y="0" width="5" height="1.5"/>
+    <!-- Row 1: |  \/  | (pipes at 0,21; slashes at center) -->
+    <rect x="0"  y="3" width="2.5" height="4"/>
+    <rect x="19.5" y="3" width="2.5" height="4"/>
+    <!-- V shape row 1 -->
+    <rect x="7"  y="3" width="3" height="2"/>
+    <rect x="12" y="3" width="3" height="2"/>
+    <rect x="9"  y="5" width="4" height="2"/>
+    <!-- Row 2: | |\/| | -->
+    <rect x="0"  y="8" width="2.5" height="4"/>
+    <rect x="5"  y="8" width="2.5" height="4"/>
+    <rect x="14.5" y="8" width="2.5" height="4"/>
+    <rect x="19.5" y="8" width="2.5" height="4"/>
+    <!-- /\ shape row 2 -->
+    <rect x="8"  y="9" width="2.5" height="2"/>
+    <rect x="11.5" y="9" width="2.5" height="2"/>
+    <!-- Row 3: | |  | | -->
+    <rect x="0"  y="13" width="2.5" height="4"/>
+    <rect x="5"  y="13" width="2.5" height="4"/>
+    <rect x="14.5" y="13" width="2.5" height="4"/>
+    <rect x="19.5" y="13" width="2.5" height="4"/>
+    <!-- Row 4: |_|  |_| (with underscores) -->
+    <rect x="0"  y="18" width="2.5" height="4"/>
+    <rect x="5"  y="18" width="2.5" height="4"/>
+    <rect x="14.5" y="18" width="2.5" height="4"/>
+    <rect x="19.5" y="18" width="2.5" height="4"/>
+    <rect x="2.5" y="20.5" width="2.5" height="1.5"/>
+    <rect x="14.5" y="20.5" width="0" height="1.5"/>
+    <rect x="17" y="20.5" width="2.5" height="1.5"/>
+  </g>
+</svg>

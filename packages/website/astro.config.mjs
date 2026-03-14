@@ -13,6 +13,7 @@ export default defineConfig({
   integrations: [
     starlight({
       title: "muxed",
+      favicon: "/favicon.svg",
       tagline: "One daemon to manage them all",
       customCss: ["./src/styles/docs.css"],
       components: {
