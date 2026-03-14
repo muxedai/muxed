@@ -60,19 +60,14 @@ export function formatServers(servers: ServerState[]): string {
 export function formatTools(tools: Array<{ server: string; tool: Tool }>): string {
   if (tools.length === 0) return 'No tools available.';
 
-  const headers = ['Tool', 'Title', 'Description', 'Hints'];
+  const headers = ['Tool', 'Title', 'Hints'];
   const rows = tools.map(({ server, tool }) => {
     const hints: string[] = [];
     if (tool.annotations?.readOnlyHint) hints.push('[read-only]');
     if (tool.annotations?.destructiveHint) hints.push('[destructive]');
     if (tool.annotations?.idempotentHint) hints.push('[idempotent]');
 
-    return [
-      `${server}/${tool.name}`,
-      tool.title ?? '\u2014',
-      truncate(tool.description ?? '', 60),
-      hints.join(' '),
-    ];
+    return [`${server}/${tool.name}`, tool.title ?? '\u2014', hints.join(' ')];
   });
 
   return formatTable(headers, rows);
