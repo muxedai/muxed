@@ -8,12 +8,12 @@ import { handleToolCommand } from './tool-handler.js';
 
 export async function startMcpProxy(options?: {
   configPath?: string;
-  tools?: boolean;
+  proxyTools?: boolean;
 }): Promise<void> {
   await ensureDaemon(options?.configPath);
 
   const servers = (await sendRequest('servers/list')) as ServerState[];
-  const mode = options?.tools ? 'tool' : 'cli';
+  const mode = options?.proxyTools ? 'tool' : 'cli';
   const instructions = buildInstructions(servers, mode);
 
   const server = new McpServer(
@@ -21,7 +21,7 @@ export async function startMcpProxy(options?: {
     { capabilities: {}, instructions }
   );
 
-  if (options?.tools) {
+  if (options?.proxyTools) {
     server.tool(
       'muxed',
       'Interact with MCP servers: discover, inspect, and call tools. Commands: servers, tools [server], grep <pattern>, info <server/tool>, call <server/tool>, resources [server], read <server/resource>',

@@ -179,11 +179,11 @@ async function tryReloadDaemon(): Promise<void> {
 export const mcpCommand = new Command('mcp')
   .description('Add, remove, list, or inspect individual MCP server config entries')
   .enablePositionalOptions()
-  .option('--tools', 'Inject proxy MCP tool for clients without bash access')
-  .action(async (opts: { tools?: boolean }, cmd: Command) => {
+  .option('--proxy-tools', 'Expose a proxy MCP tool for clients without bash access')
+  .action(async (opts: { proxyTools?: boolean }, cmd: Command) => {
     // When called without a subcommand, start the MCP proxy server over stdio
     const explicitConfig = cmd.parent?.opts().config as string | undefined;
-    await startMcpProxy({ configPath: explicitConfig, tools: opts.tools });
+    await startMcpProxy({ configPath: explicitConfig, proxyTools: opts.proxyTools });
   });
 
 // ─── mcp add ───

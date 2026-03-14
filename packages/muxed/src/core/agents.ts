@@ -373,7 +373,9 @@ export function writeMuxedConfig(configPath: string, servers: Record<string, Ser
 
 // Get the muxed replacement entry for an agent (to be injected after removing original servers)
 function getMuxedEntry(agent: AgentDef): Record<string, unknown> {
-  const args = agent.codingAgent ? ['muxed@latest', 'mcp'] : ['muxed@latest', 'mcp', '--tools'];
+  const args = agent.codingAgent
+    ? ['muxed@latest', 'mcp']
+    : ['muxed@latest', 'mcp', '--proxy-tools'];
 
   if (agent.serversKey === 'servers') {
     // VS Code format
