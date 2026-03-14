@@ -1,3 +1,4 @@
+import * as z from 'zod';
 import type { Tool, Resource, Prompt } from '@modelcontextprotocol/sdk/types.js';
 import type { MuxedConfig, ServerState, TrackedTask } from './types.js';
 import { ServerManager } from './server-manager.js';
@@ -190,7 +191,11 @@ export class ServerPool {
 
   /**
    * Validate tool arguments against the tool's inputSchema without executing.
+   * Uses Zod's fromJSONSchema for full JSON Schema validation.
    * Returns validation result with warnings about tool annotations.
+   *
+   * When the schema can't be parsed by Zod, returns `unsupported: true`.
+   * Callers should bypass validation in that case (let the MCP server handle it).
    */
   validateToolArgs(
     serverTool: string,
@@ -199,6 +204,7 @@ export class ServerPool {
     valid: boolean;
     errors: string[];
     warnings: string[];
+    unsupported?: boolean;
     tool?: Tool;
   } {
     const found = this.findToolOrError(serverTool);
@@ -210,53 +216,34 @@ export class ServerPool {
     const errors: string[] = [];
     const warnings: string[] = [];
 
-    // Validate against inputSchema
-    const schema = tool.inputSchema as {
-      type?: string;
-      properties?: Record<string, unknown>;
-      required?: string[];
-    };
-
-    if (schema && schema.type === 'object') {
-      // Check required fields
-      if (schema.required) {
-        for (const field of schema.required) {
-          if (!(field in args)) {
-            errors.push(`Missing required field: ${field}`);
+    // Validate against inputSchema using Zod's JSON Schema converter
+    if (tool.inputSchema) {
+      try {
+        const zodSchema = z.fromJSONSchema(tool.inputSchema as Record<string, unknown>);
+        const result = zodSchema.safeParse(args);
+        if (!result.success) {
+          for (const issue of result.error.issues) {
+            const path = issue.path.length > 0 ? issue.path.join('.') : '';
+            const prefix = path ? `Field '${path}': ` : '';
+            errors.push(`${prefix}${issue.message}`);
           }
         }
-      }
-
-      // Check for unknown fields
-      if (schema.properties) {
-        for (const key of Object.keys(args)) {
-          if (!(key in schema.properties)) {
-            errors.push(`Unknown field: ${key}`);
-          }
-        }
-
-        // Basic type validation for provided fields
-        for (const [key, value] of Object.entries(args)) {
-          const propSchema = schema.properties[key] as
-            | { type?: string; enum?: unknown[] }
-            | undefined;
-          if (!propSchema) continue;
-
-          if (propSchema.type) {
-            const actualType = Array.isArray(value) ? 'array' : typeof value;
-            if (propSchema.type !== actualType && value !== null) {
-              errors.push(`Field '${key}' expected type '${propSchema.type}', got '${actualType}'`);
-            }
-          }
-
-          if (propSchema.enum && !propSchema.enum.includes(value)) {
-            errors.push(`Field '${key}' must be one of: ${propSchema.enum.map(String).join(', ')}`);
-          }
-        }
+      } catch (err) {
+        getLogger().warn(
+          `Could not convert inputSchema for ${serverTool}: ${err instanceof Error ? err.message : 'unknown error'}`,
+          serverTool.split('/')[0]
+        );
+        // Schema can't be parsed — annotation warnings still apply
+        this.addAnnotationWarnings(tool, warnings);
+        return { valid: true, errors: [], warnings, unsupported: true, tool };
       }
     }
 
-    // Add annotation warnings
+    this.addAnnotationWarnings(tool, warnings);
+    return { valid: errors.length === 0, errors, warnings, tool };
+  }
+
+  private addAnnotationWarnings(tool: Tool, warnings: string[]): void {
     if (tool.annotations?.destructiveHint) {
       warnings.push('Tool is marked as destructive.');
     }
@@ -266,8 +253,6 @@ export class ServerPool {
     if (tool.annotations?.readOnlyHint === false) {
       warnings.push('Tool may modify data (not read-only).');
     }
-
-    return { valid: errors.length === 0, errors, warnings, tool };
   }
 
   grepTools(pattern: string): Array<{ server: string; tool: Tool }> {

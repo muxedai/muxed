@@ -136,6 +136,122 @@ describe('ServerPool', () => {
     expect(breResults).toEqual(jsResults);
   });
 
+  // --- validateToolArgs ---
+
+  it('validateToolArgs returns valid for correct arguments', async () => {
+    pool = new ServerPool();
+    await pool.connectAll(validConfig);
+
+    const result = pool.validateToolArgs('everything/echo', { message: 'hello' });
+    expect(result.valid).toBe(true);
+    expect(result.errors).toHaveLength(0);
+    expect(result.tool).toBeDefined();
+    expect(result.tool!.name).toBe('echo');
+  });
+
+  it('validateToolArgs returns errors for missing required field', async () => {
+    pool = new ServerPool();
+    await pool.connectAll(validConfig);
+
+    const result = pool.validateToolArgs('everything/echo', {});
+    expect(result.valid).toBe(false);
+    expect(result.errors.length).toBeGreaterThan(0);
+  });
+
+  it('validateToolArgs returns errors for wrong argument type', async () => {
+    pool = new ServerPool();
+    await pool.connectAll(validConfig);
+
+    const result = pool.validateToolArgs('everything/echo', { message: 12345 });
+    expect(result.valid).toBe(false);
+    expect(result.errors.length).toBeGreaterThan(0);
+    expect(result.errors[0]).toContain('message');
+  });
+
+  it('validateToolArgs returns error for nonexistent tool', async () => {
+    pool = new ServerPool();
+    await pool.connectAll(validConfig);
+
+    const result = pool.validateToolArgs('everything/nonexistent', { foo: 'bar' });
+    expect(result.valid).toBe(false);
+    expect(result.errors[0]).toContain('Tool not found');
+  });
+
+  it('validateToolArgs returns error for nonexistent server', async () => {
+    pool = new ServerPool();
+    await pool.connectAll(validConfig);
+
+    const result = pool.validateToolArgs('badserver/tool', {});
+    expect(result.valid).toBe(false);
+    expect(result.errors[0]).toContain('Server not found');
+  });
+
+  it('validateToolArgs includes annotation warnings', async () => {
+    pool = new ServerPool();
+    await pool.connectAll(validConfig);
+
+    const result = pool.validateToolArgs('everything/echo', { message: 'hello' });
+    expect(result.warnings.length).toBeGreaterThan(0);
+  });
+
+  it('validateToolArgs returns error for invalid format (no slash)', async () => {
+    pool = new ServerPool();
+    await pool.connectAll(validConfig);
+
+    const result = pool.validateToolArgs('noslash', {});
+    expect(result.valid).toBe(false);
+    expect(result.errors[0]).toContain('Invalid tool name format');
+  });
+
+  // --- findToolOrError ---
+
+  it('findToolOrError returns ok for valid tool', async () => {
+    pool = new ServerPool();
+    await pool.connectAll(validConfig);
+
+    const result = pool.findToolOrError('everything/echo');
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.tool.name).toBe('echo');
+      expect(result.manager.name).toBe('everything');
+    }
+  });
+
+  it('findToolOrError returns INVALID_FORMAT for no slash', async () => {
+    pool = new ServerPool();
+    await pool.connectAll(validConfig);
+
+    const result = pool.findToolOrError('noslash');
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.code).toBe('INVALID_FORMAT');
+    }
+  });
+
+  it('findToolOrError returns SERVER_NOT_FOUND for unknown server', async () => {
+    pool = new ServerPool();
+    await pool.connectAll(validConfig);
+
+    const result = pool.findToolOrError('unknown/tool');
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.code).toBe('SERVER_NOT_FOUND');
+      expect(result.error.context?.availableServers).toContain('everything');
+    }
+  });
+
+  it('findToolOrError returns TOOL_NOT_FOUND with suggestions for unknown tool', async () => {
+    pool = new ServerPool();
+    await pool.connectAll(validConfig);
+
+    const result = pool.findToolOrError('everything/ech');
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error.code).toBe('TOOL_NOT_FOUND');
+      expect(result.error.context?.similarTools).toBeDefined();
+    }
+  });
+
   it('handles mixed success and failure in connectAll', async () => {
     pool = new ServerPool();
     const mixedConfig: MuxedConfig = {
