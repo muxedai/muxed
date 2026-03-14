@@ -159,7 +159,9 @@ export class ServerPool {
    */
   findToolOrError(
     serverTool: string
-  ): { ok: true; manager: ServerManager; tool: Tool } | { ok: false; error: StructuredError } {
+  ):
+    | { ok: true; manager: ServerManager; tool: Tool; serverTimeout?: number }
+    | { ok: false; error: StructuredError } {
     const slashIndex = serverTool.indexOf('/');
     if (slashIndex === -1) {
       return { ok: false, error: invalidFormatError(serverTool) };
@@ -185,7 +187,8 @@ export class ServerPool {
       return { ok: false, error: toolNotFoundError(serverTool, similar) };
     }
 
-    return { ok: true, manager, tool };
+    const serverTimeout = manager.getState().config.timeout;
+    return { ok: true, manager, tool, serverTimeout };
   }
 
   /**

@@ -4,7 +4,12 @@ import type { MuxedConfig } from '../core/types.js';
 import { loadConfig } from '../core/config.js';
 import { getSocketPath } from '../utils/paths.js';
 import { getLogger } from '../utils/logger.js';
-import { missingParameterError, toErrorData } from '../core/errors.js';
+import {
+  missingParameterError,
+  timeoutError,
+  isTimeoutError,
+  toErrorData,
+} from '../core/errors.js';
 import { filterFields } from '../core/field-filter.js';
 import fs from 'node:fs';
 
@@ -98,22 +103,34 @@ export function createDaemonServer(serverPool: ServerPool, config: MuxedConfig):
           };
         }
 
-        const timeout = clientTimeout ?? p.timeout ?? requestTimeout;
-        const callResult = await found.manager.callTool(
-          found.tool.name,
-          p.arguments ?? {},
-          timeout
-        );
+        const timeout = clientTimeout ?? p.timeout ?? found.serverTimeout ?? requestTimeout;
+        try {
+          const callResult = await found.manager.callTool(
+            found.tool.name,
+            p.arguments ?? {},
+            timeout
+          );
 
-        if (p.fields && p.fields.length > 0) {
-          return {
-            jsonrpc: '2.0',
-            id,
-            result: filterFields(callResult as Record<string, unknown>, p.fields),
-          };
+          if (p.fields && p.fields.length > 0) {
+            return {
+              jsonrpc: '2.0',
+              id,
+              result: filterFields(callResult as Record<string, unknown>, p.fields),
+            };
+          }
+
+          return { jsonrpc: '2.0', id, result: callResult };
+        } catch (err) {
+          if (isTimeoutError(err)) {
+            const te = timeoutError(p.name, timeout);
+            return {
+              jsonrpc: '2.0',
+              id,
+              error: { code: -32001, message: te.message, data: toErrorData(te) },
+            };
+          }
+          throw err;
         }
-
-        return { jsonrpc: '2.0', id, result: callResult };
       }
 
       case 'tools/info': {
@@ -355,16 +372,29 @@ export function createDaemonServer(serverPool: ServerPool, config: MuxedConfig):
           };
         }
 
-        const taskHandle = await foundAsync.manager.callToolWithTask(
-          foundAsync.tool.name,
-          p.arguments ?? {}
-        );
-        serverPool.trackTask(taskHandle.taskId, foundAsync.manager.name);
-        return {
-          jsonrpc: '2.0',
-          id,
-          result: { ...taskHandle, server: foundAsync.manager.name },
-        };
+        try {
+          const taskHandle = await foundAsync.manager.callToolWithTask(
+            foundAsync.tool.name,
+            p.arguments ?? {}
+          );
+          serverPool.trackTask(taskHandle.taskId, foundAsync.manager.name);
+          return {
+            jsonrpc: '2.0',
+            id,
+            result: { ...taskHandle, server: foundAsync.manager.name },
+          };
+        } catch (err) {
+          if (isTimeoutError(err)) {
+            const asyncTimeout = foundAsync.serverTimeout ?? requestTimeout;
+            const te = timeoutError(p.name, asyncTimeout);
+            return {
+              jsonrpc: '2.0',
+              id,
+              error: { code: -32001, message: te.message, data: toErrorData(te) },
+            };
+          }
+          throw err;
+        }
       }
 
       case 'config/reload': {

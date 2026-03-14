@@ -134,7 +134,7 @@ describe('loadConfig', () => {
     expect(config.daemon).toEqual({
       idleTimeout: 300_000,
       connectTimeout: 30_000,
-      requestTimeout: 60_000,
+      requestTimeout: 30_000,
       healthCheckInterval: 30_000,
       maxRestartAttempts: -1,
       maxTotalTimeout: 300_000,
@@ -159,7 +159,7 @@ describe('loadConfig', () => {
     expect(config.daemon).toEqual({
       idleTimeout: 600_000,
       connectTimeout: 30_000,
-      requestTimeout: 60_000,
+      requestTimeout: 30_000,
       healthCheckInterval: 30_000,
       maxRestartAttempts: -1,
       maxTotalTimeout: 300_000,

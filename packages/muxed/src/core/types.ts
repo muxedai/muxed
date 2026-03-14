@@ -15,6 +15,7 @@ export type StdioServerConfig = {
   args?: string[];
   env?: Record<string, string>;
   cwd?: string;
+  timeout?: number;
 };
 
 export type ClientCredentialsAuth = {
@@ -46,6 +47,7 @@ export type HttpServerConfig = {
     maxRetries?: number;
   };
   auth?: OAuthConfig;
+  timeout?: number;
 };
 
 export type ServerConfig = StdioServerConfig | HttpServerConfig;
@@ -54,7 +56,7 @@ export type ServerConfig = StdioServerConfig | HttpServerConfig;
 export type DaemonConfig = {
   idleTimeout?: number; // default: 300000 (5 min)
   connectTimeout?: number; // default: 30000 (30s)
-  requestTimeout?: number; // default: 60000 (60s)
+  requestTimeout?: number; // default: 30000 (30s)
   healthCheckInterval?: number; // default: 30000 (30s)
   maxRestartAttempts?: number; // default: -1 (unlimited)
   maxTotalTimeout?: number; // default: 300000 (5 min)

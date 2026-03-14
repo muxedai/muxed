@@ -140,6 +140,16 @@ export function timeoutError(toolName: string, timeoutMs: number): StructuredErr
   };
 }
 
+// --- Timeout detection ---
+
+/** Check if an error is a timeout/abort error from AbortSignal.timeout(). */
+export function isTimeoutError(err: unknown): boolean {
+  if (!(err instanceof Error)) return false;
+  if (err.name === 'TimeoutError' || err.name === 'AbortError') return true;
+  const msg = err.message.toLowerCase();
+  return msg.includes('timeout') || msg.includes('aborted');
+}
+
 // --- JSON-RPC error data helper ---
 
 /** Convert a StructuredError to the `data` field for a JSON-RPC error response. */

@@ -9,6 +9,7 @@ const StdioServerConfigSchema = z.object({
   args: z.array(z.string()).optional(),
   env: z.record(z.string(), z.string()).optional(),
   cwd: z.string().optional(),
+  timeout: z.number().optional(),
 });
 
 const ReconnectionSchema = z.object({
@@ -42,6 +43,7 @@ const HttpServerConfigSchema = z.object({
   sessionId: z.string().optional(),
   reconnection: ReconnectionSchema.optional(),
   auth: OAuthConfigSchema.optional(),
+  timeout: z.number().optional(),
 });
 
 const ServerConfigSchema = z.union([StdioServerConfigSchema, HttpServerConfigSchema]);
@@ -108,7 +110,7 @@ function mergeClaudeDesktopServers(servers: Record<string, unknown>): Record<str
 const DAEMON_DEFAULTS = {
   idleTimeout: 300_000,
   connectTimeout: 30_000,
-  requestTimeout: 60_000,
+  requestTimeout: 30_000,
   healthCheckInterval: 30_000,
   maxRestartAttempts: -1,
   maxTotalTimeout: 300_000,
