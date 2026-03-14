@@ -1,3 +1,4 @@
+import crypto from 'node:crypto';
 import type { OAuthClientProvider } from '@modelcontextprotocol/sdk/client/auth.js';
 import type {
   OAuthClientMetadata,
@@ -14,6 +15,7 @@ export class AuthorizationCodeProvider implements OAuthClientProvider {
   private config: AuthorizationCodeAuth;
   private _redirectUrl: string | undefined;
   private hadTokensBefore = false;
+  private _state = crypto.randomBytes(32).toString('base64url');
 
   constructor(
     config: AuthorizationCodeAuth,
@@ -29,7 +31,7 @@ export class AuthorizationCodeProvider implements OAuthClientProvider {
    * Set the redirect URL once the callback server port is known.
    */
   setRedirectUrl(port: number): void {
-    this._redirectUrl = `http://127.0.0.1:${port}/oauth/callback`;
+    this._redirectUrl = `http://localhost:${port}/callback`;
   }
 
   get redirectUrl(): string | undefined {
@@ -37,7 +39,7 @@ export class AuthorizationCodeProvider implements OAuthClientProvider {
   }
 
   get clientMetadata(): OAuthClientMetadata {
-    const redirectUri = this._redirectUrl ?? 'http://127.0.0.1/oauth/callback';
+    const redirectUri = this._redirectUrl ?? 'http://localhost/callback';
     return {
       redirect_uris: [redirectUri],
       token_endpoint_auth_method: this.config.clientSecret ? 'client_secret_basic' : 'none',
@@ -56,8 +58,18 @@ export class AuthorizationCodeProvider implements OAuthClientProvider {
         ...(this.config.clientSecret ? { client_secret: this.config.clientSecret } : {}),
       };
     }
-    // Otherwise, check for dynamically registered client info
-    return this.store.getClientInformation();
+    // Otherwise, check for dynamically registered client info.
+    // If the redirect URL changed (new port), discard the cached registration
+    // so the SDK re-registers with the current redirect URI.
+    const cached = this.store.getClientInformation();
+    if (cached && this._redirectUrl) {
+      const uris: string[] = ((cached as Record<string, unknown>).redirect_uris as string[]) ?? [];
+      if (!uris.includes(this._redirectUrl)) {
+        this.store.clearClientInformation();
+        return undefined;
+      }
+    }
+    return cached;
   }
 
   saveClientInformation(info: OAuthClientInformationMixed): void {
@@ -86,6 +98,10 @@ export class AuthorizationCodeProvider implements OAuthClientProvider {
       );
       openBrowser(url);
     }
+  }
+
+  async state(): Promise<string> {
+    return this._state;
   }
 
   saveCodeVerifier(codeVerifier: string): void {

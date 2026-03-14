@@ -48,8 +48,8 @@ export class CallbackServer {
           return;
         }
 
-        const url = new URL(req.url ?? '/', `http://127.0.0.1`);
-        if (url.pathname !== '/oauth/callback') {
+        const url = new URL(req.url ?? '/', `http://localhost`);
+        if (url.pathname !== '/callback') {
           res.writeHead(404);
           res.end('Not found');
           return;
@@ -85,7 +85,7 @@ export class CallbackServer {
         resolve({ code, state });
       });
 
-      this.server.listen(port, '127.0.0.1', () => {
+      this.server.listen(port, 'localhost', () => {
         const addr = this.server!.address();
         if (addr && typeof addr === 'object') {
           this._port = addr.port;
