@@ -14,16 +14,16 @@ export default defineConfig({
     starlight({
       title: "muxed",
       tagline: "One daemon to manage them all",
-      customCss: ["./src/styles/global.css"],
+      customCss: ["./src/styles/docs.css"],
       components: {
-        Head: "./src/components/head.astro",
+        SiteTitle: "./src/components/site-title.astro",
       },
       plugins: [starlightLlmsTxt()],
       social: [
         {
           icon: "github",
           label: "GitHub",
-          href: "https://github.com/skoob13/muxed",
+          href: "https://github.com/muxedai/muxed",
         },
       ],
       sidebar: [

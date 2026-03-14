@@ -1,0 +1,30 @@
+---
+import type { Props } from "@astrojs/starlight/props";
+const { ...attrs } = Astro.props;
+
+const ascii = ` _ __ ___  _   ___  _____  __| |
+| '_ \` _ \\| | | \\ \\/ / _ \\/ _\` |
+| | | | | | |_| |>  <  __/ (_| |
+|_| |_| |_|\\__,_/_/\\_\\___|\\__,_|`;
+---
+
+<a href="/" class="ascii-title">
+  <pre>{ascii}</pre>
+</a>
+
+<style>
+  .ascii-title {
+    text-decoration: none !important;
+    line-height: 1;
+  }
+  .ascii-title pre {
+    font-size: 0.35rem;
+    line-height: 1.15;
+    margin: 0;
+    white-space: pre;
+    color: var(--sl-color-text);
+  }
+  .ascii-title:hover pre {
+    color: var(--sl-color-text-accent);
+  }
+</style>

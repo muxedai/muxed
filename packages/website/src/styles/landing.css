@@ -23,11 +23,11 @@
 }
 
 /* === Base === */
-a {
+a:not(nav a) {
   color: var(--color-brand);
   text-decoration: none;
 }
-a:hover {
+a:not(nav a):hover {
   text-decoration: underline;
 }
 
@@ -90,7 +90,13 @@ body::before {
 /* === Section divider === */
 .section-divided {
   border-bottom: 1px solid transparent;
-  border-image: linear-gradient(to right, transparent, var(--color-edge), transparent) 1;
+  border-image: linear-gradient(
+      to right,
+      transparent,
+      var(--color-edge),
+      transparent
+    )
+    1;
 }
 
 /* === Hero glow === */
@@ -100,7 +106,7 @@ body::before {
   top: -20%;
   left: 50%;
   translate: -50% 0;
-  width: 600px;
+  width: min(600px, 100vw);
   height: 400px;
   background: radial-gradient(
     ellipse at center,
