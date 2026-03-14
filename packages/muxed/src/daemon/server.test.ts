@@ -308,6 +308,21 @@ describe('createDaemonServer', () => {
     expect(result.errors.length).toBeGreaterThan(0);
   });
 
+  it('rejects tools/call with invalid arguments via Zod validation', async () => {
+    const response = await sendRequest(testSocketPath, {
+      jsonrpc: '2.0',
+      id: 13,
+      method: 'tools/call',
+      params: { name: 'everything/echo', arguments: {} },
+    });
+
+    const error = response.error as { code: number; message: string; data?: unknown };
+    expect(error.code).toBe(-32602);
+    expect(error.message).toContain('Invalid arguments');
+    const data = error.data as { code: string };
+    expect(data.code).toBe('INVALID_ARGUMENTS');
+  });
+
   it('returns error for tools/info with nonexistent tool', async () => {
     const response = await sendRequest(testSocketPath, {
       jsonrpc: '2.0',
