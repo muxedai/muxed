@@ -14,7 +14,7 @@ import type {
   OAuthConfig,
 } from '../../core/types.js';
 import { formatJson, formatMcpServer, formatMcpServerList } from '../formatter.js';
-import { capture, shutdown } from '../../analytics.js';
+import { capture } from '../../analytics.js';
 import { isDaemonRunning } from '../../daemon/process.js';
 import { sendRequest } from '../client.js';
 import { startMcpProxy } from '../../mcp/mcp-proxy.js';
@@ -236,7 +236,6 @@ mcpCommand
       await tryReloadDaemon();
 
       capture('server_added', { server: name, scope, updated: result.existed });
-      await shutdown();
 
       if (result.existed) {
         console.log(`Updated "${name}" in ${scope} config (${configPath})`);
@@ -278,7 +277,6 @@ mcpCommand
     await tryReloadDaemon();
 
     capture('server_added', { server: name, scope, updated: result.existed });
-    await shutdown();
 
     if (result.existed) {
       console.log(`Updated "${name}" in ${scope} config (${configPath})`);
@@ -333,7 +331,7 @@ mcpCommand
 
     if (result.imported.length > 0) {
       capture('servers_imported', { servers: result.imported, source: 'claude-desktop' });
-      await shutdown();
+
       console.log(
         `Imported ${result.imported.length} server(s) from Claude Desktop: ${result.imported.join(', ')}`
       );
@@ -430,7 +428,7 @@ mcpCommand
       if (result.removed) {
         await tryReloadDaemon();
         capture('server_removed', { server: name, scope });
-        await shutdown();
+
         console.log(`Removed "${name}" from ${scope} config (${configPath})`);
       } else {
         console.error(`Server "${name}" not found in ${scope} config.`);
@@ -445,7 +443,7 @@ mcpCommand
     if (localResult.removed) {
       await tryReloadDaemon();
       capture('server_removed', { server: name, scope: 'local' });
-      await shutdown();
+
       console.log(`Removed "${name}" from local config (${localPath})`);
       return;
     }
@@ -455,7 +453,7 @@ mcpCommand
     if (globalResult.removed) {
       await tryReloadDaemon();
       capture('server_removed', { server: name, scope: 'global' });
-      await shutdown();
+
       console.log(`Removed "${name}" from global config (${globalPath})`);
       return;
     }

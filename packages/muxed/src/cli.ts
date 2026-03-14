@@ -11,5 +11,8 @@ if (daemonIndex !== -1) {
     process.exit(1);
   });
 } else {
-  runCli();
+  runCli().catch((err) => {
+    console.error(err instanceof Error ? err.message : 'Unexpected error');
+    process.exit(1);
+  });
 }

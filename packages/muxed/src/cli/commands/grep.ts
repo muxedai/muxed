@@ -2,7 +2,7 @@ import { Command } from 'commander';
 import type { Tool } from '@modelcontextprotocol/sdk/types.js';
 import { ensureDaemon, sendRequest } from '../client.js';
 import { formatTools, formatJson } from '../formatter.js';
-import { capture, shutdown } from '../../analytics.js';
+import { capture } from '../../analytics.js';
 
 export const grepCommand = new Command('grep')
   .description('Search tools by regex pattern across names, titles, and descriptions')
@@ -16,6 +16,5 @@ export const grepCommand = new Command('grep')
       tool: Tool;
     }>;
     capture('tools_searched', { result_count: result.length });
-    await shutdown();
     console.log(opts.json ? formatJson(result) : formatTools(result));
   });

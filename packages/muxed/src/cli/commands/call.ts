@@ -6,7 +6,7 @@ import {
   formatStructuredError,
   formatValidation,
 } from '../formatter.js';
-import { capture, shutdown } from '../../analytics.js';
+import { capture } from '../../analytics.js';
 
 type CallResult = {
   content: Array<{
@@ -93,8 +93,12 @@ export const callCommand = new Command('call')
             arguments: parsedArgs,
           })) as ValidationResult;
 
-          capture('tool_validated', { server, tool, valid: result.valid });
-          await shutdown();
+          capture('tool_called', {
+            server,
+            tool,
+            mode: 'dry-run',
+            status: result.valid ? 'success' : 'validation_error',
+          });
 
           if (opts.json) {
             console.log(formatJson(result));
@@ -104,6 +108,8 @@ export const callCommand = new Command('call')
 
           if (!result.valid) process.exit(1);
         } catch (err) {
+          capture('tool_called', { server, tool, mode: 'dry-run', status: 'error' });
+
           if (err instanceof MuxedError && err.data) {
             const errorData = err.data as {
               code?: string;
@@ -120,7 +126,6 @@ export const callCommand = new Command('call')
           } else {
             console.error(err instanceof Error ? err.message : 'Validation failed');
           }
-          await shutdown();
           process.exit(1);
         }
         return;
@@ -134,8 +139,7 @@ export const callCommand = new Command('call')
             arguments: parsedArgs,
           })) as { taskId: string; status: string; server: string };
 
-          capture('tool_called', { server, tool, async: true });
-          await shutdown();
+          capture('tool_called', { server, tool, mode: 'async', status: 'success' });
 
           if (opts.json) {
             console.log(formatJson(taskResult));
@@ -143,6 +147,8 @@ export const callCommand = new Command('call')
             console.log(`Task created: ${taskResult.taskId} (status: ${taskResult.status})`);
           }
         } catch (err) {
+          capture('tool_called', { server, tool, mode: 'async', status: 'error' });
+
           if (err instanceof MuxedError && err.data) {
             const errorData = err.data as {
               code?: string;
@@ -159,7 +165,6 @@ export const callCommand = new Command('call')
           } else {
             console.error(err instanceof Error ? err.message : 'Call failed');
           }
-          await shutdown();
           process.exit(1);
         }
         return;
@@ -182,12 +187,23 @@ export const callCommand = new Command('call')
         capture('tool_called', {
           server,
           tool,
-          async: false,
-          is_error: result.isError ?? false,
+          mode: 'sync',
+          status: result.isError ? 'tool_error' : 'success',
+          has_timeout: !!opts.timeout,
+          has_fields: !!opts.fields,
+          stdin_input: jsonArgs === '-',
         });
-        await shutdown();
         console.log(opts.json ? formatJson(result) : formatCallResult(result));
       } catch (err) {
+        capture('tool_called', {
+          server,
+          tool,
+          mode: 'sync',
+          status: 'error',
+          has_timeout: !!opts.timeout,
+          has_fields: !!opts.fields,
+          stdin_input: jsonArgs === '-',
+        });
         if (err instanceof MuxedError && err.data) {
           const errorData = err.data as {
             code?: string;
@@ -204,7 +220,6 @@ export const callCommand = new Command('call')
         } else {
           console.error(err instanceof Error ? err.message : 'Call failed');
         }
-        await shutdown();
         process.exit(1);
       }
     }

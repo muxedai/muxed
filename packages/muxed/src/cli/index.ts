@@ -18,8 +18,9 @@ import { initCommand } from './commands/init.js';
 import { mcpCommand } from './commands/mcp.js';
 import { typegenCommand } from './commands/typegen.js';
 import { telemetryCommand } from './commands/telemetry.js';
+import { capture, shutdown } from '../analytics.js';
 
-export function runCli(): void {
+export async function runCli(): Promise<void> {
   const program = new Command();
   program.name('muxed').description('The optimization layer for MCP').version('0.1.0');
   program.enablePositionalOptions();
@@ -58,5 +59,12 @@ export function runCli(): void {
   program.commandsGroup('Daemon:');
   program.addCommand(daemonCommand);
 
-  program.parse();
+  const command = process.argv[2];
+  capture('session_started', { command: command ?? null });
+
+  try {
+    await program.parseAsync();
+  } finally {
+    await shutdown();
+  }
 }

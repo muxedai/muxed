@@ -10,7 +10,7 @@ import type { Conflict, InitResult, UnresolvedConflict } from '../../core/agents
 import type { ServerConfig } from '../../core/types.js';
 import { formatInit, formatJson } from '../formatter.js';
 import { confirm, choose } from '../prompt.js';
-import { capture, shutdown } from '../../analytics.js';
+import { capture } from '../../analytics.js';
 import fs from 'node:fs';
 
 const AGENT_PRIORITY = ['claude-code', 'cursor'];
@@ -178,7 +178,6 @@ export const initCommand = new Command('init')
         warning_count: warnings.length,
         discovered_agents: initResult.discovered.map((d) => d.agent),
       });
-      await shutdown();
       console.log(opts.json ? formatJson(initResult) : formatInit(initResult));
     }
   );
