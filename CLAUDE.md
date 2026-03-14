@@ -1,3 +1,64 @@
+# Project overview
+
+Muxed is an MCP (Model Context Protocol) server daemon and aggregator CLI. It aggregates multiple MCP servers behind a single Unix socket daemon with lazy start, auto-reconnect, and idle shutdown. Core value: reduce agent token consumption by keeping tool schemas in the daemon rather than the model's context window.
+
+## Monorepo structure
+
+- `packages/muxed` — the CLI + daemon + client library (npm: `muxed`)
+- `packages/website` — marketing/docs site (Astro + Starlight + Svelte + Tailwind)
+- `specs/` — design specs and architecture docs
+
+## packages/muxed architecture
+
+```
+CLI (Commander.js)  →  Unix Socket (JSON-RPC 2.0)  →  Daemon Server
+                                                         ↓
+                                                    ServerPool
+                                                         ↓
+                                                  ServerManager(s)
+                                                         ↓
+                                              MCP Transports (stdio / HTTP / SSE)
+```
+
+Key source directories:
+- `src/cli/` — CLI entry (`index.ts`) and commands (`commands/*.ts`), formatter (`formatter.ts`)
+- `src/client/` — TypeScript client library (`index.ts`) and socket IPC (`socket.ts`)
+- `src/daemon/` — daemon server (`server.ts`), process management (`process.ts`), HTTP server (`http-server.ts`)
+- `src/core/` — server pool (`server-pool.ts`), server manager (`server-manager.ts`), config (`config.ts`), types (`types.ts`), agents (`agents.ts`)
+- `src/mcp/` — MCP proxy mode (`mcp-proxy.ts`)
+- `src/codegen/` — type generation (`typegen.ts`)
+- `src/analytics.ts` — PostHog telemetry
+
+CLI commands: `servers`, `tools`, `info`, `call`, `grep`, `resources`, `read`, `prompts`, `prompt`, `completions`, `tasks`, `task`, `task-result`, `task-cancel`, `init`, `mcp`, `typegen`, `telemetry`, `daemon`
+
+## Key dependencies
+
+- `@modelcontextprotocol/sdk` — MCP protocol types and transports
+- `commander` — CLI framework
+- `zod` — schema validation
+- `json-schema-to-typescript` — codegen for tool types
+- `posthog-node` — analytics
+- `obuild` — build tool
+
+## Scripts (packages/muxed)
+
+- `pnpm build` — build with obuild
+- `pnpm dev` — run CLI from source (`node src/cli.ts`)
+- `pnpm test` — vitest
+- `pnpm type-check` — tsc --noEmit
+- `pnpm format` / `pnpm format:check` — prettier
+
+## Config file
+
+`muxed.config.json` at project root. Defines `mcpServers` (stdio or HTTP configs) and `daemon` settings (idle timeout, log level, HTTP listener, etc.). See `src/core/types.ts` for the `MuxedConfig` type.
+
+## Daemon details
+
+- Socket path: `~/.muxed/muxed.sock`
+- PID file: `~/.muxed/muxed.pid`
+- Auto-starts on first CLI command, auto-shuts down after 5 min idle (configurable)
+- JSON-RPC 2.0 methods: `servers/list`, `tools/list`, `tools/call`, `tools/call-async`, `tools/info`, `tools/grep`, `resources/*`, `prompts/*`, `completions/*`, `tasks/*`, `daemon/*`, `config/reload`, `auth/status`
+
 # Code style
 
 Use kebab case for JS and TS.
