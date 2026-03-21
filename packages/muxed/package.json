@@ -61,7 +61,10 @@
     "format:check": "prettier --check 'src/**/*.ts'",
     "publish": "tsc --noEmit && prettier --check 'src/**/*.ts' && pnpm build && cp ../../README.md . && npm publish",
     "test": "vitest",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "eval": "vitest run --config evals/vitest.config.ts",
+    "eval:case1": "vitest run --config evals/vitest.config.ts case-1",
+    "eval:case3": "vitest run --config evals/vitest.config.ts case-3"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.26.0",
@@ -72,10 +75,17 @@
   },
   "devDependencies": {
     "@modelcontextprotocol/server-everything": "^2026.1.26",
+    "@types/dockerode": "^3.3.0",
     "@types/node": "^22.0.0",
+    "autoevals": "^0.0.132",
+    "dockerode": "^4.0.10",
+    "js-yaml": "^4.1.0",
+    "@types/js-yaml": "^4.0.0",
     "obuild": "^0.4.22",
     "prettier": "^3.8.1",
+    "tinyrainbow": "^2.0.0",
     "typescript": "^5.9.3",
-    "vitest": "^4.0.17"
+    "vitest": "^4.0.17",
+    "vitest-evals": "^0.6.0"
   }
 }
