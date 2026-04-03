@@ -1,0 +1,20 @@
+{
+  "mcpServers": {
+    "analytics": {
+      "url": "http://host.docker.internal:64797/mcp",
+      "transport": "streamable-http"
+    },
+    "feature-flags": {
+      "url": "http://host.docker.internal:64798/mcp",
+      "transport": "streamable-http"
+    },
+    "logging": {
+      "url": "http://host.docker.internal:64799/mcp",
+      "transport": "streamable-http"
+    },
+    "database": {
+      "url": "http://host.docker.internal:64800/mcp",
+      "transport": "streamable-http"
+    }
+  }
+}

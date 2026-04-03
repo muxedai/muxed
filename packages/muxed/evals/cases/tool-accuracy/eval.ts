@@ -8,85 +8,93 @@ import { ToolAccuracy } from './scorer.ts';
 import { startMockServers } from '../../lib/mcp-server-harness.ts';
 import { runAgent } from '../../lib/agent-runner.ts';
 import { writeConfigFiles } from '../../lib/config-builder.ts';
-import type { Condition } from '../../types.ts';
+import type { AgentType, Condition } from '../../types.ts';
 
 const CASE_DIR = import.meta.dirname;
 const SERVERS_DIR = path.resolve(CASE_DIR, '..', '..', 'servers');
 
 const tasks = loadTasks(path.join(CASE_DIR, 'tasks.yaml'));
 
+const agents: AgentType[] = ['claude-code', 'codex'];
 const toolCounts = [10, 25, 50, 100];
 const conditions: Condition[] = ['baseline', 'muxed'];
 
-const hasApiKey = (): boolean => !process.env['ANTHROPIC_API_KEY'];
+const API_KEY_ENV: Record<AgentType, string> = {
+  'claude-code': 'ANTHROPIC_API_KEY',
+  codex: 'OPENAI_API_KEY',
+};
 
-for (const toolCount of toolCounts) {
-  for (const condition of conditions) {
-    describeEval(`Tool Accuracy [${toolCount} tools/${condition}]`, {
-      skipIf: hasApiKey,
+const hasApiKey = (agent: AgentType): boolean => !process.env[API_KEY_ENV[agent]];
 
-      data: async () =>
-        tasks.map((t) => ({
-          name: `${t.name}/n=${toolCount}/${condition}`,
-          input: t.input,
-          expected: t.correctToolByCount[toolCount] ?? 'unknown',
-        })),
+for (const agent of agents) {
+  for (const toolCount of toolCounts) {
+    for (const condition of conditions) {
+      describeEval(`Tool Accuracy [${agent}/${toolCount} tools/${condition}]`, {
+        skipIf: () => hasApiKey(agent),
 
-      task: async (input) => {
-        const workDir = fs.mkdtempSync(path.join(os.tmpdir(), 'muxed-eval-tool-accuracy-'));
+        data: async () =>
+          tasks.map((t) => ({
+            name: `${t.name}/n=${toolCount}/${condition}`,
+            input: t.input,
+            expected: t.correctToolByCount[toolCount] ?? 'unknown',
+          })),
 
-        const { servers, cleanup } = await startMockServers([
-          {
-            name: 'confusable',
-            scriptPath: path.join(SERVERS_DIR, 'confusable.ts'),
-            args: ['--tool-count', String(toolCount), '--seed', '42'],
-          },
-        ]);
+        task: async (input) => {
+          const workDir = fs.mkdtempSync(path.join(os.tmpdir(), 'muxed-eval-tool-accuracy-'));
 
-        try {
-          const mcpConfigPath = writeConfigFiles(workDir, condition, servers);
-
-          const result = await runAgent({
-            agent: 'claude-code',
-            condition,
-            taskPrompt: input,
-            mcpConfigPath,
-            workDir,
-            apiKeys: {
-              ANTHROPIC_API_KEY: process.env['ANTHROPIC_API_KEY'] ?? '',
+          const { servers, cleanup } = await startMockServers([
+            {
+              name: 'confusable',
+              scriptPath: path.join(SERVERS_DIR, 'confusable.ts'),
+              args: ['--tool-count', String(toolCount), '--seed', '42'],
             },
-            maxTurns: 15,
-            maxBudgetUsd: 1.5,
-            timeoutMs: 120_000,
-          });
+          ]);
 
-          return {
-            result: result.finalOutput,
-            toolCalls: result.toolCalls.map((tc) => ({
-              name: tc.name,
-              arguments: tc.arguments,
-            })),
-          };
-        } finally {
-          await cleanup();
-          fs.rmSync(workDir, { recursive: true, force: true });
-        }
-      },
+          try {
+            const mcpConfigPath = writeConfigFiles(workDir, condition, servers);
 
-      scorers: [
-        ToolAccuracy,
-        async ({ output, expected, input }: Record<string, unknown>) => {
-          const result = await Factuality({
-            output: output as string,
-            expected: `The agent should have called tool: ${expected}`,
-            input: input as string,
-          } as Parameters<typeof Factuality>[0]);
-          return { score: result.score ?? 0 };
+            const result = await runAgent({
+              agent,
+              condition,
+              taskPrompt: input,
+              mcpConfigPath,
+              workDir,
+              apiKeys: {
+                [API_KEY_ENV[agent]]: process.env[API_KEY_ENV[agent]] ?? '',
+              },
+              maxTurns: 15,
+              maxBudgetUsd: 1.5,
+              timeoutMs: 120_000,
+            });
+
+            return {
+              result: result.finalOutput,
+              toolCalls: result.toolCalls.map((tc) => ({
+                name: tc.name,
+                arguments: tc.arguments,
+              })),
+            };
+          } finally {
+            await cleanup();
+            fs.rmSync(workDir, { recursive: true, force: true });
+          }
         },
-      ],
 
-      threshold: 0.7,
-      timeout: 300_000,
-    });
+        scorers: [
+          ToolAccuracy,
+          async ({ output, expected, input }: Record<string, unknown>) => {
+            const result = await Factuality({
+              output: output as string,
+              expected: `The agent should have called tool: ${expected}`,
+              input: input as string,
+            } as Parameters<typeof Factuality>[0]);
+            return { score: result.score ?? 0 };
+          },
+        ],
+
+        threshold: 0.7,
+        timeout: 300_000,
+      });
+    }
   }
 }

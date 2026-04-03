@@ -4,15 +4,38 @@ import path from 'node:path';
 import fs from 'node:fs';
 import type { AgentType, Condition, AgentRunResult } from '../types.ts';
 import {
-  parseClaudeCodeOutput,
+  parseToolCalls,
   extractMuxedSubcommands,
   extractFinalOutput,
   extractTokenUsage,
 } from './log-parser.ts';
 
-const docker = new Dockerode();
+function getDockerSocketPath(): string | undefined {
+  const candidates = [
+    process.env['DOCKER_HOST'],
+    '/var/run/docker.sock',
+    `${process.env['HOME']}/.orbstack/run/docker.sock`,
+    `${process.env['HOME']}/.docker/run/docker.sock`,
+    `${process.env['HOME']}/.colima/default/docker.sock`,
+  ];
+  for (const c of candidates) {
+    if (!c) continue;
+    const p = c.replace(/^unix:\/\//, '');
+    try {
+      fs.accessSync(p);
+      return p;
+    } catch {}
+  }
+  return undefined;
+}
 
-const CLAUDE_CODE_IMAGE = 'muxed-eval-claude-code';
+const socketPath = getDockerSocketPath();
+const docker = socketPath ? new Dockerode({ socketPath }) : new Dockerode();
+
+const IMAGE_NAMES: Record<AgentType, string> = {
+  'claude-code': 'muxed-eval-claude-code',
+  codex: 'muxed-eval-codex',
+};
 
 export type AgentRunOptions = {
   agent: AgentType;
@@ -30,7 +53,7 @@ export type AgentRunOptions = {
  * Build the Docker image if it doesn't exist.
  */
 async function ensureImage(agent: AgentType): Promise<string> {
-  const imageName = agent === 'claude-code' ? CLAUDE_CODE_IMAGE : `muxed-eval-${agent}`;
+  const imageName = IMAGE_NAMES[agent];
   const dockerfilePath = path.resolve(import.meta.dirname, '..', 'docker', `Dockerfile.${agent}`);
 
   // Check if image exists
@@ -93,7 +116,8 @@ export async function runAgent(opts: AgentRunOptions): Promise<AgentRunResult> {
       '-p',
       taskPrompt,
       '--output-format',
-      'json',
+      'stream-json',
+      '--verbose',
       '--dangerously-skip-permissions',
       '--max-turns',
       String(maxTurns),
@@ -104,8 +128,7 @@ export async function runAgent(opts: AgentRunOptions): Promise<AgentRunResult> {
       cmd.push('--mcp-config', '/workspace/.mcp.json');
     }
   } else {
-    // Codex placeholder
-    cmd = ['exec', taskPrompt, '--approval-mode', 'full-auto'];
+    cmd = ['exec', '--full-auto', '--json', '--skip-git-repo-check', '--ephemeral', taskPrompt];
   }
 
   // Create and start the container
@@ -182,13 +205,13 @@ export async function runAgent(opts: AgentRunOptions): Promise<AgentRunResult> {
     const durationMs = Date.now() - startTime;
 
     // Parse tool calls from output
-    let toolCalls = parseClaudeCodeOutput(rawOutput);
+    let toolCalls = parseToolCalls(rawOutput, agent);
     if (condition === 'muxed') {
       toolCalls = extractMuxedSubcommands(toolCalls);
     }
 
-    const finalOutput = extractFinalOutput(rawOutput);
-    const tokenUsage = extractTokenUsage(rawOutput);
+    const finalOutput = extractFinalOutput(rawOutput, agent);
+    const tokenUsage = extractTokenUsage(rawOutput, agent);
 
     return {
       agent,

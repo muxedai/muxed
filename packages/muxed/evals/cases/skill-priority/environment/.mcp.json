@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "muxed": {
+      "command": "npx",
+      "args": [
+        "muxed",
+        "mcp"
+      ]
+    }
+  }
+}

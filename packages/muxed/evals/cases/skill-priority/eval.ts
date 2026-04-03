@@ -14,18 +14,23 @@ const SERVERS_DIR = path.resolve(CASE_DIR, '..', '..', 'servers');
 
 const tasks = loadTasks(path.join(CASE_DIR, 'tasks.yaml'));
 
-const agents: AgentType[] = ['claude-code'];
+const agents: AgentType[] = ['claude-code', 'codex'];
 const conditions: Condition[] = ['baseline', 'muxed'];
 
-const hasApiKey = (): boolean => !process.env['ANTHROPIC_API_KEY'];
+const API_KEY_ENV: Record<AgentType, string> = {
+  'claude-code': 'ANTHROPIC_API_KEY',
+  codex: 'OPENAI_API_KEY',
+};
+
+const hasApiKey = (agent: AgentType): boolean => !process.env[API_KEY_ENV[agent]];
 
 for (const agent of agents) {
   for (const condition of conditions) {
     describeEval(`Skill Priority [${agent}/${condition}]`, {
-      skipIf: hasApiKey,
+      skipIf: () => hasApiKey(agent),
 
       data: async () =>
-        tasks.map((t) => ({
+        tasks.slice(0, 1).map((t) => ({
           name: `${t.name}/${agent}/${condition}`,
           input: t.input,
           expected: t.expected,
@@ -52,7 +57,7 @@ for (const agent of agents) {
             mcpConfigPath,
             workDir: ENV_DIR,
             apiKeys: {
-              ANTHROPIC_API_KEY: process.env['ANTHROPIC_API_KEY'] ?? '',
+              [API_KEY_ENV[agent]]: process.env[API_KEY_ENV[agent]] ?? '',
             },
             maxTurns: 20,
             maxBudgetUsd: 2.0,

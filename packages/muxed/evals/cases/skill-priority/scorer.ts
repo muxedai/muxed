@@ -1,159 +1,64 @@
 import type { CapturedToolCall } from '../../types.ts';
 
-/**
- * Discovery commands that don't count as "substantive" tool calls.
- * These are part of the muxed discover → inspect → call workflow.
- */
-const DISCOVERY_PATTERNS = ['muxed:grep', 'muxed:tools', /^muxed:info:/, 'Read', 'Glob', 'Grep'];
-
-function isDiscoveryCall(name: string): boolean {
-  return DISCOVERY_PATTERNS.some((pattern) =>
-    typeof pattern === 'string' ? name === pattern : pattern.test(name)
-  );
-}
+const MAX_TURNS = 5;
 
 /**
- * Map a tool call name to the server it belongs to.
- * Works for both baseline (direct MCP) and muxed (via npx muxed call) conditions.
+ * Check if a tool call invokes the /investigate-customer-issue skill.
+ * Claude Code: Skill tool with skill name.
+ * Codex: may appear as a bash command or direct skill invocation.
  */
-function getServerName(call: CapturedToolCall): string | null {
+function isSkillCall(call: CapturedToolCall): boolean {
   const name = call.name;
 
-  // Muxed condition: "muxed:call:logging/search_logs" → "logging"
-  const muxedMatch = name.match(/^muxed:call:([\w-]+)\//);
-  if (muxedMatch) return muxedMatch[1]!;
-
-  // Baseline condition: direct MCP tool names
-  // Logging server tools
-  if (
-    ['search_logs', 'get_error_summary', 'get_trace', 'tail_logs', 'get_service_health'].includes(
-      name
-    )
-  ) {
-    return 'logging';
+  // Claude Code Skill tool
+  if (name === 'Skill') {
+    const skill =
+      (call.arguments?.['skill'] as string) ?? (call.arguments?.['name'] as string) ?? '';
+    return skill.includes('investigate-customer-issue');
   }
 
-  // Analytics server tools
-  if (
-    [
-      'query_events',
-      'get_user_sessions',
-      'get_funnel',
-      'query_insights',
-      'list_dashboards',
-      'get_dashboard_data',
-    ].includes(name)
-  ) {
-    return 'analytics';
+  // Direct slash-command reference in Bash
+  if (name === 'Bash' || name === 'bash') {
+    const command = (call.arguments?.['command'] as string) ?? '';
+    return command.includes('investigate-customer-issue');
   }
 
-  // Feature flags server tools
-  if (['list_flags', 'get_flag', 'evaluate_flag', 'get_flag_history'].includes(name)) {
-    return 'feature-flags';
-  }
+  // Tool name itself matches
+  if (name.includes('investigate-customer-issue')) return true;
 
-  // Database server tools
-  if (['query', 'list_tables', 'describe_table'].includes(name)) {
-    return 'database';
-  }
-
-  return null;
+  return false;
 }
-
-/**
- * Expected investigation order from CLAUDE.md skill:
- * 1. logging (check logs first)
- * 2. analytics (query events)
- * 3. feature-flags (check flags)
- */
-const EXPECTED_ORDER = ['logging', 'analytics', 'feature-flags'];
 
 export type SkillPriorityResult = {
   score: number;
   metadata: {
-    substantiveCalls: string[];
-    serverOrder: string[];
-    expectedOrder: string[];
-    stepScores: Record<string, number>;
+    skillCalledAtTurn: number | null;
+    totalCalls: number;
+    firstCalls: string[];
   };
 };
 
 /**
- * Score whether the agent followed the investigation skill in the correct order.
+ * Score whether the agent invoked the skill within the first N tool calls.
  *
- * Scoring:
- * - First substantive call targets logging server → +0.25
- * - Second unique server targets analytics → +0.25
- * - Third unique server targets feature-flags → +0.25
- * - All three in correct order without skipping → +0.25
+ * 1.0 if the skill was called within the first 5 tool calls, 0.0 otherwise.
  */
 export function scoreSkillPriority(toolCalls: CapturedToolCall[]): SkillPriorityResult {
-  // Filter to substantive calls (exclude discovery)
-  const substantive = toolCalls.filter((c) => !isDiscoveryCall(c.name));
-
-  // Extract unique server order (first appearance)
-  const seenServers = new Set<string>();
-  const serverOrder: string[] = [];
-  for (const call of substantive) {
-    const server = getServerName(call);
-    if (server && !seenServers.has(server)) {
-      seenServers.add(server);
-      serverOrder.push(server);
-    }
-  }
-
-  let score = 0;
-  const stepScores: Record<string, number> = {
-    logging_first: 0,
-    analytics_second: 0,
-    flags_third: 0,
-    correct_order: 0,
-  };
-
-  // Check step 1: logging first
-  if (serverOrder[0] === EXPECTED_ORDER[0]) {
-    score += 0.25;
-    stepScores['logging_first'] = 1;
-  }
-
-  // Check step 2: analytics second
-  if (serverOrder[1] === EXPECTED_ORDER[1]) {
-    score += 0.25;
-    stepScores['analytics_second'] = 1;
-  }
-
-  // Check step 3: feature-flags third
-  if (serverOrder[2] === EXPECTED_ORDER[2]) {
-    score += 0.25;
-    stepScores['flags_third'] = 1;
-  }
-
-  // Check overall order: all three present in correct sequence
-  const orderCorrect =
-    serverOrder.length >= 3 &&
-    serverOrder[0] === EXPECTED_ORDER[0] &&
-    serverOrder[1] === EXPECTED_ORDER[1] &&
-    serverOrder[2] === EXPECTED_ORDER[2];
-
-  if (orderCorrect) {
-    score += 0.25;
-    stepScores['correct_order'] = 1;
-  }
+  const first = toolCalls.slice(0, MAX_TURNS);
+  const idx = first.findIndex(isSkillCall);
 
   return {
-    score,
+    score: idx !== -1 ? 1.0 : 0.0,
     metadata: {
-      substantiveCalls: substantive.map((c) => c.name),
-      serverOrder,
-      expectedOrder: EXPECTED_ORDER,
-      stepScores,
+      skillCalledAtTurn: idx !== -1 ? idx + 1 : null,
+      totalCalls: toolCalls.length,
+      firstCalls: first.map((c) => c.name),
     },
   };
 }
 
 /**
  * Vitest-evals compatible scorer function.
- * Receives `toolCalls` from the TaskResult returned by the task function.
  */
 export async function SkillPriority({
   toolCalls,

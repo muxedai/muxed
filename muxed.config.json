@@ -6,6 +6,15 @@
       "headers": {
         "x-posthog-mcp-version": "2"
       }
+    },
+    "posthog": {
+      "command": "-t",
+      "args": [
+        "http",
+        "https://mcp.posthog.com/mcp",
+        "-H",
+        "x-posthog-project-id: 2"
+      ]
     }
   }
 }

@@ -1,12 +1,21 @@
 import { spawn, type ChildProcess } from 'node:child_process';
+import { createServer } from 'node:net';
 import { createConnection } from 'node:net';
 import type { MockServerDef, RunningServer } from '../types.ts';
 
-const BASE_PORT = 13100;
-let portCounter = 0;
-
-function nextPort(): number {
-  return BASE_PORT + portCounter++;
+/**
+ * Get a random available port by binding to port 0 and reading the assigned port.
+ */
+function getRandomPort(): Promise<number> {
+  return new Promise((resolve, reject) => {
+    const srv = createServer();
+    srv.listen(0, () => {
+      const addr = srv.address();
+      const port = typeof addr === 'object' && addr ? addr.port : 0;
+      srv.close((err) => (err ? reject(err) : resolve(port)));
+    });
+    srv.on('error', reject);
+  });
 }
 
 /**
@@ -38,7 +47,7 @@ async function startServer(def: MockServerDef): Promise<{
   server: RunningServer;
   process: ChildProcess;
 }> {
-  const port = nextPort();
+  const port = await getRandomPort();
   const serverArgs = [
     '--experimental-strip-types',
     def.scriptPath,
@@ -94,7 +103,6 @@ export async function startMockServers(
     for (const proc of processes) {
       if (!proc.killed) {
         proc.kill('SIGTERM');
-        // Give it a moment, then force kill
         await new Promise<void>((resolve) => {
           const timer = setTimeout(() => {
             if (!proc.killed) proc.kill('SIGKILL');
