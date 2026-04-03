@@ -54,7 +54,7 @@ export type AgentRunOptions = {
  */
 async function ensureImage(agent: AgentType): Promise<string> {
   const imageName = IMAGE_NAMES[agent];
-  const dockerfilePath = path.resolve(import.meta.dirname, '..', 'docker', `Dockerfile.${agent}`);
+  const dockerfilePath = path.resolve('evals/docker', `Dockerfile.${agent}`);
 
   // Check if image exists
   try {

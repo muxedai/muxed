@@ -9,8 +9,7 @@
 
 - name: slow-dashboard-load
   input: >
-    Multiple customers are reporting that their dashboards are loading very
-    slowly since this morning. Investigate what changed.
+    can you check why dashboards are loading slowly?
   expected: >
     The agent should follow the investigation skill: first check logs for
     performance issues and errors, then query analytics for timing data and

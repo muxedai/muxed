@@ -1,4 +1,4 @@
-import { describeEval } from 'vitest-evals';
+import { Eval } from 'braintrust';
 import { Factuality } from 'autoevals';
 import path from 'node:path';
 import fs from 'node:fs';
@@ -10,8 +10,8 @@ import { runAgent } from '../../lib/agent-runner.ts';
 import { writeConfigFiles } from '../../lib/config-builder.ts';
 import type { AgentType, Condition } from '../../types.ts';
 
-const CASE_DIR = import.meta.dirname;
-const SERVERS_DIR = path.resolve(CASE_DIR, '..', '..', 'servers');
+const CASE_DIR = path.resolve('evals/cases/tool-accuracy');
+const SERVERS_DIR = path.resolve('evals/servers');
 
 const tasks = loadTasks(path.join(CASE_DIR, 'tasks.yaml'));
 
@@ -24,17 +24,12 @@ const API_KEY_ENV: Record<AgentType, string> = {
   codex: 'OPENAI_API_KEY',
 };
 
-const hasApiKey = (agent: AgentType): boolean => !process.env[API_KEY_ENV[agent]];
-
 for (const agent of agents) {
   for (const toolCount of toolCounts) {
     for (const condition of conditions) {
-      describeEval(`Tool Accuracy [${agent}/${toolCount} tools/${condition}]`, {
-        skipIf: () => hasApiKey(agent),
-
-        data: async () =>
+      Eval(`tool-accuracy-${agent}-${toolCount}tools-${condition}`, {
+        data: () =>
           tasks.map((t) => ({
-            name: `${t.name}/n=${toolCount}/${condition}`,
             input: t.input,
             expected: t.correctToolByCount[toolCount] ?? 'unknown',
           })),
@@ -56,7 +51,7 @@ for (const agent of agents) {
             const result = await runAgent({
               agent,
               condition,
-              taskPrompt: input,
+              taskPrompt: input as string,
               mcpConfigPath,
               workDir,
               apiKeys: {
@@ -80,20 +75,31 @@ for (const agent of agents) {
           }
         },
 
-        scorers: [
+        scores: [
           ToolAccuracy,
-          async ({ output, expected, input }: Record<string, unknown>) => {
+          async ({
+            output,
+            expected,
+            input,
+          }: {
+            output: unknown;
+            expected?: unknown;
+            input: unknown;
+            [key: string]: unknown;
+          }) => {
+            const taskOutput = output as { result: string } | undefined;
             const result = await Factuality({
-              output: output as string,
+              output: taskOutput?.result ?? '',
               expected: `The agent should have called tool: ${expected}`,
               input: input as string,
+              model: 'gpt-5.4',
+              reasoningEffort: 'medium',
             } as Parameters<typeof Factuality>[0]);
-            return { score: result.score ?? 0 };
+            return { name: 'Factuality', score: result.score ?? 0 };
           },
         ],
 
-        threshold: 0.7,
-        timeout: 300_000,
+        maxConcurrency: 1,
       });
     }
   }
