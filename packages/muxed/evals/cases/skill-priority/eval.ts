@@ -1,6 +1,7 @@
-import { Eval } from 'braintrust';
-import { ClosedQA } from 'autoevals';
+import { Eval, traced } from 'braintrust';
 import path from 'node:path';
+import fs from 'node:fs';
+import os from 'node:os';
 import { loadTasks } from './tasks.ts';
 import { SkillPriority } from './scorer.ts';
 import { startMockServers } from '../../lib/mcp-server-harness.ts';
@@ -14,7 +15,7 @@ const SERVERS_DIR = path.resolve('evals/servers');
 
 const tasks = loadTasks(path.join(CASE_DIR, 'tasks.yaml'));
 
-const agents: AgentType[] = ['claude-code' /*'codex'*/];
+const agents: AgentType[] = ['claude-code', 'codex'];
 const conditions: Condition[] = ['baseline', 'muxed'];
 
 const API_KEY_ENV: Record<AgentType, string> = {
@@ -32,6 +33,9 @@ for (const agent of agents) {
         })),
 
       task: async (input) => {
+        // Config files go in a separate temp dir to avoid race conditions.
+        // ENV_DIR (with skills) is mounted as the workspace.
+        const configDir = fs.mkdtempSync(path.join(os.tmpdir(), 'muxed-eval-config-'));
         const { servers, cleanup } = await startMockServers([
           { name: 'analytics', scriptPath: path.join(SERVERS_DIR, 'analytics.ts') },
           { name: 'feature-flags', scriptPath: path.join(SERVERS_DIR, 'feature-flags.ts') },
@@ -40,7 +44,7 @@ for (const agent of agents) {
         ]);
 
         try {
-          const mcpConfigPath = writeConfigFiles(ENV_DIR, condition, servers);
+          const mcpConfigPath = writeConfigFiles(configDir, condition, servers);
 
           const result = await runAgent({
             agent,
@@ -56,41 +60,45 @@ for (const agent of agents) {
             timeoutMs: 180_000,
           });
 
-          return {
-            result: result.finalOutput,
-            toolCalls: result.toolCalls.map((tc) => ({
-              name: tc.name,
-              arguments: tc.arguments,
-            })),
-          };
+          const toolCalls = result.toolCalls;
+
+          for (const tc of toolCalls) {
+            const isMessage = tc.name === 'AgentMessage';
+            traced(
+              (span) => {
+                span.log({
+                  input: tc.arguments,
+                  output: tc.result ?? tc.name,
+                  metadata: { agent, condition },
+                });
+              },
+              { name: isMessage ? 'agent-message' : tc.name, type: isMessage ? 'llm' : 'tool' }
+            );
+          }
+
+          traced(
+            (span) => {
+              span.log({
+                input: { prompt: input },
+                output: {
+                  exitCode: result.exitCode,
+                  durationMs: result.durationMs,
+                  tokenUsage: result.tokenUsage,
+                },
+                metadata: { agent, condition },
+              });
+            },
+            { name: 'agent-run', type: 'task' }
+          );
+
+          return { result: result.finalOutput, toolCalls };
         } finally {
           await cleanup();
+          fs.rmSync(configDir, { recursive: true, force: true });
         }
       },
 
-      scores: [
-        SkillPriority,
-        async ({
-          output,
-          expected,
-          input,
-        }: {
-          output: unknown;
-          expected?: unknown;
-          input: unknown;
-          [key: string]: unknown;
-        }) => {
-          const taskOutput = output as { result: string } | undefined;
-          const result = await ClosedQA({
-            output: taskOutput?.result ?? '',
-            expected: (expected as string) ?? '',
-            input: input as string,
-            model: 'gpt-5.4',
-            reasoningEffort: 'medium',
-          } as Parameters<typeof ClosedQA>[0]);
-          return { name: 'ClosedQA', score: result.score ?? 0 };
-        },
-      ],
+      scores: [SkillPriority],
 
       maxConcurrency: 1,
     });

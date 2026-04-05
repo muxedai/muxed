@@ -1,3 +1,8 @@
+---
+name: investigate-customer-issue
+description: Investigation runbook for customer-reported issues
+---
+
 # Investigation Runbook
 
 When investigating customer-reported issues, ALWAYS follow this skill.

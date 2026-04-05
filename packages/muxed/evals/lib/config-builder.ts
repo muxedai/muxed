@@ -14,8 +14,8 @@ export function buildBaselineConfig(
 
   for (const server of servers) {
     mcpServers[server.name] = {
+      type: 'http',
       url: `http://${dockerHost}:${server.port}/mcp`,
-      transport: 'streamable-http',
     };
   }
 
@@ -39,7 +39,6 @@ export function buildMuxedConfig(
   for (const server of servers) {
     mcpServers[server.name] = {
       url: `http://${dockerHost}:${server.port}/mcp`,
-      transport: 'streamable-http',
     };
   }
 

@@ -123,12 +123,17 @@ export async function runAgent(opts: AgentRunOptions): Promise<AgentRunResult> {
       String(maxTurns),
     ];
 
-    // Add MCP config if it's a .mcp.json in the workdir
+    // Add MCP config — may live in workDir or a separate config dir
     if (fs.existsSync(mcpConfigPath)) {
-      cmd.push('--mcp-config', '/workspace/.mcp.json');
+      cmd.push('--mcp-config', '/workspace-config/.mcp.json');
     }
   } else {
-    cmd = ['exec', '--full-auto', '--json', '--skip-git-repo-check', '--ephemeral', taskPrompt];
+    // Codex requires login before exec — pipe OPENAI_API_KEY via stdin
+    // Use --dangerously-bypass-approvals-and-sandbox since Docker doesn't support bubblewrap
+    cmd = [
+      '-c',
+      `echo "$OPENAI_API_KEY" | codex login --with-api-key && codex exec --dangerously-bypass-approvals-and-sandbox --json --skip-git-repo-check --ephemeral "${taskPrompt.replace(/"/g, '\\"')}"`,
+    ];
   }
 
   // Create and start the container
@@ -136,10 +141,18 @@ export async function runAgent(opts: AgentRunOptions): Promise<AgentRunResult> {
     Image: imageName,
     Cmd: cmd,
     Env: env,
+    // Codex needs bash entrypoint to run login + exec
+    ...(agent !== 'claude-code' && { Entrypoint: ['bash'] }),
     HostConfig: {
       Binds: [
         `${path.resolve(workDir)}:/workspace:ro`,
         `${path.resolve(path.dirname(mcpConfigPath))}:/workspace-config:ro`,
+        // Mount muxed.config.json into workspace if it exists (needed for muxed condition)
+        ...(fs.existsSync(path.join(path.dirname(mcpConfigPath), 'muxed.config.json'))
+          ? [
+              `${path.resolve(path.dirname(mcpConfigPath), 'muxed.config.json')}:/workspace/muxed.config.json:ro`,
+            ]
+          : []),
       ],
       NetworkMode: process.platform === 'linux' ? 'host' : 'bridge',
       // Add host.docker.internal on macOS Docker Desktop

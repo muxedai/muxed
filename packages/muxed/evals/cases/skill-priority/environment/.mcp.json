@@ -1,11 +1,20 @@
 {
   "mcpServers": {
-    "muxed": {
-      "command": "npx",
-      "args": [
-        "muxed",
-        "mcp"
-      ]
+    "analytics": {
+      "url": "http://host.docker.internal:56297/mcp",
+      "transport": "streamable-http"
+    },
+    "feature-flags": {
+      "url": "http://host.docker.internal:56298/mcp",
+      "transport": "streamable-http"
+    },
+    "logging": {
+      "url": "http://host.docker.internal:56299/mcp",
+      "transport": "streamable-http"
+    },
+    "database": {
+      "url": "http://host.docker.internal:56300/mcp",
+      "transport": "streamable-http"
     }
   }
 }

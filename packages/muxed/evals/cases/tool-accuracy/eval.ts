@@ -1,4 +1,4 @@
-import { Eval } from 'braintrust';
+import { Eval, traced } from 'braintrust';
 import { Factuality } from 'autoevals';
 import path from 'node:path';
 import fs from 'node:fs';
@@ -62,13 +62,38 @@ for (const agent of agents) {
               timeoutMs: 120_000,
             });
 
-            return {
-              result: result.finalOutput,
-              toolCalls: result.toolCalls.map((tc) => ({
-                name: tc.name,
-                arguments: tc.arguments,
-              })),
-            };
+            const toolCalls = result.toolCalls;
+
+            for (const tc of toolCalls) {
+              const isMessage = tc.name === 'AgentMessage';
+              traced(
+                (span) => {
+                  span.log({
+                    input: tc.arguments,
+                    output: tc.result ?? tc.name,
+                    metadata: { agent, condition, toolCount },
+                  });
+                },
+                { name: isMessage ? 'agent-message' : tc.name, type: isMessage ? 'llm' : 'tool' }
+              );
+            }
+
+            traced(
+              (span) => {
+                span.log({
+                  input: { prompt: input },
+                  output: {
+                    exitCode: result.exitCode,
+                    durationMs: result.durationMs,
+                    tokenUsage: result.tokenUsage,
+                  },
+                  metadata: { agent, condition, toolCount },
+                });
+              },
+              { name: 'agent-run', type: 'task' }
+            );
+
+            return { result: result.finalOutput, toolCalls };
           } finally {
             await cleanup();
             fs.rmSync(workDir, { recursive: true, force: true });

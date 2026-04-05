@@ -130,6 +130,8 @@ type CodexEvent = {
     type?: string;
     text?: string;
     command?: string;
+    aggregated_output?: string;
+    exit_code?: number;
     status?: string;
   };
   usage?: {
@@ -146,6 +148,18 @@ function parseCodexCalls(events: CodexEvent[]): CapturedToolCall[] {
       calls.push({
         name: 'Bash',
         arguments: { command: ev.item.command },
+        result: {
+          output: ev.item.aggregated_output ?? '',
+          exitCode: ev.item.exit_code ?? null,
+          status: ev.item.status ?? 'unknown',
+        },
+      });
+    }
+    // Capture agent messages as reasoning traces
+    if (ev.type === 'item.completed' && ev.item?.type === 'agent_message' && ev.item.text) {
+      calls.push({
+        name: 'AgentMessage',
+        arguments: { text: ev.item.text },
       });
     }
   }
