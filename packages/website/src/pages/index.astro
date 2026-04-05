@@ -4,7 +4,7 @@ import PostHog from "../components/posthog.astro";
 
 const title = "muxed – Your agent wastes tokens on tools. Fix it.";
 const description =
-  "muxed moves MCP tools to a background daemon so your agent's context stays clean and instructions get followed.";
+  "muxed moves MCP tools to a CLI so your agent's context stays clean and instructions get followed.";
 
 const asciiLogo = `                              _
  _ __ ___  _   ___  _____  __| |
@@ -116,15 +116,15 @@ const codeAfter = `<span class="kw">⛁ </span><span class="flag">⛁ </span><sp
           <h1
             class="text-xl md:text-2xl font-semibold text-fg max-w-[600px] mx-auto mb-5 leading-snug"
           >
-            Your agent wastes your time &mdash; and it's the tools' fault.
+            Your agent wastes your time and tokens &mdash; and it's the MCPs' fault.
           </h1>
           <p
             class="text-[13px] text-fg-muted max-w-[540px] mx-auto mb-10 leading-relaxed"
           >
             Every MCP server you add dumps schemas into context, and the model
             spends tokens figuring out tools instead of doing your task. muxed
-            moves tools to a background daemon and discovers them lazily &mdash;
-            via shell or Node.js API.
+            moves tools to a CLI and discovers them lazily &mdash;
+            via Bash or TypeScript SDK.
           </p>
 
           <div
