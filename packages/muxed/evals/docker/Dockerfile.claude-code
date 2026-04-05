@@ -1,0 +1,10 @@
+FROM node:22-slim
+
+RUN npm install -g @anthropic-ai/claude-code muxed
+
+RUN useradd -m -s /bin/bash agent
+USER agent
+
+WORKDIR /workspace
+
+ENTRYPOINT ["claude"]

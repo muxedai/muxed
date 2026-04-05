@@ -1,0 +1,25 @@
+- name: dashboard-not-loading
+  input: >
+    A customer reports their dashboard is not loading.
+    Investigate the issue and provide a summary of your findings.
+  expected: >
+    The agent should follow the investigation skill: first check logs for errors,
+    then query analytics events for scope, then check feature flags for recent
+    changes, then summarize findings.
+
+- name: slow-dashboard-load
+  input: >
+    can you check why dashboards are loading slowly?
+  expected: >
+    The agent should follow the investigation skill: first check logs for
+    performance issues and errors, then query analytics for timing data and
+    error rates, then check feature flags for recent changes, then summarize.
+
+- name: dashboard-data-stale
+  input: >
+    A customer says their dashboard data has not updated in 24 hours.
+    Please investigate why the data is stale.
+  expected: >
+    The agent should follow the investigation skill: first check logs for data
+    pipeline errors, then query analytics for data freshness events, then check
+    feature flags for any data-related flag changes, then summarize.

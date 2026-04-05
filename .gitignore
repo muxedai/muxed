@@ -9,3 +9,4 @@ coverage
 packages/*/README.md
 .claude/skills/posthog-*
 .pnpm-store/
+muxed.config.json

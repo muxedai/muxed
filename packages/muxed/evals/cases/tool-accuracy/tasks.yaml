@@ -1,0 +1,75 @@
+- name: fetch-user-profile
+  input: Retrieve the profile data for user ID 42.
+  expected: The agent should call a user-management tool to retrieve user profile data.
+  correct_tool:
+    cluster: user-management
+    index: 0
+
+- name: send-alert-notification
+  input: Send a high-priority alert to the ops team about the database being down.
+  expected: The agent should call a notification tool to send an alert.
+  correct_tool:
+    cluster: notification
+    index: 0
+
+- name: analyze-customer-feedback
+  input: >
+    Analyze this customer feedback text for sentiment:
+    "The new update broke everything!"
+  expected: The agent should call a text-analysis tool to analyze the text.
+  correct_tool:
+    cluster: text-analysis
+    index: 0
+
+- name: search-error-logs
+  input: Search for all records related to "timeout" errors in the last 24 hours.
+  expected: The agent should call a search tool to find matching records.
+  correct_tool:
+    cluster: search
+    index: 0
+
+- name: read-config-file
+  input: Read the contents of the configuration file at /etc/app/config.yaml.
+  expected: The agent should call a file-operations tool to read the file.
+  correct_tool:
+    cluster: file-operations
+    index: 0
+
+- name: get-performance-metrics
+  input: Get the CPU and memory usage metrics for the last hour.
+  expected: The agent should call a metrics tool to retrieve performance data.
+  correct_tool:
+    cluster: metrics
+    index: 0
+
+- name: fetch-order-data
+  input: Fetch the order records for customer account ACME-Corp.
+  expected: The agent should call a data-retrieval tool to fetch the records.
+  correct_tool:
+    cluster: data-retrieval
+    index: 0
+
+- name: notify-user-signup
+  input: >
+    Send a welcome notification to the new user who just signed up
+    with email hello@example.com.
+  expected: The agent should call a notification tool to send a welcome message.
+  correct_tool:
+    cluster: notification
+    index: 1
+
+- name: find-duplicate-entries
+  input: Find all duplicate entries in the customers database table.
+  expected: The agent should call a search tool to find duplicates.
+  correct_tool:
+    cluster: search
+    index: 1
+
+- name: get-user-activity-history
+  input: >
+    Look up the activity history for user ID 99 including all their
+    recent actions.
+  expected: The agent should call a user-management tool to retrieve activity history.
+  correct_tool:
+    cluster: user-management
+    index: 1
