@@ -41,12 +41,12 @@ export type AgentRunOptions = {
   agent: AgentType;
   condition: Condition;
   taskPrompt: string;
-  mcpConfigPath: string;
   workDir: string;
   apiKeys: Record<string, string>;
   maxTurns?: number;
   maxBudgetUsd?: number;
   timeoutMs?: number;
+  keepContainer?: boolean;
 };
 
 /**
@@ -89,18 +89,23 @@ async function ensureImage(agent: AgentType): Promise<string> {
 
 /**
  * Run an agent in a Docker container and capture the output.
+ *
+ * The workDir must contain pre-built config files for each condition:
+ *   - baseline.mcp.json / muxed.mcp.json  (Claude Code MCP config)
+ *   - .codex/baseline.config.toml / .codex/muxed.config.toml  (Codex MCP config)
+ *   - muxed.config.json  (muxed daemon server list, used in muxed condition)
  */
 export async function runAgent(opts: AgentRunOptions): Promise<AgentRunResult> {
   const {
     agent,
     condition,
     taskPrompt,
-    mcpConfigPath,
     workDir,
     apiKeys,
     maxTurns = 20,
     maxBudgetUsd = 2.0,
     timeoutMs = 300_000,
+    keepContainer = false,
   } = opts;
 
   const imageName = await ensureImage(agent);
@@ -108,6 +113,16 @@ export async function runAgent(opts: AgentRunOptions): Promise<AgentRunResult> {
 
   // Build environment variables
   const env: string[] = Object.entries(apiKeys).map(([k, v]) => `${k}=${v}`);
+  if (agent === 'claude-code') {
+    env.push('ENABLE_TOOL_SEARCH=0:auto');
+  }
+
+  // Resolve condition-specific config paths
+  // Baseline: agents connect to MCP servers directly via .mcp.json / config.toml
+  // Muxed: agents use `npx muxed` CLI (instructions in CLAUDE.md/AGENTS.md), no direct MCP
+  const mcpJsonPath = path.resolve(workDir, '.mcp.json');
+  const codexConfigPath = path.resolve(workDir, '.codex/config.toml');
+  const muxedConfigPath = path.resolve(workDir, 'muxed.config.json');
 
   // Build command based on agent
   let cmd: string[];
@@ -121,12 +136,10 @@ export async function runAgent(opts: AgentRunOptions): Promise<AgentRunResult> {
       '--dangerously-skip-permissions',
       '--max-turns',
       String(maxTurns),
+      // Baseline: connect to MCP servers directly via config
+      // Muxed: no MCP config — agent uses npx muxed CLI via bash
+      ...(condition === 'baseline' ? ['--mcp-config', '/workspace/.mcp.json'] : []),
     ];
-
-    // Add MCP config — may live in workDir or a separate config dir
-    if (fs.existsSync(mcpConfigPath)) {
-      cmd.push('--mcp-config', '/workspace-config/.mcp.json');
-    }
   } else {
     // Codex requires login before exec — pipe OPENAI_API_KEY via stdin
     // Use --dangerously-bypass-approvals-and-sandbox since Docker doesn't support bubblewrap
@@ -145,13 +158,21 @@ export async function runAgent(opts: AgentRunOptions): Promise<AgentRunResult> {
     ...(agent !== 'claude-code' && { Entrypoint: ['bash'] }),
     HostConfig: {
       Binds: [
-        `${path.resolve(workDir)}:/workspace:ro`,
-        `${path.resolve(path.dirname(mcpConfigPath))}:/workspace-config:ro`,
-        // Mount muxed.config.json into workspace if it exists (needed for muxed condition)
-        ...(fs.existsSync(path.join(path.dirname(mcpConfigPath), 'muxed.config.json'))
+        // Mount workspace read-write so file overlays work
+        `${path.resolve(workDir)}:/workspace`,
+        // Baseline: overlay direct MCP configs so agents connect to servers
+        // Muxed: no MCP overlay — agents use `npx muxed` CLI via bash
+        ...(condition === 'baseline'
           ? [
-              `${path.resolve(path.dirname(mcpConfigPath), 'muxed.config.json')}:/workspace/muxed.config.json:ro`,
+              `${mcpJsonPath}:/workspace/.mcp.json:ro`,
+              ...(fs.existsSync(codexConfigPath)
+                ? [`${codexConfigPath}:/home/agent/.codex/config.toml`]
+                : []),
             ]
+          : []),
+        // Mount muxed.config.json (used by muxed daemon in muxed condition)
+        ...(condition === 'muxed' && fs.existsSync(muxedConfigPath)
+          ? [`${muxedConfigPath}:/workspace/muxed.config.json:ro`]
           : []),
       ],
       NetworkMode: process.platform === 'linux' ? 'host' : 'bridge',
@@ -237,11 +258,12 @@ export async function runAgent(opts: AgentRunOptions): Promise<AgentRunResult> {
       rawOutput,
     };
   } finally {
-    // Clean up container
-    try {
-      await container.remove({ force: true });
-    } catch {
-      // Container may have already been removed
+    if (!keepContainer) {
+      try {
+        await container.remove({ force: true });
+      } catch {
+        // Container may have already been removed
+      }
     }
   }
 }

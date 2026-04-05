@@ -47,7 +47,7 @@ async function startServer(def: MockServerDef): Promise<{
   server: RunningServer;
   process: ChildProcess;
 }> {
-  const port = await getRandomPort();
+  const port = def.port ?? (await getRandomPort());
   const serverArgs = [
     '--experimental-strip-types',
     def.scriptPath,

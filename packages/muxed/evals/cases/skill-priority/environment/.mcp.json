@@ -1,20 +1,12 @@
 {
   "mcpServers": {
-    "analytics": {
-      "url": "http://host.docker.internal:56297/mcp",
-      "transport": "streamable-http"
-    },
-    "feature-flags": {
-      "url": "http://host.docker.internal:56298/mcp",
-      "transport": "streamable-http"
-    },
-    "logging": {
-      "url": "http://host.docker.internal:56299/mcp",
-      "transport": "streamable-http"
-    },
-    "database": {
-      "url": "http://host.docker.internal:56300/mcp",
-      "transport": "streamable-http"
-    }
+    "posthog": { "type": "http", "url": "http://host.docker.internal:9700/mcp" },
+    "sentry": { "type": "http", "url": "http://host.docker.internal:9701/mcp" },
+    "pagerduty": { "type": "http", "url": "http://host.docker.internal:9702/mcp" },
+    "linear": { "type": "http", "url": "http://host.docker.internal:9703/mcp" },
+    "grafana": { "type": "http", "url": "http://host.docker.internal:9704/mcp" },
+    "slack": { "type": "http", "url": "http://host.docker.internal:9705/mcp" },
+    "github": { "type": "http", "url": "http://host.docker.internal:9706/mcp" },
+    "datadog": { "type": "http", "url": "http://host.docker.internal:9707/mcp" }
   }
 }

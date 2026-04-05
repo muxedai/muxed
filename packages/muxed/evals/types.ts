@@ -34,6 +34,7 @@ export type MockServerDef = {
   name: string;
   scriptPath: string;
   args?: string[];
+  port?: number;
 };
 
 export type RunningServer = {
