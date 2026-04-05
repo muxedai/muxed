@@ -82,14 +82,31 @@ for (const agent of agents) {
                   exitCode: result.exitCode,
                   durationMs: result.durationMs,
                   tokenUsage: result.tokenUsage,
+                  costUsd: result.costUsd,
                 },
                 metadata: { agent, condition },
+                metrics: {
+                  input_tokens: result.tokenUsage?.inputTokens ?? 0,
+                  output_tokens: result.tokenUsage?.outputTokens ?? 0,
+                  cached_input_tokens: result.tokenUsage?.cachedInputTokens ?? 0,
+                  cost_usd: result.costUsd ?? 0,
+                },
               });
             },
             { name: 'agent-run', type: 'task' }
           );
 
-          return { result: result.finalOutput, toolCalls };
+          return {
+            result: result.finalOutput,
+            toolCalls,
+            metadata: {
+              input_tokens: result.tokenUsage?.inputTokens ?? 0,
+              output_tokens: result.tokenUsage?.outputTokens ?? 0,
+              cached_input_tokens: result.tokenUsage?.cachedInputTokens ?? 0,
+              cost_usd: result.costUsd ?? 0,
+              duration_ms: result.durationMs,
+            },
+          };
         } finally {
           await cleanup();
         }

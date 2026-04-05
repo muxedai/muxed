@@ -8,6 +8,7 @@ import {
   extractMuxedSubcommands,
   extractFinalOutput,
   extractTokenUsage,
+  extractCostUsd,
 } from './log-parser.ts';
 
 function getDockerSocketPath(): string | undefined {
@@ -113,16 +114,15 @@ export async function runAgent(opts: AgentRunOptions): Promise<AgentRunResult> {
 
   // Build environment variables
   const env: string[] = Object.entries(apiKeys).map(([k, v]) => `${k}=${v}`);
-  if (agent === 'claude-code') {
-    env.push('ENABLE_TOOL_SEARCH=0:auto');
-  }
 
   // Resolve condition-specific config paths
-  // Baseline: agents connect to MCP servers directly via .mcp.json / config.toml
+  // Baseline: agents connect to MCP servers directly via .mcp.json / config.toml, no CLAUDE.md/AGENTS.md
   // Muxed: agents use `npx muxed` CLI (instructions in CLAUDE.md/AGENTS.md), no direct MCP
   const mcpJsonPath = path.resolve(workDir, '.mcp.json');
-  const codexConfigPath = path.resolve(workDir, '.codex/config.toml');
+  const codexConfigPath = path.resolve(workDir, `.codex/${condition}.config.toml`);
   const muxedConfigPath = path.resolve(workDir, 'muxed.config.json');
+  const muxedClaudeMdPath = path.resolve(workDir, 'muxed.CLAUDE.md');
+  const muxedAgentsMdPath = path.resolve(workDir, 'muxed.AGENTS.md');
 
   // Build command based on agent
   let cmd: string[];
@@ -160,19 +160,25 @@ export async function runAgent(opts: AgentRunOptions): Promise<AgentRunResult> {
       Binds: [
         // Mount workspace read-write so file overlays work
         `${path.resolve(workDir)}:/workspace`,
-        // Baseline: overlay direct MCP configs so agents connect to servers
-        // Muxed: no MCP overlay — agents use `npx muxed` CLI via bash
-        ...(condition === 'baseline'
+        // Always overlay Codex config.toml (baseline has servers, muxed has empty)
+        ...(fs.existsSync(codexConfigPath)
+          ? [`${codexConfigPath}:/home/agent/.codex/config.toml`]
+          : []),
+        // Baseline: overlay direct MCP config for Claude Code
+        ...(condition === 'baseline' ? [`${mcpJsonPath}:/workspace/.mcp.json:ro`] : []),
+        // Muxed: mount muxed.config.json + CLAUDE.md/AGENTS.md with muxed instructions
+        ...(condition === 'muxed'
           ? [
-              `${mcpJsonPath}:/workspace/.mcp.json:ro`,
-              ...(fs.existsSync(codexConfigPath)
-                ? [`${codexConfigPath}:/home/agent/.codex/config.toml`]
+              ...(fs.existsSync(muxedConfigPath)
+                ? [`${muxedConfigPath}:/workspace/muxed.config.json:ro`]
+                : []),
+              ...(fs.existsSync(muxedClaudeMdPath)
+                ? [`${muxedClaudeMdPath}:/workspace/CLAUDE.md:ro`]
+                : []),
+              ...(fs.existsSync(muxedAgentsMdPath)
+                ? [`${muxedAgentsMdPath}:/workspace/AGENTS.md:ro`]
                 : []),
             ]
-          : []),
-        // Mount muxed.config.json (used by muxed daemon in muxed condition)
-        ...(condition === 'muxed' && fs.existsSync(muxedConfigPath)
-          ? [`${muxedConfigPath}:/workspace/muxed.config.json:ro`]
           : []),
       ],
       NetworkMode: process.platform === 'linux' ? 'host' : 'bridge',
@@ -246,6 +252,7 @@ export async function runAgent(opts: AgentRunOptions): Promise<AgentRunResult> {
 
     const finalOutput = extractFinalOutput(rawOutput, agent);
     const tokenUsage = extractTokenUsage(rawOutput, agent);
+    const costUsd = extractCostUsd(rawOutput, agent);
 
     return {
       agent,
@@ -254,6 +261,7 @@ export async function runAgent(opts: AgentRunOptions): Promise<AgentRunResult> {
       finalOutput,
       durationMs,
       tokenUsage,
+      costUsd,
       exitCode,
       rawOutput,
     };

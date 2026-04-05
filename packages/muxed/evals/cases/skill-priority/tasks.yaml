@@ -1,25 +1,35 @@
-- name: dashboard-not-loading
+- name: dashboard-blank
   input: >
-    A customer reports their dashboard is not loading.
-    Investigate the issue and provide a summary of your findings.
+    hey, customer acme-corp says their dashboard is just showing a blank page since this morning. can you take a look?
   expected: >
-    The agent should follow the investigation skill: first check logs for errors,
-    then query analytics events for scope, then check feature flags for recent
-    changes, then summarize findings.
+    The agent should follow the investigation skill before diving into individual tools.
 
-- name: slow-dashboard-load
+- name: error-spike
   input: >
-    can you check why dashboards are loading slowly?
+    we're seeing a big spike in 503s on the dashboard endpoint. not sure what changed.
   expected: >
-    The agent should follow the investigation skill: first check logs for
-    performance issues and errors, then query analytics for timing data and
-    error rates, then check feature flags for recent changes, then summarize.
+    The agent should follow the investigation skill before diving into individual tools.
 
-- name: dashboard-data-stale
+- name: partial-outage
   input: >
-    A customer says their dashboard data has not updated in 24 hours.
-    Please investigate why the data is stale.
+    some users are complaining the dashboard works fine but others get timeouts. might be related to the rollout we did yesterday?
   expected: >
-    The agent should follow the investigation skill: first check logs for data
-    pipeline errors, then query analytics for data freshness events, then check
-    feature flags for any data-related flag changes, then summarize.
+    The agent should follow the investigation skill before diving into individual tools.
+
+- name: customer-escalation
+  input: >
+    got an escalation from enterprise customer — their analytics dashboard hasn't refreshed data since last night. they're on a demo with their board tomorrow.
+  expected: >
+    The agent should follow the investigation skill before diving into individual tools.
+
+- name: slack-alert
+  input: >
+    pagerduty just fired for dashboard-api. can you figure out what's going on?
+  expected: >
+    The agent should follow the investigation skill before diving into individual tools.
+
+- name: vague-complaint
+  input: >
+    something seems off with the dashboard. users are reporting it's "broken" but nobody is giving specifics.
+  expected: >
+    The agent should follow the investigation skill before diving into individual tools.

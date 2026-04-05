@@ -1,0 +1,2 @@
+# Muxed condition: no direct MCP servers.
+# Agent discovers and calls tools via `npx muxed` CLI (see AGENTS.md).

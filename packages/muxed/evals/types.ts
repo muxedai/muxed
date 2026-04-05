@@ -18,7 +18,10 @@ export type AgentRunResult = {
   tokenUsage?: {
     inputTokens: number;
     outputTokens: number;
+    cachedInputTokens?: number;
+    cacheCreationInputTokens?: number;
   };
+  costUsd?: number;
   exitCode: number;
   rawOutput: string;
 };
