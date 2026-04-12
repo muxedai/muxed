@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
+import { execSync } from 'node:child_process';
 import { getVersion } from '../utils/version.js';
 
 // --- Types ---
@@ -102,16 +103,33 @@ export function getInstructionTargets(opts: { local: boolean }): InstructionTarg
   return targets;
 }
 
+// --- Runtime detection ---
+
+let cachedHasBun: boolean | null = null;
+
+export function hasBun(): boolean {
+  if (cachedHasBun !== null) return cachedHasBun;
+  try {
+    execSync('bun --version', { stdio: 'ignore' });
+    cachedHasBun = true;
+  } catch {
+    cachedHasBun = false;
+  }
+  return cachedHasBun;
+}
+
 // --- Static instruction content ---
 
 export function buildStaticInstructions(): string {
+  const bun = hasBun();
+  const run = bun ? 'bunx' : 'npx';
+  const tsx = bun ? 'bun' : 'npx tsx';
+
   return `# Muxed — MCP Server Aggregator
 
 Muxed is a CLI tool and Node.js library that aggregates multiple MCP servers behind a single daemon. Use it to discover and call MCP tools on demand.
 
 ## CLI Usage
-
-Prefer \`bunx\` (or \`npx\`) for running muxed commands:
 
 ### Mandatory Workflow
 
@@ -119,18 +137,18 @@ Prefer \`bunx\` (or \`npx\`) for running muxed commands:
 
 1. **Discover** tools:
    \`\`\`
-   bunx muxed grep "<pattern>"              # Search tool names and descriptions
-   bunx muxed tools [server]                # List available tools
+   ${run} muxed grep "<pattern>"              # Search tool names and descriptions
+   ${run} muxed tools [server]                # List available tools
    \`\`\`
 
 2. **Inspect** schema (REQUIRED before calling):
    \`\`\`
-   bunx muxed info <server>/<tool>          # View tool JSON schema
+   ${run} muxed info <server>/<tool>          # View tool JSON schema
    \`\`\`
 
 3. **Call** with correct parameters:
    \`\`\`
-   bunx muxed call <server>/<tool> '<json>' # Execute a tool
+   ${run} muxed call <server>/<tool> '<json>' # Execute a tool
    \`\`\`
 
 Tool names and parameter schemas change frequently and cannot be guessed. Every call without inspecting the schema first will fail.
@@ -138,19 +156,18 @@ Tool names and parameter schemas change frequently and cannot be guessed. Every 
 ### Additional Commands
 
 \`\`\`
-bunx muxed servers                           # List connected MCP servers
-bunx muxed resources [server]                # List MCP resources
-bunx muxed read <server>/<resource>          # Read an MCP resource
-bunx muxed call <s>/<t> '<j>' --dry-run      # Validate args without executing
-bunx muxed call <s>/<t> '<j>' --fields "a,b" # Extract specific fields
-bunx muxed -h                                # Full command reference
+${run} muxed servers                           # List connected MCP servers
+${run} muxed resources [server]                # List MCP resources
+${run} muxed read <server>/<resource>          # Read an MCP resource
+${run} muxed call <s>/<t> '<j>' --dry-run      # Validate args without executing
+${run} muxed call <s>/<t> '<j>' --fields "a,b" # Extract specific fields
+${run} muxed -h                                # Full command reference
 \`\`\`
 
 ### Error Handling
 
 - If a tool call fails, read the error — it includes suggestions and similar tool names.
 - Use \`--dry-run\` to validate arguments before executing destructive tools.
-- If \`bunx\` is not available, use \`npx muxed\` or \`tsx node_modules/.bin/muxed\` instead.
 
 ## Node.js / TypeScript Scripts (Preferred for Complex Workflows)
 
@@ -170,10 +187,10 @@ const data = await client.call('db/query', { sql: 'SELECT ...' });
 console.log(JSON.stringify({ tools: tools.length, result, data }));
 \`\`\`
 
-Run scripts with: \`bunx tsx script.ts\` (preferred) or \`npx tsx script.ts\`.
+Run scripts with: \`${tsx} script.ts\`.
 
 **When to use scripts vs CLI:**
-- **CLI** (\`bunx muxed call ...\`) — single tool discovery or one-off calls
+- **CLI** (\`${run} muxed call ...\`) — single tool discovery or one-off calls
 - **Scripts** — any workflow involving 2+ MCP calls, data processing, or conditional logic`;
 }
 
