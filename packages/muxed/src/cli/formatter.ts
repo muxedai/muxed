@@ -393,6 +393,30 @@ export function formatInit(result: InitResult): string {
     lines.push('All discovered servers already exist in muxed config. Nothing to do.');
   }
 
+  // Instruction injection results
+  if (result.instructionResults && result.instructionResults.length > 0) {
+    lines.push('');
+    lines.push('Instructions:');
+    for (const r of result.instructionResults) {
+      switch (r.action) {
+        case 'created':
+          lines.push(`  ${r.target} \u2014 created (v${r.newVersion})`);
+          break;
+        case 'updated':
+          lines.push(
+            `  ${r.target} \u2014 updated (v${r.previousVersion} \u2192 v${r.newVersion})`
+          );
+          break;
+        case 'up-to-date':
+          lines.push(`  ${r.target} \u2014 up-to-date (v${r.previousVersion})`);
+          break;
+        case 'skipped':
+          lines.push(`  ${r.target} \u2014 skipped`);
+          break;
+      }
+    }
+  }
+
   return lines.join('\n');
 }
 
