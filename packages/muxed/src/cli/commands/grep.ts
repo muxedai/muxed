@@ -13,10 +13,15 @@ export const grepCommand = new Command('grep')
   .addHelpText(
     'after',
     `
+Schema options:
+  --include schema        Add input schemas to matching tools.
+  --include schema --depth N  Collapse schemas beyond N levels.
+
 Examples:
-  muxed grep "search"          Find tools related to searching
-  muxed grep "file|read"       Regex: tools matching "file" or "read"
-  muxed grep "query" --json    Machine-readable output for scripting`
+  muxed grep "search"                              Find tools related to searching
+  muxed grep "file|read"                           Regex: tools matching "file" or "read"
+  muxed grep "query" --include schema --depth 1    Matches with top-level schema
+  muxed grep "query" --json                        Machine-readable output for scripting`
   )
   .action(async (pattern: string, opts: { json?: boolean; include?: string; depth?: number }) => {
     const configPath = grepCommand.parent?.opts().config as string | undefined;

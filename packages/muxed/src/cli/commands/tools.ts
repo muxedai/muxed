@@ -13,10 +13,17 @@ export const toolsCommand = new Command('tools')
   .addHelpText(
     'after',
     `
+Schema options:
+  --include schema        Add input schemas to each tool in the output.
+  --include schema --depth N  Collapse schemas beyond N levels. Nodes deeper than N
+                          are replaced with { _collapsed: true, _hint: "..." }.
+                          Depth is auto-selected to fit a token budget if omitted.
+
 Examples:
-  muxed tools                       List all tools (names + descriptions)
-  muxed tools postgres              List tools from the "postgres" server only
-  muxed tools --include schema      List tools with their full input schemas`
+  muxed tools                              List all tools (names + descriptions)
+  muxed tools postgres                     List tools from the "postgres" server only
+  muxed tools --include schema             List with full input schemas
+  muxed tools --include schema --depth 1   List with schemas collapsed at depth 1`
   )
   .action(
     async (
