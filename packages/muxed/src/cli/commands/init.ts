@@ -72,7 +72,10 @@ export const initCommand = new Command('init')
   .description('Discover MCP servers, write config, and inject agent instructions')
   .option('--dry-run', 'Preview changes without writing any files')
   .option('--json', 'Output as JSON (machine-readable)')
-  .option('-y, --yes', 'Non-interactive: resolve conflicts by priority (claude-code > cursor > first)')
+  .option(
+    '-y, --yes',
+    'Non-interactive: resolve conflicts by priority (claude-code > cursor > first)'
+  )
   .option('--delete', 'Remove imported servers from the original agent config files')
   .option('--no-replace', "Don't add a muxed entry to agent configs")
   .option('--local', 'Also inject instructions into project-level CLAUDE.md and AGENTS.md')

@@ -1,6 +1,6 @@
 {
   "name": "muxed",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "MCP tools don't belong in your model's context window. Offload them to a CLI – agents call tools through shell commands and scripts instead of loading schemas into context.",
   "type": "module",
   "exports": {

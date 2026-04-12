@@ -179,7 +179,10 @@ async function tryReloadDaemon(): Promise<void> {
 export const mcpCommand = new Command('mcp')
   .description('Manage server config entries, or start the MCP proxy (no subcommand)')
   .enablePositionalOptions()
-  .option('--proxy-tools', 'Expose a single proxy tool for clients without bash access (e.g. Claude Desktop)')
+  .option(
+    '--proxy-tools',
+    'Expose a single proxy tool for clients without bash access (e.g. Claude Desktop)'
+  )
   .addHelpText(
     'after',
     `

@@ -9,7 +9,11 @@ export const grepCommand = new Command('grep')
   .argument('<pattern>', 'Regex pattern to match against tool names and descriptions')
   .option('--json', 'Output as JSON (machine-readable)')
   .option('--include <fields>', 'Include extra fields: "schema" adds input schemas')
-  .option('--depth <n>', 'Collapse schemas deeper than N levels (use with --include schema)', parseInt)
+  .option(
+    '--depth <n>',
+    'Collapse schemas deeper than N levels (use with --include schema)',
+    parseInt
+  )
   .addHelpText(
     'after',
     `

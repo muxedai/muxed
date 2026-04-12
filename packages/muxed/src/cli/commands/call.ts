@@ -45,9 +45,12 @@ function readStdin(): Promise<string> {
 export const callCommand = new Command('call')
   .description('Execute a tool with JSON arguments')
   .argument('<server/tool>', 'server_name/tool_name (e.g. postgres/query)')
-  .argument('[json]', "JSON object with arguments, or - to read from stdin")
+  .argument('[json]', 'JSON object with arguments, or - to read from stdin')
   .option('--dry-run', 'Validate arguments without executing (catches errors early)')
-  .option('--fields <paths>', 'Extract specific fields from response (comma-separated dot-notation)')
+  .option(
+    '--fields <paths>',
+    'Extract specific fields from response (comma-separated dot-notation)'
+  )
   .option('--timeout <ms>', 'Timeout in milliseconds')
   .option('--async', 'Run in background, return a task ID instead of waiting')
   .option('--json', 'Output as JSON (machine-readable)')

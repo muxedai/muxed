@@ -4,7 +4,7 @@ import { ensureDaemon, sendRequest } from '../client.js';
 import { formatToolInfo, formatJson } from '../formatter.js';
 
 export const infoCommand = new Command('info')
-  .description('Show a tool\'s input schema — REQUIRED before calling any tool')
+  .description("Show a tool's input schema — REQUIRED before calling any tool")
   .argument('<server/tool>', 'server_name/tool_name (e.g. postgres/query)')
   .option('--json', 'Output as JSON (machine-readable)')
   .option('--path <path>', 'Show only a subtree of the schema (e.g. "filters.tags")')

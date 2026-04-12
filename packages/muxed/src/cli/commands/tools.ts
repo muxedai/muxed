@@ -9,7 +9,11 @@ export const toolsCommand = new Command('tools')
   .argument('[server]', 'Show tools from this server only')
   .option('--json', 'Output as JSON (machine-readable)')
   .option('--include <fields>', 'Include extra fields: "schema" adds input schemas')
-  .option('--depth <n>', 'Collapse schemas deeper than N levels (use with --include schema)', parseInt)
+  .option(
+    '--depth <n>',
+    'Collapse schemas deeper than N levels (use with --include schema)',
+    parseInt
+  )
   .addHelpText(
     'after',
     `
