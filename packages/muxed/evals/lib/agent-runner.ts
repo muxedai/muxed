@@ -8,7 +8,6 @@ import {
   extractMuxedSubcommands,
   extractFinalOutput,
   extractTokenUsage,
-  extractCostUsd,
 } from './log-parser.ts';
 
 function getDockerSocketPath(): string | undefined {
@@ -42,12 +41,12 @@ export type AgentRunOptions = {
   agent: AgentType;
   condition: Condition;
   taskPrompt: string;
+  mcpConfigPath: string;
   workDir: string;
   apiKeys: Record<string, string>;
   maxTurns?: number;
   maxBudgetUsd?: number;
   timeoutMs?: number;
-  keepContainer?: boolean;
 };
 
 /**
@@ -90,23 +89,18 @@ async function ensureImage(agent: AgentType): Promise<string> {
 
 /**
  * Run an agent in a Docker container and capture the output.
- *
- * The workDir must contain pre-built config files for each condition:
- *   - baseline.mcp.json / muxed.mcp.json  (Claude Code MCP config)
- *   - .codex/baseline.config.toml / .codex/muxed.config.toml  (Codex MCP config)
- *   - muxed.config.json  (muxed daemon server list, used in muxed condition)
  */
 export async function runAgent(opts: AgentRunOptions): Promise<AgentRunResult> {
   const {
     agent,
     condition,
     taskPrompt,
+    mcpConfigPath,
     workDir,
     apiKeys,
     maxTurns = 20,
     maxBudgetUsd = 2.0,
     timeoutMs = 300_000,
-    keepContainer = false,
   } = opts;
 
   const imageName = await ensureImage(agent);
@@ -114,15 +108,6 @@ export async function runAgent(opts: AgentRunOptions): Promise<AgentRunResult> {
 
   // Build environment variables
   const env: string[] = Object.entries(apiKeys).map(([k, v]) => `${k}=${v}`);
-
-  // Resolve condition-specific config paths
-  // Baseline: agents connect to MCP servers directly via .mcp.json / config.toml, no CLAUDE.md/AGENTS.md
-  // Muxed: agents use `npx muxed` CLI (instructions in CLAUDE.md/AGENTS.md), no direct MCP
-  const mcpJsonPath = path.resolve(workDir, '.mcp.json');
-  const codexConfigPath = path.resolve(workDir, `.codex/${condition}.config.toml`);
-  const muxedConfigPath = path.resolve(workDir, 'muxed.config.json');
-  const muxedClaudeMdPath = path.resolve(workDir, 'muxed.CLAUDE.md');
-  const muxedAgentsMdPath = path.resolve(workDir, 'muxed.AGENTS.md');
 
   // Build command based on agent
   let cmd: string[];
@@ -136,10 +121,12 @@ export async function runAgent(opts: AgentRunOptions): Promise<AgentRunResult> {
       '--dangerously-skip-permissions',
       '--max-turns',
       String(maxTurns),
-      // Baseline: connect to MCP servers directly via config
-      // Muxed: no MCP config — agent uses npx muxed CLI via bash
-      ...(condition === 'baseline' ? ['--mcp-config', '/workspace/.mcp.json'] : []),
     ];
+
+    // Add MCP config — may live in workDir or a separate config dir
+    if (fs.existsSync(mcpConfigPath)) {
+      cmd.push('--mcp-config', '/workspace-config/.mcp.json');
+    }
   } else {
     // Codex requires login before exec — pipe OPENAI_API_KEY via stdin
     // Use --dangerously-bypass-approvals-and-sandbox since Docker doesn't support bubblewrap
@@ -158,26 +145,12 @@ export async function runAgent(opts: AgentRunOptions): Promise<AgentRunResult> {
     ...(agent !== 'claude-code' && { Entrypoint: ['bash'] }),
     HostConfig: {
       Binds: [
-        // Mount workspace read-write so file overlays work
-        `${path.resolve(workDir)}:/workspace`,
-        // Always overlay Codex config.toml (baseline has servers, muxed has empty)
-        ...(fs.existsSync(codexConfigPath)
-          ? [`${codexConfigPath}:/home/agent/.codex/config.toml`]
-          : []),
-        // Baseline: overlay direct MCP config for Claude Code
-        ...(condition === 'baseline' ? [`${mcpJsonPath}:/workspace/.mcp.json:ro`] : []),
-        // Muxed: mount muxed.config.json + CLAUDE.md/AGENTS.md with muxed instructions
-        ...(condition === 'muxed'
+        `${path.resolve(workDir)}:/workspace:ro`,
+        `${path.resolve(path.dirname(mcpConfigPath))}:/workspace-config:ro`,
+        // Mount muxed.config.json into workspace if it exists (needed for muxed condition)
+        ...(fs.existsSync(path.join(path.dirname(mcpConfigPath), 'muxed.config.json'))
           ? [
-              ...(fs.existsSync(muxedConfigPath)
-                ? [`${muxedConfigPath}:/workspace/muxed.config.json:ro`]
-                : []),
-              ...(fs.existsSync(muxedClaudeMdPath)
-                ? [`${muxedClaudeMdPath}:/workspace/CLAUDE.md:ro`]
-                : []),
-              ...(fs.existsSync(muxedAgentsMdPath)
-                ? [`${muxedAgentsMdPath}:/workspace/AGENTS.md:ro`]
-                : []),
+              `${path.resolve(path.dirname(mcpConfigPath), 'muxed.config.json')}:/workspace/muxed.config.json:ro`,
             ]
           : []),
       ],
@@ -252,7 +225,6 @@ export async function runAgent(opts: AgentRunOptions): Promise<AgentRunResult> {
 
     const finalOutput = extractFinalOutput(rawOutput, agent);
     const tokenUsage = extractTokenUsage(rawOutput, agent);
-    const costUsd = extractCostUsd(rawOutput, agent);
 
     return {
       agent,
@@ -261,17 +233,15 @@ export async function runAgent(opts: AgentRunOptions): Promise<AgentRunResult> {
       finalOutput,
       durationMs,
       tokenUsage,
-      costUsd,
       exitCode,
       rawOutput,
     };
   } finally {
-    if (!keepContainer) {
-      try {
-        await container.remove({ force: true });
-      } catch {
-        // Container may have already been removed
-      }
+    // Clean up container
+    try {
+      await container.remove({ force: true });
+    } catch {
+      // Container may have already been removed
     }
   }
 }

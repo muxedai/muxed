@@ -1,29 +1,25 @@
-- name: partial-outage
+- name: dashboard-not-loading
   input: >
-    some users are complaining the dashboard works fine but others get timeouts. might be related to the rollout we did yesterday?
+    A customer reports their dashboard is not loading.
+    Investigate the issue and provide a summary of your findings.
   expected: >
-    The agent should follow the investigation skill before diving into individual tools.
+    The agent should follow the investigation skill: first check logs for errors,
+    then query analytics events for scope, then check feature flags for recent
+    changes, then summarize findings.
 
-- name: customer-escalation
+- name: slow-dashboard-load
   input: >
-    got an escalation from enterprise customer — their analytics dashboard hasn't refreshed data since last night. they're on a demo with their board tomorrow.
+    can you check why dashboards are loading slowly?
   expected: >
-    The agent should follow the investigation skill before diving into individual tools.
+    The agent should follow the investigation skill: first check logs for
+    performance issues and errors, then query analytics for timing data and
+    error rates, then check feature flags for recent changes, then summarize.
 
-- name: slack-alert
+- name: dashboard-data-stale
   input: >
-    pagerduty just fired for dashboard-api. can you figure out what's going on?
+    A customer says their dashboard data has not updated in 24 hours.
+    Please investigate why the data is stale.
   expected: >
-    The agent should follow the investigation skill before diving into individual tools.
-
-- name: vague-complaint
-  input: >
-    something seems off with the dashboard. users are reporting it's "broken" but nobody is giving specifics.
-  expected: >
-    The agent should follow the investigation skill before diving into individual tools.
-
-- name: trace-debug
-  input: >
-    how was experience here? https://muxed.ai/chat?id=284
-  expected: >
-    The agent should call the exploring-llm-traces skill to debug the trace from the URL.
+    The agent should follow the investigation skill: first check logs for data
+    pipeline errors, then query analytics for data freshness events, then check
+    feature flags for any data-related flag changes, then summarize.

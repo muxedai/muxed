@@ -18,10 +18,7 @@ export type AgentRunResult = {
   tokenUsage?: {
     inputTokens: number;
     outputTokens: number;
-    cachedInputTokens?: number;
-    cacheCreationInputTokens?: number;
   };
-  costUsd?: number;
   exitCode: number;
   rawOutput: string;
 };
@@ -37,7 +34,6 @@ export type MockServerDef = {
   name: string;
   scriptPath: string;
   args?: string[];
-  port?: number;
 };
 
 export type RunningServer = {

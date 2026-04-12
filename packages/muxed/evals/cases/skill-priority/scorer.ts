@@ -2,15 +2,13 @@ import type { CapturedToolCall } from '../../types.ts';
 
 const MAX_TURNS = 5;
 
-const SKILL_NAMES = ['investigate-customer-issue', 'exploring-llm-traces'];
-
 type TaskOutput = {
   result: string;
   toolCalls: Array<{ name: string; arguments?: Record<string, unknown> }>;
 };
 
 /**
- * Check if a tool call invokes any of the known skills.
+ * Check if a tool call invokes the /investigate-customer-issue skill.
  */
 function isSkillCall(call: CapturedToolCall): boolean {
   const name = call.name;
@@ -18,19 +16,21 @@ function isSkillCall(call: CapturedToolCall): boolean {
   if (name === 'Skill') {
     const skill =
       (call.arguments?.['skill'] as string) ?? (call.arguments?.['name'] as string) ?? '';
-    return SKILL_NAMES.some((s) => skill.includes(s));
+    return skill.includes('investigate-customer-issue');
   }
 
   if (name === 'Bash' || name === 'bash') {
     const command = (call.arguments?.['command'] as string) ?? '';
-    return SKILL_NAMES.some((s) => command.includes(s));
+    return command.includes('investigate-customer-issue');
   }
 
-  return SKILL_NAMES.some((s) => name.includes(s));
+  if (name.includes('investigate-customer-issue')) return true;
+
+  return false;
 }
 
 /**
- * Braintrust scorer: checks if a skill was called within the first 5 tool calls.
+ * Braintrust scorer: checks if the skill was called within the first 5 tool calls.
  */
 export function SkillPriority({ output }: { output: unknown; [key: string]: unknown }) {
   const taskOutput = output as TaskOutput | undefined;

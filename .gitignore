@@ -10,4 +10,3 @@ packages/*/README.md
 .claude/skills/posthog-*
 .pnpm-store/
 muxed.config.json
-packages/muxed/evals/servers/posthog-schemas/

@@ -39,12 +39,7 @@ type NormalisedEvent = {
   type: string;
   content?: ContentBlock[];
   result?: string;
-  usage?: {
-    input_tokens: number;
-    output_tokens: number;
-    cache_read_input_tokens?: number;
-    cache_creation_input_tokens?: number;
-  };
+  usage?: { input_tokens: number; output_tokens: number };
 };
 
 function normaliseClaudeCodeEvents(raw: unknown[]): NormalisedEvent[] {
@@ -110,33 +105,16 @@ function extractClaudeCodeFinalOutput(raw: unknown[]): string {
   return '';
 }
 
-type TokenUsage = {
-  inputTokens: number;
-  outputTokens: number;
-  cachedInputTokens?: number;
-  cacheCreationInputTokens?: number;
-};
-
-function extractClaudeCodeUsage(raw: unknown[]): TokenUsage | undefined {
+function extractClaudeCodeUsage(
+  raw: unknown[]
+): { inputTokens: number; outputTokens: number } | undefined {
   const events = normaliseClaudeCodeEvents(raw);
   const resultEv = events.find((e) => e.type === 'result');
   if (resultEv?.usage) {
     return {
       inputTokens: resultEv.usage.input_tokens,
       outputTokens: resultEv.usage.output_tokens,
-      cachedInputTokens: resultEv.usage.cache_read_input_tokens,
-      cacheCreationInputTokens: resultEv.usage.cache_creation_input_tokens,
     };
-  }
-  return undefined;
-}
-
-function extractClaudeCodeCost(raw: unknown[]): number | undefined {
-  for (const obj of raw) {
-    const ev = obj as Record<string, unknown>;
-    if (ev['type'] === 'result' && typeof ev['total_cost_usd'] === 'number') {
-      return ev['total_cost_usd'] as number;
-    }
   }
   return undefined;
 }
@@ -198,22 +176,19 @@ function extractCodexFinalOutput(events: CodexEvent[]): string {
   return '';
 }
 
-function extractCodexUsage(events: CodexEvent[]): TokenUsage | undefined {
-  let totalInput = 0;
-  let totalOutput = 0;
-  let totalCached = 0;
-  let found = false;
-  for (const ev of events) {
+function extractCodexUsage(
+  events: CodexEvent[]
+): { inputTokens: number; outputTokens: number } | undefined {
+  for (let i = events.length - 1; i >= 0; i--) {
+    const ev = events[i]!;
     if (ev.type === 'turn.completed' && ev.usage) {
-      totalInput += ev.usage.input_tokens;
-      totalOutput += ev.usage.output_tokens;
-      totalCached += ev.usage.cached_input_tokens ?? 0;
-      found = true;
+      return {
+        inputTokens: ev.usage.input_tokens,
+        outputTokens: ev.usage.output_tokens,
+      };
     }
   }
-  return found
-    ? { inputTokens: totalInput, outputTokens: totalOutput, cachedInputTokens: totalCached }
-    : undefined;
+  return undefined;
 }
 
 // ---------------------------------------------------------------------------
@@ -234,19 +209,14 @@ export function extractFinalOutput(rawOutput: string, agent: AgentType): string 
     : extractCodexFinalOutput(parsed as CodexEvent[]);
 }
 
-export function extractTokenUsage(rawOutput: string, agent: AgentType): TokenUsage | undefined {
+export function extractTokenUsage(
+  rawOutput: string,
+  agent: AgentType
+): { inputTokens: number; outputTokens: number } | undefined {
   const parsed = parseJsonl(rawOutput);
   return agent === 'claude-code'
     ? extractClaudeCodeUsage(parsed)
     : extractCodexUsage(parsed as CodexEvent[]);
-}
-
-export function extractCostUsd(rawOutput: string, agent: AgentType): number | undefined {
-  if (agent === 'claude-code') {
-    return extractClaudeCodeCost(parseJsonl(rawOutput));
-  }
-  // Codex doesn't report cost directly
-  return undefined;
 }
 
 /**
