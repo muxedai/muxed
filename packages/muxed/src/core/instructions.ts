@@ -3,6 +3,7 @@ import path from 'node:path';
 import os from 'node:os';
 import { execSync } from 'node:child_process';
 import { getVersion } from '../utils/version.js';
+import { makeCliFragments, buildPrompt } from './prompt.js';
 
 // --- Types ---
 
@@ -125,51 +126,9 @@ export function buildStaticInstructions(): string {
   const run = bun ? 'bunx' : 'npx';
   const tsx = bun ? 'bun' : 'npx tsx';
 
-  return `# Muxed — MCP Server Aggregator
+  const fragments = makeCliFragments(run);
 
-Muxed is a CLI tool and Node.js library that aggregates multiple MCP servers behind a single daemon. Use it to discover and call MCP tools on demand.
-
-## CLI Usage
-
-### Mandatory Workflow
-
-**ALWAYS follow this order — never skip the inspect step.**
-
-1. **Discover** tools:
-   \`\`\`
-   ${run} muxed grep "<pattern>"              # Search tool names and descriptions
-   ${run} muxed tools [server]                # List available tools
-   \`\`\`
-
-2. **Inspect** schema (REQUIRED before calling):
-   \`\`\`
-   ${run} muxed info <server>/<tool>          # View tool JSON schema
-   \`\`\`
-
-3. **Call** with correct parameters:
-   \`\`\`
-   ${run} muxed call <server>/<tool> '<json>' # Execute a tool
-   \`\`\`
-
-Tool names and parameter schemas change frequently and cannot be guessed. Every call without inspecting the schema first will fail.
-
-### Additional Commands
-
-\`\`\`
-${run} muxed servers                           # List connected MCP servers
-${run} muxed resources [server]                # List MCP resources
-${run} muxed read <server>/<resource>          # Read an MCP resource
-${run} muxed call <s>/<t> '<j>' --dry-run      # Validate args without executing
-${run} muxed call <s>/<t> '<j>' --fields "a,b" # Extract specific fields
-${run} muxed -h                                # Full command reference
-\`\`\`
-
-### Error Handling
-
-- If a tool call fails, read the error — it includes suggestions and similar tool names.
-- Use \`--dry-run\` to validate arguments before executing destructive tools.
-
-## Node.js / TypeScript Scripts (Preferred for Complex Workflows)
+  const scripts = `## Node.js / TypeScript Scripts (Preferred for Complex Workflows)
 
 For multi-step MCP workflows, **write and execute a script** instead of making individual CLI calls. A single script execution replaces many sequential CLI invocations — dramatically reducing round-trips and token usage.
 
@@ -179,9 +138,11 @@ import { createClient } from 'muxed/client';
 const client = await createClient();
 
 // Batch multiple MCP operations in one script execution
-const tools = await client.tools();
-const result = await client.call('server/tool', { param: 'value' });
-const data = await client.call('db/query', { sql: 'SELECT ...' });
+const [tools, result, data] = await Promise.all([
+  client.tools(),
+  client.call('server/tool', { param: 'value' }),
+  client.call('db/query', { sql: 'SELECT ...' }),
+]);
 
 // Process results, chain calls, handle errors — all in one execution
 console.log(JSON.stringify({ tools: tools.length, result, data }));
@@ -192,6 +153,18 @@ Run scripts with: \`${tsx} script.ts\`.
 **When to use scripts vs CLI:**
 - **CLI** (\`${run} muxed call ...\`) — single tool discovery or one-off calls
 - **Scripts** — any workflow involving 2+ MCP calls, data processing, or conditional logic`;
+
+  return buildPrompt(
+    {
+      ...fragments,
+      intro:
+        'Muxed is a CLI tool and Node.js library that proxies multiple MCP servers behind a single daemon. Use it to discover and call MCP tools on demand.',
+    },
+    {
+      heading: '# Muxed — MCP CLI Proxy',
+      scripts,
+    }
+  );
 }
 
 // --- Injection ---
@@ -202,7 +175,7 @@ function wrapTaggedBlock(content: string, version: string): string {
 
 function buildMdcFile(content: string, version: string): string {
   return `---
-description: Muxed MCP server aggregator - CLI usage instructions
+description: Muxed MCP CLI proxy - usage instructions
 globs:
 alwaysApply: true
 muxed_version: ${version}
