@@ -1,0 +1,37 @@
+---
+title: Codex
+description: Use muxed with OpenAI Codex for CLI-based MCP tool access.
+---
+
+Codex has bash access, so muxed works through CLI commands — no MCP proxy needed.
+
+## Setup
+
+```bash
+npx muxed init
+```
+
+`init` discovers your existing MCP servers and injects CLI instructions into `~/.codex/AGENTS.md`. See [Setup](/getting-started/installation/) for details and options.
+
+## How Codex uses muxed
+
+After init, Codex reads the instructions from `AGENTS.md` and follows the discover, inspect, call workflow:
+
+```bash
+# Find tools
+muxed grep "search"
+
+# Check the schema (required before calling)
+muxed info slack/search_messages
+
+# Call with correct parameters
+muxed call slack/search_messages '{"query": "deployment issue", "limit": 5}'
+```
+
+For multi-step workflows, Codex writes and runs TypeScript scripts using the `createClient()` API. See the [Setup page](/getting-started/installation/) for an example.
+
+## Next steps
+
+- [Setup](/getting-started/installation/) — Full setup details and init options
+- [Configuration](/getting-started/configuration/) — Config options
+- [CLI Reference](/reference/cli-commands/) — All commands

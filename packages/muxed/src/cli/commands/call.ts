@@ -43,14 +43,24 @@ function readStdin(): Promise<string> {
 }
 
 export const callCommand = new Command('call')
-  .description('Execute a tool with JSON arguments (use - for stdin, --async for background)')
-  .argument('<server/tool>', 'Tool identifier (e.g. myserver/mytool)')
-  .argument('[json]', 'JSON arguments (use - for stdin)')
-  .option('--timeout <ms>', 'Request timeout in milliseconds')
-  .option('--async', 'Use task-based execution (return task handle immediately)')
-  .option('--dry-run', 'Validate arguments against tool schema without executing')
-  .option('--fields <paths>', 'Comma-separated dot-notation paths to extract from response')
-  .option('--json', 'Output as JSON')
+  .description('Execute a tool with JSON arguments')
+  .argument('<server/tool>', 'server_name/tool_name (e.g. postgres/query)')
+  .argument('[json]', "JSON object with arguments, or - to read from stdin")
+  .option('--dry-run', 'Validate arguments without executing (catches errors early)')
+  .option('--fields <paths>', 'Extract specific fields from response (comma-separated dot-notation)')
+  .option('--timeout <ms>', 'Timeout in milliseconds')
+  .option('--async', 'Run in background, return a task ID instead of waiting')
+  .option('--json', 'Output as JSON (machine-readable)')
+  .addHelpText(
+    'after',
+    `
+Examples:
+  muxed call postgres/query '{"sql": "SELECT * FROM users LIMIT 5"}'
+  muxed call fs/read_file '{"path": "/tmp/data.json"}' --fields "content"
+  muxed call server/tool '{"a": 1}' --dry-run     Validate without executing
+  echo '{"sql": "..."}' | muxed call db/query -    Read args from stdin
+  muxed call analytics/export '{}' --async         Returns task ID immediately`
+  )
   .action(
     async (
       serverTool: string,

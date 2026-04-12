@@ -27,10 +27,10 @@ The `input` parameter is a JSON object passed directly as tool arguments, so the
 If you already have servers in Claude Desktop's config, run `muxed init` to import them:
 
 ```bash
-muxed init
+npx muxed init
 ```
 
-Or add servers manually:
+See [Setup](/getting-started/installation/) for details. Or add servers manually:
 
 ```bash
 muxed mcp add my-server npx some-mcp-server --scope global
@@ -76,11 +76,11 @@ Claude Desktop can only interact through MCP tool calls. The `--proxy-tools` fla
 | Client | Mode | How it works |
 |---|---|---|
 | Claude Code | `muxed mcp` | Injected instructions teach the agent CLI commands |
-| Cursor / Windsurf | `muxed mcp` | Same — CLI commands via terminal |
+| Cursor | `muxed mcp` | Same — CLI commands via terminal |
 | Claude Desktop | `muxed mcp --proxy-tools` | Proxy tool over stdio |
 
 ## Next steps
 
-- [Quick Start](/getting-started/quick-start/) — Your first tool call in under a minute
-- [Configuration](/getting-started/configuration/) — Full config options
-- [CLI Reference](/reference/cli-commands/) — All available commands
+- [Setup](/getting-started/installation/) — Full setup details
+- [Configuration](/getting-started/configuration/) — Config options
+- [CLI Reference](/reference/cli-commands/) — All commands

@@ -5,11 +5,26 @@ import { formatTools, formatJson } from '../formatter.js';
 import { capture } from '../../analytics.js';
 
 export const toolsCommand = new Command('tools')
-  .description('List all available tools, optionally filtered by server name')
-  .argument('[server]', 'Filter by server name')
-  .option('--json', 'Output as JSON')
-  .option('--include <fields>', 'Include additional fields (e.g. "schema")')
-  .option('--depth <n>', 'Schema collapse depth (requires --include schema)', parseInt)
+  .description('List available tools across all servers')
+  .argument('[server]', 'Show tools from this server only')
+  .option('--json', 'Output as JSON (machine-readable)')
+  .option('--include <fields>', 'Include extra fields: "schema" adds input schemas')
+  .option('--depth <n>', 'Collapse schemas deeper than N levels (use with --include schema)', parseInt)
+  .addHelpText(
+    'after',
+    `
+Schema options:
+  --include schema        Add input schemas to each tool in the output.
+  --include schema --depth N  Collapse schemas beyond N levels. Nodes deeper than N
+                          are replaced with { _collapsed: true, _hint: "..." }.
+                          Depth is auto-selected to fit a token budget if omitted.
+
+Examples:
+  muxed tools                              List all tools (names + descriptions)
+  muxed tools postgres                     List tools from the "postgres" server only
+  muxed tools --include schema             List with full input schemas
+  muxed tools --include schema --depth 1   List with schemas collapsed at depth 1`
+  )
   .action(
     async (
       server: string | undefined,

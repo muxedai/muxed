@@ -13,15 +13,21 @@ function getExplicitConfig(cmd: Command): string | undefined {
 // ─── daemon command group ───
 
 export const daemonCommand = new Command('daemon')
-  .description('Start, stop, reload, or check status of the muxed background daemon')
-  .enablePositionalOptions();
+  .description('Manage the muxed background daemon')
+  .enablePositionalOptions()
+  .addHelpText(
+    'after',
+    `
+The daemon auto-starts on first CLI command and shuts down after 5 min idle.
+These subcommands are for manual lifecycle control.`
+  );
 
 // ─── daemon start ───
 
 daemonCommand
   .command('start')
-  .description('Start the daemon process in the background')
-  .option('--json', 'Output as JSON')
+  .description('Start the daemon (usually not needed — auto-starts on first command)')
+  .option('--json', 'Output as JSON (machine-readable)')
   .action(async (opts: { json?: boolean }) => {
     const configPath = getExplicitConfig(daemonCommand);
     const running = await isDaemonRunning();
@@ -92,8 +98,8 @@ daemonCommand
 
 daemonCommand
   .command('reload')
-  .description('Reload config and reconnect changed servers without restarting')
-  .option('--json', 'Output as JSON')
+  .description('Reload config and reconnect changed servers (no restart)')
+  .option('--json', 'Output as JSON (machine-readable)')
   .action(async (opts: { json?: boolean }) => {
     const configPath = getExplicitConfig(daemonCommand);
     await ensureDaemon(configPath);
@@ -109,8 +115,8 @@ daemonCommand
 
 daemonCommand
   .command('status')
-  .description('Show daemon status including uptime and connected servers')
-  .option('--json', 'Output as JSON')
+  .description('Show PID, uptime, and connected servers')
+  .option('--json', 'Output as JSON (machine-readable)')
   .action(async (opts: { json?: boolean }) => {
     const running = await isDaemonRunning();
     if (!running) {

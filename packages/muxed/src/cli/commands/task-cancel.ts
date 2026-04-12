@@ -4,8 +4,8 @@ import { formatTask, formatJson } from '../formatter.js';
 
 export const taskCancelCommand = new Command('task-cancel')
   .description('Cancel a running async task')
-  .argument('<server/taskId>', 'Task identifier (e.g. myserver/task-123)')
-  .option('--json', 'Output as JSON')
+  .argument('<server/taskId>', 'server_name/task_id (e.g. analytics/task-abc123)')
+  .option('--json', 'Output as JSON (machine-readable)')
   .action(async (serverTaskId: string, opts: { json?: boolean }) => {
     const configPath = taskCancelCommand.parent?.opts().config as string | undefined;
     await ensureDaemon(configPath);

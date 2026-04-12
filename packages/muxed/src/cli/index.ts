@@ -23,9 +23,23 @@ import { getVersion } from '../utils/version.js';
 
 export async function runCli(): Promise<void> {
   const program = new Command();
-  program.name('muxed').description('The optimization layer for MCP').version(getVersion());
+  program
+    .name('muxed')
+    .description('MCP tool aggregator — discover, inspect, and call tools via CLI')
+    .version(getVersion());
   program.enablePositionalOptions();
-  program.option('--config <path>', 'Path to config file');
+  program.option('--config <path>', 'Path to muxed.config.json');
+  program.addHelpText(
+    'after',
+    `
+Workflow:
+  muxed grep "<pattern>"              Find tools by name or description
+  muxed info <server>/<tool>          Inspect schema (required before calling)
+  muxed call <server>/<tool> '<json>' Execute a tool
+
+Setup:
+  npx muxed init                      Discover servers and inject agent instructions`
+  );
 
   program.commandsGroup('Servers:');
   program.addCommand(serversCommand);

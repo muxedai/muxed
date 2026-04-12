@@ -6,8 +6,15 @@ import { ensureDaemon, sendRequest } from '../client.js';
 import { generateTypes, type ToolEntry } from '../../codegen/typegen.js';
 
 export const typegenCommand = new Command('typegen')
-  .description('Generate TypeScript types from tool schemas for type-safe tool calls')
+  .description('Generate TypeScript types from live tool schemas')
   .option('-c, --config <path>', 'Path to muxed.config.json')
+  .addHelpText(
+    'after',
+    `
+Writes to node_modules/muxed/muxed.generated.d.ts.
+After running, client.call() gets autocomplete on tool names and typed arguments.
+Re-run when tool schemas change (same workflow as prisma generate).`
+  )
   .action(async (opts: { config?: string }) => {
     const configPath = typegenCommand.parent?.opts().config ?? opts.config;
     await ensureDaemon(configPath);

@@ -5,11 +5,24 @@ import { formatTools, formatJson } from '../formatter.js';
 import { capture } from '../../analytics.js';
 
 export const grepCommand = new Command('grep')
-  .description('Search tools by regex pattern across names, titles, and descriptions')
-  .argument('<pattern>', 'Regex pattern to search')
-  .option('--json', 'Output as JSON')
-  .option('--include <fields>', 'Include additional fields (e.g. "schema")')
-  .option('--depth <n>', 'Schema collapse depth (requires --include schema)', parseInt)
+  .description('Search tools by name or description (regex)')
+  .argument('<pattern>', 'Regex pattern to match against tool names and descriptions')
+  .option('--json', 'Output as JSON (machine-readable)')
+  .option('--include <fields>', 'Include extra fields: "schema" adds input schemas')
+  .option('--depth <n>', 'Collapse schemas deeper than N levels (use with --include schema)', parseInt)
+  .addHelpText(
+    'after',
+    `
+Schema options:
+  --include schema        Add input schemas to matching tools.
+  --include schema --depth N  Collapse schemas beyond N levels.
+
+Examples:
+  muxed grep "search"                              Find tools related to searching
+  muxed grep "file|read"                           Regex: tools matching "file" or "read"
+  muxed grep "query" --include schema --depth 1    Matches with top-level schema
+  muxed grep "query" --json                        Machine-readable output for scripting`
+  )
   .action(async (pattern: string, opts: { json?: boolean; include?: string; depth?: number }) => {
     const configPath = grepCommand.parent?.opts().config as string | undefined;
     await ensureDaemon(configPath);
