@@ -1,0 +1,23 @@
+[mcp_servers.posthog]
+url = "http://host.docker.internal:9700/mcp"
+
+[mcp_servers.sentry]
+url = "http://host.docker.internal:9701/mcp"
+
+[mcp_servers.pagerduty]
+url = "http://host.docker.internal:9702/mcp"
+
+[mcp_servers.linear]
+url = "http://host.docker.internal:9703/mcp"
+
+[mcp_servers.grafana]
+url = "http://host.docker.internal:9704/mcp"
+
+[mcp_servers.slack]
+url = "http://host.docker.internal:9705/mcp"
+
+[mcp_servers.github]
+url = "http://host.docker.internal:9706/mcp"
+
+[mcp_servers.datadog]
+url = "http://host.docker.internal:9707/mcp"
