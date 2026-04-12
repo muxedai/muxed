@@ -177,9 +177,23 @@ async function tryReloadDaemon(): Promise<void> {
 // ─── mcp command group ───
 
 export const mcpCommand = new Command('mcp')
-  .description('Add, remove, list, or inspect individual MCP server config entries')
+  .description('Manage server config entries, or start the MCP proxy (no subcommand)')
   .enablePositionalOptions()
-  .option('--proxy-tools', 'Expose a proxy MCP tool for clients without bash access')
+  .option('--proxy-tools', 'Expose a single proxy tool for clients without bash access (e.g. Claude Desktop)')
+  .addHelpText(
+    'after',
+    `
+When run without a subcommand, starts a stdio MCP proxy server.
+Use subcommands to manage individual server config entries.
+
+Examples:
+  muxed mcp                          Start stdio MCP proxy
+  muxed mcp --proxy-tools            Start proxy with exec tool (for Claude Desktop)
+  muxed mcp add mydb npx @db/server  Add a stdio server
+  muxed mcp add api https://api.com  Add an HTTP server
+  muxed mcp list                     Show all configured servers
+  muxed mcp remove mydb              Remove a server`
+  )
   .action(async (opts: { proxyTools?: boolean }, cmd: Command) => {
     // When called without a subcommand, start the MCP proxy server over stdio
     const explicitConfig = cmd.parent?.opts().config as string | undefined;
@@ -190,17 +204,17 @@ export const mcpCommand = new Command('mcp')
 
 mcpCommand
   .command('add')
-  .description('Add an MCP server')
+  .description('Add or update an MCP server in config')
   .passThroughOptions()
-  .argument('<name>', 'Server name')
-  .argument('<commandOrUrl>', 'Command to run or URL to connect to')
-  .argument('[args...]', 'Additional arguments (for stdio servers)')
-  .option('-e, --env <env>', 'Set environment variables (KEY=value), repeatable', collectValues, [])
-  .option('-H, --header <header>', 'Set HTTP headers (Key: value), repeatable', collectValues, [])
-  .option('-s, --scope <scope>', 'Config scope: local, global', 'local')
-  .option('-t, --transport <transport>', 'Transport: stdio, sse, http')
+  .argument('<name>', 'Server name (used to reference it in other commands)')
+  .argument('<commandOrUrl>', 'Command to run (stdio) or URL to connect to (HTTP)')
+  .argument('[args...]', 'Additional command arguments (stdio only)')
+  .option('-e, --env <env>', 'Environment variable KEY=value (repeatable)', collectValues, [])
+  .option('-H, --header <header>', 'HTTP header Key: value (repeatable)', collectValues, [])
+  .option('-s, --scope <scope>', 'Config scope: local or global (default: local)', 'local')
+  .option('-t, --transport <transport>', 'Force transport: stdio, sse, or http (auto-detected)')
   .option('--client-id <clientId>', 'OAuth client ID')
-  .option('--client-secret', 'Prompt for OAuth client secret (or use MCP_CLIENT_SECRET env)')
+  .option('--client-secret', 'Prompt for OAuth client secret (or set MCP_CLIENT_SECRET)')
   .option('--callback-port <port>', 'Fixed port for OAuth callback')
   .option('--oauth-scope <oauthScope>', 'OAuth scope string')
   .action(
@@ -250,10 +264,10 @@ mcpCommand
 
 mcpCommand
   .command('add-json')
-  .description('Add an MCP server from a JSON config string')
+  .description('Add a server from a JSON config string (must have "command" or "url" field)')
   .argument('<name>', 'Server name')
-  .argument('<json>', 'JSON server configuration')
-  .option('-s, --scope <scope>', 'Config scope: local, global', 'local')
+  .argument('<json>', 'JSON object: {"command":"...","args":[...]} or {"url":"..."}')
+  .option('-s, --scope <scope>', 'Config scope: local or global (default: local)', 'local')
   .action(async (name: string, jsonStr: string, opts: { scope: string }) => {
     const explicitConfig = getExplicitConfig(mcpCommand);
     const scope = opts.scope as Scope;
@@ -290,8 +304,8 @@ mcpCommand
 
 mcpCommand
   .command('add-from-claude-desktop')
-  .description('Import MCP servers from Claude Desktop config')
-  .option('-s, --scope <scope>', 'Config scope: local, global', 'local')
+  .description('Import servers from Claude Desktop config into muxed')
+  .option('-s, --scope <scope>', 'Config scope: local or global (default: local)', 'local')
   .action(async (opts: { scope: string }) => {
     const explicitConfig = getExplicitConfig(mcpCommand);
     const scope = opts.scope as Scope;
@@ -351,9 +365,9 @@ mcpCommand
 
 mcpCommand
   .command('get')
-  .description('Get details of a configured MCP server')
+  .description('Show config details for a server (checks local, then global)')
   .argument('<name>', 'Server name')
-  .option('--json', 'Output as JSON')
+  .option('--json', 'Output as JSON (machine-readable)')
   .action(async (name: string, opts: { json?: boolean }) => {
     const explicitConfig = getExplicitConfig(mcpCommand);
 
@@ -384,8 +398,8 @@ mcpCommand
 
 mcpCommand
   .command('list')
-  .description('List all configured MCP servers')
-  .option('--json', 'Output as JSON')
+  .description('List all configured servers (local + global)')
+  .option('--json', 'Output as JSON (machine-readable)')
   .action(async (opts: { json?: boolean }) => {
     const explicitConfig = getExplicitConfig(mcpCommand);
     const localPath = getConfigPath('local', explicitConfig);
@@ -416,9 +430,9 @@ mcpCommand
 
 mcpCommand
   .command('remove')
-  .description('Remove an MCP server')
-  .argument('<name>', 'Server name')
-  .option('-s, --scope <scope>', 'Config scope: local, global (searches both if not specified)')
+  .description('Remove a server from config')
+  .argument('<name>', 'Server name to remove')
+  .option('-s, --scope <scope>', 'Scope: local or global (searches both if omitted)')
   .action(async (name: string, opts: { scope?: string }) => {
     const explicitConfig = getExplicitConfig(mcpCommand);
 

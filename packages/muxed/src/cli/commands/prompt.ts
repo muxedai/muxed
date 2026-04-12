@@ -3,10 +3,16 @@ import { ensureDaemon, sendRequest } from '../client.js';
 import { formatPromptMessages, formatJson } from '../formatter.js';
 
 export const promptCommand = new Command('prompt')
-  .description('Render a prompt template with optional JSON arguments')
-  .argument('<server/prompt>', 'Prompt identifier (e.g. myserver/myprompt)')
-  .argument('[args-json]', 'JSON arguments')
-  .option('--json', 'Output as JSON')
+  .description('Render a prompt template with arguments')
+  .argument('<server/prompt>', 'server_name/prompt_name (e.g. myserver/summarize)')
+  .argument('[args-json]', 'JSON object with template arguments')
+  .option('--json', 'Output as JSON (machine-readable)')
+  .addHelpText(
+    'after',
+    `
+Examples:
+  muxed prompt myserver/summarize '{"text": "..."}'`
+  )
   .action(async (serverPrompt: string, argsJson: string | undefined, opts: { json?: boolean }) => {
     const configPath = promptCommand.parent?.opts().config as string | undefined;
     await ensureDaemon(configPath);

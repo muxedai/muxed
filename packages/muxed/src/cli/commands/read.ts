@@ -3,10 +3,17 @@ import { ensureDaemon, sendRequest } from '../client.js';
 import { formatReadResource, formatJson } from '../formatter.js';
 
 export const readCommand = new Command('read')
-  .description('Fetch and display the contents of a resource by server/resource')
-  .argument('<server/resource>', 'Resource identifier (e.g. myserver/myresource)')
-  .argument('[uri]', 'Resource URI (optional, uses resource name as URI if not provided)')
-  .option('--json', 'Output as JSON')
+  .description('Fetch and display the contents of an MCP resource')
+  .argument('<server/resource>', 'server_name/resource_name (e.g. github/repos)')
+  .argument('[uri]', 'Custom URI (defaults to the resource name)')
+  .option('--json', 'Output as JSON (machine-readable)')
+  .addHelpText(
+    'after',
+    `
+Examples:
+  muxed read github/repos                  Read using resource name as URI
+  muxed read github/repos "github://repos" Read with explicit URI`
+  )
   .action(async (serverResource: string, uri: string | undefined, opts: { json?: boolean }) => {
     const configPath = readCommand.parent?.opts().config as string | undefined;
     await ensureDaemon(configPath);

@@ -69,14 +69,29 @@ async function resolveConflicts(
 }
 
 export const initCommand = new Command('init')
-  .description('Discover and import MCP servers from agent configs (Claude Code, Cursor)')
-  .option('--dry-run', 'Show what would be done without writing files')
-  .option('--json', 'Output as JSON')
-  .option('-y, --yes', 'Skip prompts; resolve conflicts by priority (claude-code > cursor > first)')
-  .option('--delete', 'Remove imported servers from original agent configs')
-  .option('--no-replace', "Don't add muxed entry to agent configs")
-  .option('--local', 'Also inject instructions into local agent files (CLAUDE.md, AGENTS.md)')
+  .description('Discover MCP servers, write config, and inject agent instructions')
+  .option('--dry-run', 'Preview changes without writing any files')
+  .option('--json', 'Output as JSON (machine-readable)')
+  .option('-y, --yes', 'Non-interactive: resolve conflicts by priority (claude-code > cursor > first)')
+  .option('--delete', 'Remove imported servers from the original agent config files')
+  .option('--no-replace', "Don't add a muxed entry to agent configs")
+  .option('--local', 'Also inject instructions into project-level CLAUDE.md and AGENTS.md')
   .option('--no-instructions', 'Skip injecting CLI instructions into agent files')
+  .addHelpText(
+    'after',
+    `
+What it does:
+  1. Scans Claude Desktop, Cursor, VS Code, Windsurf, Cline, Roo Code, Amazon Q
+  2. Merges and deduplicates servers into muxed.config.json
+  3. Injects CLI usage instructions into ~/.claude/CLAUDE.md, ~/.codex/AGENTS.md,
+     and .cursor/rules/muxed.mdc (if .cursor/ exists)
+
+Examples:
+  muxed init                 Interactive setup
+  muxed init -y              Non-interactive (CI-friendly)
+  muxed init --dry-run       Preview without writing files
+  muxed init --local         Also inject into project-level agent files`
+  )
   .action(
     async (opts: {
       dryRun?: boolean;

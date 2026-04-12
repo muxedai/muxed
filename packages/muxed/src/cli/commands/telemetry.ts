@@ -2,7 +2,7 @@ import { Command } from 'commander';
 import { setTelemetryEnabled, getTelemetryStatus } from '../../analytics.js';
 
 export const telemetryCommand = new Command('telemetry')
-  .description('Manage anonymous telemetry (on, off, status)')
+  .description('Enable, disable, or check anonymous telemetry')
   .argument('[action]', 'on | off | status (default: status)')
   .action((action?: string) => {
     switch (action) {
