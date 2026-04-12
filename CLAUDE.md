@@ -1,10 +1,10 @@
 # Project overview
 
-Muxed is an MCP (Model Context Protocol) server daemon and aggregator CLI. It aggregates multiple MCP servers behind a single Unix socket daemon with lazy start, auto-reconnect, and idle shutdown. Core value: reduce agent token consumption by keeping tool schemas in the daemon rather than the model's context window.
+Muxed is an MCP (Model Context Protocol) CLI tool. MCP tools don't belong in the model's context window — muxed offloads them to a CLI so agents call tools through shell commands and scripts instead of loading schemas into context. Under the hood it runs a background process with lazy start, auto-reconnect, and idle shutdown.
 
 ## Monorepo structure
 
-- `packages/muxed` — the CLI + daemon + client library (npm: `muxed`)
+- `packages/muxed` — the CLI + client library (npm: `muxed`)
 - `packages/website` — marketing/docs site (Astro + Starlight + Svelte + Tailwind)
 - `specs/` — design specs and architecture docs
 
