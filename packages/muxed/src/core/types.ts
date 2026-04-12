@@ -58,6 +58,7 @@ export type DaemonConfig = {
   connectTimeout?: number; // default: 30000 (30s)
   requestTimeout?: number; // default: 30000 (30s)
   healthCheckInterval?: number; // default: 30000 (30s)
+  healthCheckTimeout?: number; // default: 10000 (10s)
   maxRestartAttempts?: number; // default: -1 (unlimited)
   maxTotalTimeout?: number; // default: 300000 (5 min)
   taskExpiryTimeout?: number; // default: 3600000 (1 hour)
