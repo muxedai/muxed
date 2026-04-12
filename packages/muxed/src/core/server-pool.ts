@@ -27,6 +27,7 @@ export class ServerPool {
       const manager = new ServerManager(name, serverConfig, {
         connectTimeout: config.daemon?.connectTimeout,
         healthCheckInterval: config.daemon?.healthCheckInterval,
+        healthCheckTimeout: config.daemon?.healthCheckTimeout,
         maxRestartAttempts: config.daemon?.maxRestartAttempts,
       });
       manager.setHealthCallback((serverName, status, error) => {
@@ -472,6 +473,7 @@ export class ServerPool {
         const manager = new ServerManager(name, serverConfig, {
           connectTimeout: newConfig.daemon?.connectTimeout,
           healthCheckInterval: newConfig.daemon?.healthCheckInterval,
+          healthCheckTimeout: newConfig.daemon?.healthCheckTimeout,
           maxRestartAttempts: newConfig.daemon?.maxRestartAttempts,
         });
         manager.setHealthCallback((serverName, status, error) => {
@@ -488,6 +490,7 @@ export class ServerPool {
           const newManager = new ServerManager(name, serverConfig, {
             connectTimeout: newConfig.daemon?.connectTimeout,
             healthCheckInterval: newConfig.daemon?.healthCheckInterval,
+            healthCheckTimeout: newConfig.daemon?.healthCheckTimeout,
             maxRestartAttempts: newConfig.daemon?.maxRestartAttempts,
           });
           newManager.setHealthCallback((serverName, status, error) => {

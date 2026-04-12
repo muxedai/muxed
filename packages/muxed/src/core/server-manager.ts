@@ -30,6 +30,7 @@ import {
 export type ServerManagerOptions = {
   connectTimeout?: number;
   healthCheckInterval?: number;
+  healthCheckTimeout?: number;
   maxRestartAttempts?: number; // -1 = unlimited
 };
 
@@ -65,6 +66,7 @@ export class ServerManager {
   // Options
   private connectTimeout: number | undefined;
   private healthCheckInterval: number;
+  private healthCheckTimeout: number;
   private maxRestartAttempts: number;
 
   // Callbacks
@@ -77,6 +79,7 @@ export class ServerManager {
   ) {
     this.connectTimeout = options?.connectTimeout;
     this.healthCheckInterval = options?.healthCheckInterval ?? 30_000;
+    this.healthCheckTimeout = options?.healthCheckTimeout ?? 10_000;
     this.maxRestartAttempts = options?.maxRestartAttempts ?? -1;
   }
 
@@ -358,7 +361,7 @@ export class ServerManager {
 
     this.lastHealthCheck = new Date();
     try {
-      await this.client.ping();
+      await this.client.ping({ timeout: this.healthCheckTimeout });
       if (this.consecutiveFailures > 0) {
         getLogger().info(
           `Health check recovered after ${this.consecutiveFailures} failures`,
@@ -453,17 +456,22 @@ export class ServerManager {
     this.tools = result.tools;
   }
 
+  private ensureConnected(): Client {
+    if (!this.client || this.status !== 'connected') {
+      throw new Error(`Server "${this.name}" is not connected`);
+    }
+    return this.client;
+  }
+
   async callTool(
     name: string,
     args: Record<string, unknown>,
     timeout?: number
   ): Promise<Awaited<ReturnType<Client['callTool']>>> {
-    if (!this.client) {
-      throw new Error(`Server "${this.name}" is not connected`);
-    }
+    const client = this.ensureConnected();
 
     const options = timeout ? { signal: AbortSignal.timeout(timeout) } : undefined;
-    return await this.client.callTool({ name, arguments: args }, undefined, options);
+    return await client.callTool({ name, arguments: args }, undefined, options);
   }
 
   listResources(): Resource[] {
@@ -477,10 +485,8 @@ export class ServerManager {
   }
 
   async readResource(uri: string): Promise<Awaited<ReturnType<Client['readResource']>>> {
-    if (!this.client) {
-      throw new Error(`Server "${this.name}" is not connected`);
-    }
-    return await this.client.readResource({ uri });
+    const client = this.ensureConnected();
+    return await client.readResource({ uri });
   }
 
   listPrompts(): Prompt[] {
@@ -497,72 +503,58 @@ export class ServerManager {
     name: string,
     args?: Record<string, string>
   ): Promise<Awaited<ReturnType<Client['getPrompt']>>> {
-    if (!this.client) {
-      throw new Error(`Server "${this.name}" is not connected`);
-    }
-    return await this.client.getPrompt({ name, arguments: args });
+    const client = this.ensureConnected();
+    return await client.getPrompt({ name, arguments: args });
   }
 
   async complete(
     ref: { type: string; name: string; uri?: string },
     argument: { name: string; value: string }
   ): Promise<Awaited<ReturnType<Client['complete']>>> {
-    if (!this.client) {
-      throw new Error(`Server "${this.name}" is not connected`);
-    }
+    const client = this.ensureConnected();
     if (!this.capabilities?.completions) {
       throw new Error(`Server "${this.name}" does not support completions`);
     }
-    return await this.client.complete({ ref: ref as never, argument });
+    return await client.complete({ ref: ref as never, argument });
   }
 
   async listTasks(
     cursor?: string
   ): Promise<Awaited<ReturnType<Client['experimental']['tasks']['listTasks']>>> {
-    if (!this.client) {
-      throw new Error(`Server "${this.name}" is not connected`);
-    }
+    const client = this.ensureConnected();
     if (!this.capabilities?.experimental?.tasks) {
       throw new Error(`Server "${this.name}" does not support tasks`);
     }
-    return await this.client.experimental.tasks.listTasks(cursor);
+    return await client.experimental.tasks.listTasks(cursor);
   }
 
   async getTask(
     taskId: string
   ): Promise<Awaited<ReturnType<Client['experimental']['tasks']['getTask']>>> {
-    if (!this.client) {
-      throw new Error(`Server "${this.name}" is not connected`);
-    }
-    return await this.client.experimental.tasks.getTask(taskId);
+    const client = this.ensureConnected();
+    return await client.experimental.tasks.getTask(taskId);
   }
 
   async getTaskResult(
     taskId: string
   ): Promise<Awaited<ReturnType<Client['experimental']['tasks']['getTaskResult']>>> {
-    if (!this.client) {
-      throw new Error(`Server "${this.name}" is not connected`);
-    }
-    return await this.client.experimental.tasks.getTaskResult(taskId);
+    const client = this.ensureConnected();
+    return await client.experimental.tasks.getTaskResult(taskId);
   }
 
   async cancelTask(
     taskId: string
   ): Promise<Awaited<ReturnType<Client['experimental']['tasks']['cancelTask']>>> {
-    if (!this.client) {
-      throw new Error(`Server "${this.name}" is not connected`);
-    }
-    return await this.client.experimental.tasks.cancelTask(taskId);
+    const client = this.ensureConnected();
+    return await client.experimental.tasks.cancelTask(taskId);
   }
 
   async callToolWithTask(
     name: string,
     args: Record<string, unknown>
   ): Promise<{ taskId: string; status: string }> {
-    if (!this.client) {
-      throw new Error(`Server "${this.name}" is not connected`);
-    }
-    const stream = this.client.experimental.tasks.callToolStream({
+    const client = this.ensureConnected();
+    const stream = client.experimental.tasks.callToolStream({
       name,
       arguments: args,
     });

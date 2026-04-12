@@ -49,15 +49,27 @@ export async function ensureDaemon(configPath?: string): Promise<void> {
 
 export async function sendRequest(
   method: string,
-  params?: Record<string, unknown>
+  params?: Record<string, unknown>,
+  timeout = 90_000
 ): Promise<unknown> {
   const socketPath = getSocketPath();
 
   return new Promise<unknown>((resolve, reject) => {
     const socket = net.createConnection(socketPath);
     let buffer = '';
+    let settled = false;
+
+    const timer = setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      socket.destroy();
+      reject(new Error(`Request timed out after ${timeout}ms`));
+    }, timeout);
 
     socket.on('error', (err) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
       if ((err as NodeJS.ErrnoException).code === 'ENOENT') {
         reject(new Error('Daemon is not running. Run `muxed status` to check.'));
       } else if ((err as NodeJS.ErrnoException).code === 'ECONNREFUSED') {
@@ -65,6 +77,13 @@ export async function sendRequest(
       } else {
         reject(err);
       }
+    });
+
+    socket.on('close', () => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      reject(new Error('Daemon closed the connection before sending a response'));
     });
 
     socket.on('connect', () => {
@@ -81,6 +100,10 @@ export async function sendRequest(
       buffer += data.toString();
       const newlineIndex = buffer.indexOf('\n');
       if (newlineIndex === -1) return;
+
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
 
       const line = buffer.slice(0, newlineIndex).trim();
       socket.destroy();
