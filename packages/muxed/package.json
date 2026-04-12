@@ -1,6 +1,6 @@
 {
   "name": "muxed",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "MCP tools don't belong in your model's context window. Offload them to a CLI – agents call tools through shell commands and scripts instead of loading schemas into context.",
   "type": "module",
   "exports": {
@@ -59,7 +59,7 @@
     "dev": "node src/cli.ts",
     "format": "prettier --write 'src/**/*.ts'",
     "format:check": "prettier --check 'src/**/*.ts'",
-    "publish": "tsc --noEmit && prettier --check 'src/**/*.ts' && pnpm build && cp ../../README.md . && npm publish",
+    "release": "tsc --noEmit && prettier --check 'src/**/*.ts' && pnpm build && cp ../../README.md . && npm publish",
     "test": "vitest",
     "type-check": "tsc --noEmit",
     "eval": "npx braintrust eval evals/cases/**/eval.ts",
