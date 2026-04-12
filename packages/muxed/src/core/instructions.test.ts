@@ -7,6 +7,7 @@ import {
   extractMuxedVersion,
   compareSemver,
   injectInstructions,
+  hasBun,
   type InstructionTarget,
 } from './instructions.js';
 
@@ -25,14 +26,17 @@ function makeTarget(tmpDir: string, overrides: Partial<InstructionTarget> = {}):
 }
 
 describe('buildStaticInstructions', () => {
+  const bun = hasBun();
+  const run = bun ? 'bunx' : 'npx';
+
   it('returns non-empty content', () => {
     const content = buildStaticInstructions();
     expect(content.length).toBeGreaterThan(100);
   });
 
-  it('contains CLI usage instructions with bunx', () => {
+  it('uses detected runner in CLI instructions', () => {
     const content = buildStaticInstructions();
-    expect(content).toContain('bunx muxed');
+    expect(content).toContain(`${run} muxed`);
   });
 
   it('contains Node.js script usage', () => {
@@ -41,9 +45,10 @@ describe('buildStaticInstructions', () => {
     expect(content).toContain('muxed/client');
   });
 
-  it('recommends tsx for running scripts', () => {
+  it('includes tsx runner for scripts', () => {
     const content = buildStaticInstructions();
-    expect(content).toContain('bunx tsx');
+    const tsx = bun ? 'bun' : 'npx tsx';
+    expect(content).toContain(`${tsx} script.ts`);
   });
 
   it('explains when to use scripts vs CLI', () => {
