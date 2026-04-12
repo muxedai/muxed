@@ -6,7 +6,10 @@ type Fragments = {
   intro: string;
   grep: (pattern: string) => string;
   tools: (server?: string) => string;
+  toolsSchema: (server?: string) => string;
   info: (name: string) => string;
+  infoDepth: (name: string, depth: number) => string;
+  infoPath: (name: string, path: string) => string;
   call: (name: string, json: string) => string;
   callStdin: (name: string) => string;
   callDryRun: (name: string, json: string) => string;
@@ -22,7 +25,11 @@ const cliFragments: Fragments = {
     'You have access to an `npx muxed` CLI command for interacting with MCP (Model Context Protocol) servers. This command allows you to discover and call MCP tools on demand. Prioritize the use of skills over MCP tools.',
   grep: (p) => `npx muxed grep "${p}"`,
   tools: (s) => (s ? `npx muxed tools ${s}` : 'npx muxed tools'),
+  toolsSchema: (s) =>
+    s ? `npx muxed tools ${s} --include schema` : 'npx muxed tools --include schema',
   info: (n) => `npx muxed info ${n}`,
+  infoDepth: (n, d) => `npx muxed info ${n} --depth ${d}`,
+  infoPath: (n, p) => `npx muxed info ${n} --path ${p}`,
   call: (n, j) => `npx muxed call ${n} '${j}'`,
   callStdin: (n) => `npx muxed call ${n} -`,
   callDryRun: (n, j) => `npx muxed call ${n} '${j}' --dry-run`,
@@ -39,7 +46,13 @@ const toolFragments: Fragments = {
   grep: (p) => `muxed:exec({ "command": "grep ${p}" })`,
   tools: (s) =>
     s ? `muxed:exec({ "command": "tools ${s}" })` : `muxed:exec({ "command": "tools" })`,
+  toolsSchema: (s) =>
+    s
+      ? `muxed:exec({ "command": "tools ${s} --include schema" })`
+      : `muxed:exec({ "command": "tools --include schema" })`,
   info: (n) => `muxed:exec({ "command": "info ${n}" })`,
+  infoDepth: (n, d) => `muxed:exec({ "command": "info ${n} --depth ${d}" })`,
+  infoPath: (n, p) => `muxed:exec({ "command": "info ${n} --path ${p}" })`,
   call: (n, j) => `muxed:exec({ "command": "call ${n}", "input": ${j} })`,
   callStdin: (n) => `muxed:exec({ "command": "call ${n}", "input": { ... } })`,
   callDryRun: (n, j) => `muxed:exec({ "command": "call ${n}", "input": ${j} })`,
@@ -83,15 +96,23 @@ Commands (in order of execution):
 ${f.grep('<pattern>')}                 # Search tool names and descriptions
 ${f.tools('[server]')}                 # List available tools (optionally filter by server)
 
-# STEP 2: ALWAYS CHECK SCHEMA FIRST (MANDATORY)
-${f.info('<server>/<tool>')}           # REQUIRED before ANY call - View JSON schema
+# STEP 2: GET SCHEMA (choose one approach)
+# Option A: Include schemas in tool listing (auto-collapses to fit 48k budget)
+${f.toolsSchema('[server]')}           # List tools with schemas included
+# Option B: Get full schema for a specific tool
+${f.info('<server>/<tool>')}           # View full JSON schema for one tool
+
+# STEP 2b: PROGRESSIVE SCHEMA EXPLORATION (for large schemas)
+${f.infoDepth('<server>/<tool>', 1)}   # Collapse schema at depth 1 (top-level overview)
+${f.infoPath('<server>/<tool>', 'filters')}  # Extract just the 'filters' subtree
+${f.infoPath('<server>/<tool>', 'filters.tags.items')}  # Drill deeper into nested schemas
 
 # STEP 3: OPTIONAL - Validate arguments before calling (dry-run)
 ${f.callDryRun('<server>/<tool>', '<json>')}  # Validate args without executing
 
-# STEP 4: Only after checking schema, make the call
-${f.call('<server>/<tool>', '<json>')}  # Only run AFTER info
-${f.callStdin('<server>/<tool>')}       # Invoke with JSON input (AFTER info)
+# STEP 4: Only after getting the schema, make the call
+${f.call('<server>/<tool>', '<json>')}  # Only run AFTER getting schema
+${f.callStdin('<server>/<tool>')}       # Invoke with JSON input
 ${f.callFields('<server>/<tool>', '<json>', 'field1,field2')}  # Extract specific fields from response
 
 # Discovery commands (use these to find tools)
@@ -169,8 +190,15 @@ Example usage:
 ${f.tools()}                          # See all available MCP tools
 ${f.grep('weather')}                  # Find tools by description
 
-# Get tool details
-${f.info('<server>/<tool>')}          # View JSON schema for input and output if available
+# Get tool schemas (choose the approach that fits)
+${f.toolsSchema()}                    # All tools with schemas (auto-collapses large schemas)
+${f.toolsSchema('slack')}             # Schemas for one server
+${f.info('<server>/<tool>')}          # Full schema for one tool
+
+# Progressive schema exploration (for complex tools)
+${f.infoDepth('<server>/<tool>', 0)}  # Top-level structure only
+${f.infoPath('<server>/<tool>', 'filters')}  # Drill into a subtree
+${f.infoPath('<server>/<tool>', 'filters.tags.items')}  # Drill deeper
 
 # Simple tool call (no parameters)
 ${f.call('weather/get_location', '{}')}

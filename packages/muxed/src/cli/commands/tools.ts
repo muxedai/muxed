@@ -8,14 +8,24 @@ export const toolsCommand = new Command('tools')
   .description('List all available tools, optionally filtered by server name')
   .argument('[server]', 'Filter by server name')
   .option('--json', 'Output as JSON')
-  .action(async (server: string | undefined, opts: { json?: boolean }) => {
-    const configPath = toolsCommand.parent?.opts().config as string | undefined;
-    await ensureDaemon(configPath);
-    const params = server ? { server } : undefined;
-    const result = (await sendRequest('tools/list', params)) as Array<{
-      server: string;
-      tool: Tool;
-    }>;
-    capture('tools_listed', { filtered_by_server: !!server, tool_count: result.length });
-    console.log(opts.json ? formatJson(result) : formatTools(result));
-  });
+  .option('--include <fields>', 'Include additional fields (e.g. "schema")')
+  .option('--depth <n>', 'Schema collapse depth (requires --include schema)', parseInt)
+  .action(
+    async (
+      server: string | undefined,
+      opts: { json?: boolean; include?: string; depth?: number }
+    ) => {
+      const configPath = toolsCommand.parent?.opts().config as string | undefined;
+      await ensureDaemon(configPath);
+      const params: Record<string, unknown> = {};
+      if (server) params.server = server;
+      if (opts.include === 'schema') params.includeSchema = true;
+      if (opts.depth !== undefined) params.schemaDepth = opts.depth;
+      const result = (await sendRequest('tools/list', params)) as Array<{
+        server: string;
+        tool: Tool;
+      }>;
+      capture('tools_listed', { filtered_by_server: !!server, tool_count: result.length });
+      console.log(opts.json ? formatJson(result) : formatTools(result));
+    }
+  );

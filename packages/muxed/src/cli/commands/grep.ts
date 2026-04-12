@@ -8,10 +8,15 @@ export const grepCommand = new Command('grep')
   .description('Search tools by regex pattern across names, titles, and descriptions')
   .argument('<pattern>', 'Regex pattern to search')
   .option('--json', 'Output as JSON')
-  .action(async (pattern: string, opts: { json?: boolean }) => {
+  .option('--include <fields>', 'Include additional fields (e.g. "schema")')
+  .option('--depth <n>', 'Schema collapse depth (requires --include schema)', parseInt)
+  .action(async (pattern: string, opts: { json?: boolean; include?: string; depth?: number }) => {
     const configPath = grepCommand.parent?.opts().config as string | undefined;
     await ensureDaemon(configPath);
-    const result = (await sendRequest('tools/grep', { pattern })) as Array<{
+    const params: Record<string, unknown> = { pattern };
+    if (opts.include === 'schema') params.includeSchema = true;
+    if (opts.depth !== undefined) params.schemaDepth = opts.depth;
+    const result = (await sendRequest('tools/grep', params)) as Array<{
       server: string;
       tool: Tool;
     }>;

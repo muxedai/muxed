@@ -69,6 +69,30 @@ describe('handleToolCommand', () => {
       await handleToolCommand('tools slack');
       expect(mockSendRequest).toHaveBeenCalledWith('tools/list', { server: 'slack' });
     });
+
+    it('passes --include schema flag', async () => {
+      mockSendRequest.mockResolvedValue([]);
+      await handleToolCommand('tools --include schema');
+      expect(mockSendRequest).toHaveBeenCalledWith('tools/list', { includeSchema: true });
+    });
+
+    it('passes --include schema with server filter', async () => {
+      mockSendRequest.mockResolvedValue([]);
+      await handleToolCommand('tools slack --include schema');
+      expect(mockSendRequest).toHaveBeenCalledWith('tools/list', {
+        server: 'slack',
+        includeSchema: true,
+      });
+    });
+
+    it('passes --depth flag', async () => {
+      mockSendRequest.mockResolvedValue([]);
+      await handleToolCommand('tools --include schema --depth 2');
+      expect(mockSendRequest).toHaveBeenCalledWith('tools/list', {
+        includeSchema: true,
+        schemaDepth: 2,
+      });
+    });
   });
 
   describe('grep', () => {
@@ -84,6 +108,25 @@ describe('handleToolCommand', () => {
       expect(result.isError).toBe(true);
       expect(result.content[0]!.text).toContain('Usage');
     });
+
+    it('passes --include schema flag', async () => {
+      mockSendRequest.mockResolvedValue([]);
+      await handleToolCommand('grep weather --include schema');
+      expect(mockSendRequest).toHaveBeenCalledWith('tools/grep', {
+        pattern: 'weather',
+        includeSchema: true,
+      });
+    });
+
+    it('passes --depth flag', async () => {
+      mockSendRequest.mockResolvedValue([]);
+      await handleToolCommand('grep weather --include schema --depth 1');
+      expect(mockSendRequest).toHaveBeenCalledWith('tools/grep', {
+        pattern: 'weather',
+        includeSchema: true,
+        schemaDepth: 1,
+      });
+    });
   });
 
   describe('info', () => {
@@ -96,6 +139,34 @@ describe('handleToolCommand', () => {
     it('returns error without name', async () => {
       const result = await handleToolCommand('info');
       expect(result.isError).toBe(true);
+    });
+
+    it('passes --path flag', async () => {
+      mockSendRequest.mockResolvedValue({ name: 'search', inputSchema: {} });
+      await handleToolCommand('info slack/search --path filters.tags');
+      expect(mockSendRequest).toHaveBeenCalledWith('tools/info', {
+        name: 'slack/search',
+        path: 'filters.tags',
+      });
+    });
+
+    it('passes --depth flag', async () => {
+      mockSendRequest.mockResolvedValue({ name: 'search', inputSchema: {} });
+      await handleToolCommand('info slack/search --depth 1');
+      expect(mockSendRequest).toHaveBeenCalledWith('tools/info', {
+        name: 'slack/search',
+        schemaDepth: 1,
+      });
+    });
+
+    it('passes both --path and --depth flags', async () => {
+      mockSendRequest.mockResolvedValue({ name: 'search', inputSchema: {} });
+      await handleToolCommand('info slack/search --path filters --depth 2');
+      expect(mockSendRequest).toHaveBeenCalledWith('tools/info', {
+        name: 'slack/search',
+        path: 'filters',
+        schemaDepth: 2,
+      });
     });
   });
 

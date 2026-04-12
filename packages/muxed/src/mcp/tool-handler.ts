@@ -18,6 +18,27 @@ function parseCommand(command: string): { subcommand: string; args: string } {
   };
 }
 
+function parseFlags(args: string): {
+  positional: string;
+  flags: Record<string, string>;
+} {
+  const flags: Record<string, string> = {};
+  const positionalParts: string[] = [];
+  const parts = args.split(/\s+/);
+
+  for (let i = 0; i < parts.length; i++) {
+    const part = parts[i]!;
+    if (part.startsWith('--') && i + 1 < parts.length) {
+      const key = part.slice(2);
+      flags[key] = parts[++i]!;
+    } else {
+      positionalParts.push(part);
+    }
+  }
+
+  return { positional: positionalParts.join(' '), flags };
+}
+
 function textResult(data: unknown): ToolResult {
   return {
     content: [{ type: 'text', text: JSON.stringify(data, null, 2) }],
@@ -45,21 +66,34 @@ export async function handleToolCommand(
       }
 
       case 'tools': {
+        const { positional, flags } = parseFlags(args);
         const params: Record<string, unknown> = {};
-        if (args) params.server = args;
+        if (positional) params.server = positional;
+        if (flags.include === 'schema') params.includeSchema = true;
+        if (flags.depth) params.schemaDepth = parseInt(flags.depth, 10);
         const result = await sendRequest('tools/list', params);
         return textResult(result);
       }
 
       case 'grep': {
         if (!args) return errorResult('Usage: grep <pattern>');
-        const result = await sendRequest('tools/grep', { pattern: args });
+        const { positional, flags } = parseFlags(args);
+        if (!positional) return errorResult('Usage: grep <pattern>');
+        const params: Record<string, unknown> = { pattern: positional };
+        if (flags.include === 'schema') params.includeSchema = true;
+        if (flags.depth) params.schemaDepth = parseInt(flags.depth, 10);
+        const result = await sendRequest('tools/grep', params);
         return textResult(result);
       }
 
       case 'info': {
-        if (!args) return errorResult('Usage: info <server/tool>');
-        const result = await sendRequest('tools/info', { name: args });
+        if (!args) return errorResult('Usage: info <server/tool> [--path <path>] [--depth <n>]');
+        const { positional, flags } = parseFlags(args);
+        if (!positional) return errorResult('Usage: info <server/tool>');
+        const params: Record<string, unknown> = { name: positional };
+        if (flags.path) params.path = flags.path;
+        if (flags.depth) params.schemaDepth = parseInt(flags.depth, 10);
+        const result = await sendRequest('tools/info', params);
         return textResult(result);
       }
 

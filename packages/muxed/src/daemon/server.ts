@@ -12,6 +12,7 @@ import {
   toErrorData,
 } from '../core/errors.js';
 import { filterFields } from '../core/field-filter.js';
+import { collapseSchema, extractSubtree, autoDepth } from '../core/schema-collapse.js';
 import fs from 'node:fs';
 
 type JsonRpcRequest = {
@@ -73,12 +74,42 @@ export function createDaemonServer(serverPool: ServerPool, config: MuxedConfig):
       }
 
       case 'tools/list': {
-        const server = (params as { server?: string } | undefined)?.server;
-        const tools = serverPool.listAllTools(server).map(({ server, tool }) => ({
+        const p = params as
+          | {
+              server?: string;
+              includeSchema?: boolean;
+              schemaDepth?: number;
+              schemaBudget?: number;
+            }
+          | undefined;
+        const tools = serverPool.listAllTools(p?.server);
+
+        if (p?.includeSchema) {
+          const schemas = tools.map(
+            ({ tool }) => (tool.inputSchema as Record<string, unknown>) ?? {}
+          );
+          const depth = p.schemaDepth ?? autoDepth(schemas, p.schemaBudget).depth;
+          const result = tools.map(({ server, tool }) => ({
+            server,
+            tool: {
+              name: tool.name,
+              title: tool.title,
+              description: tool.description,
+              annotations: tool.annotations,
+              inputSchema: collapseSchema(
+                (tool.inputSchema as Record<string, unknown>) ?? {},
+                depth
+              ).schema,
+            },
+          }));
+          return { jsonrpc: '2.0', id, result };
+        }
+
+        const result = tools.map(({ server, tool }) => ({
           server,
           tool: { name: tool.name, title: tool.title, annotations: tool.annotations },
         }));
-        return { jsonrpc: '2.0', id, result: tools };
+        return { jsonrpc: '2.0', id, result };
       }
 
       case 'tools/call': {
@@ -150,7 +181,7 @@ export function createDaemonServer(serverPool: ServerPool, config: MuxedConfig):
       }
 
       case 'tools/info': {
-        const p = params as { name?: string } | undefined;
+        const p = params as { name?: string; path?: string; schemaDepth?: number } | undefined;
         if (!p?.name) {
           const err = missingParameterError('name');
           return {
@@ -169,7 +200,36 @@ export function createDaemonServer(serverPool: ServerPool, config: MuxedConfig):
           };
         }
 
-        return { jsonrpc: '2.0', id, result: found.tool };
+        let tool = found.tool;
+
+        if (p.path) {
+          const inputSchema = (tool.inputSchema as Record<string, unknown>) ?? {};
+          const subtree = extractSubtree(inputSchema, p.path);
+          if (!subtree) {
+            return {
+              jsonrpc: '2.0',
+              id,
+              error: {
+                code: -32602,
+                message: `Path not found in schema: ${p.path}`,
+                data: { code: 'SCHEMA_PATH_NOT_FOUND', path: p.path },
+              },
+            };
+          }
+          tool = { ...tool, inputSchema: subtree as typeof tool.inputSchema };
+        }
+
+        if (p.schemaDepth !== undefined) {
+          tool = {
+            ...tool,
+            inputSchema: collapseSchema(
+              (tool.inputSchema as Record<string, unknown>) ?? {},
+              p.schemaDepth
+            ).schema as typeof tool.inputSchema,
+          };
+        }
+
+        return { jsonrpc: '2.0', id, result: tool };
       }
 
       case 'tools/validate': {
@@ -233,7 +293,14 @@ export function createDaemonServer(serverPool: ServerPool, config: MuxedConfig):
       }
 
       case 'tools/grep': {
-        const p = params as { pattern?: string } | undefined;
+        const p = params as
+          | {
+              pattern?: string;
+              includeSchema?: boolean;
+              schemaDepth?: number;
+              schemaBudget?: number;
+            }
+          | undefined;
         if (!p?.pattern) {
           return {
             jsonrpc: '2.0',
@@ -242,7 +309,35 @@ export function createDaemonServer(serverPool: ServerPool, config: MuxedConfig):
           };
         }
         try {
-          return { jsonrpc: '2.0', id, result: serverPool.grepTools(p.pattern) };
+          const matches = serverPool.grepTools(p.pattern);
+
+          if (p.includeSchema) {
+            const schemas = matches.map(
+              ({ tool }) => (tool.inputSchema as Record<string, unknown>) ?? {}
+            );
+            const depth = p.schemaDepth ?? autoDepth(schemas, p.schemaBudget).depth;
+            const result = matches.map(({ server, tool }) => ({
+              server,
+              tool: {
+                name: tool.name,
+                title: tool.title,
+                description: tool.description,
+                annotations: tool.annotations,
+                inputSchema: collapseSchema(
+                  (tool.inputSchema as Record<string, unknown>) ?? {},
+                  depth
+                ).schema,
+              },
+            }));
+            return { jsonrpc: '2.0', id, result };
+          }
+
+          // Default: strip to match tools/list consistency
+          const result = matches.map(({ server, tool }) => ({
+            server,
+            tool: { name: tool.name, title: tool.title, annotations: tool.annotations },
+          }));
+          return { jsonrpc: '2.0', id, result };
         } catch (err) {
           return {
             jsonrpc: '2.0',
