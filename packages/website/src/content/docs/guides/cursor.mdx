@@ -1,0 +1,57 @@
+---
+title: Cursor
+description: Use muxed with Cursor for CLI-based MCP tool access.
+---
+
+Cursor has terminal access, so muxed works through CLI commands. You can also optionally connect muxed as an MCP server for the proxy-tools pattern.
+
+## Setup
+
+```bash
+npx muxed init
+```
+
+`init` discovers your existing MCP servers and injects a `.cursor/rules/muxed.mdc` rule file (if `.cursor/` exists in the current directory). See [Setup](/getting-started/installation/) for details and options.
+
+## Optional: connect as MCP server
+
+If you prefer Cursor to connect to muxed over the MCP protocol, add it to `.cursor/mcp.json` in your project root:
+
+```json
+{
+  "mcpServers": {
+    "muxed": {
+      "command": "npx",
+      "args": ["muxed@latest", "mcp"]
+    }
+  }
+}
+```
+
+For a global configuration that applies to all projects, use `~/.cursor/mcp.json` instead.
+
+## HTTP listener
+
+Instead of stdio, you can use muxed's HTTP listener. This is useful when multiple editors or agents need to connect to the same muxed instance simultaneously.
+
+Enable the HTTP listener in your `muxed.config.json`:
+
+```json
+{
+  "daemon": {
+    "http": {
+      "enabled": true,
+      "port": 3100,
+      "host": "127.0.0.1"
+    }
+  }
+}
+```
+
+Point Cursor to `http://127.0.0.1:3100` for JSON-RPC requests. Origin validation restricts access to localhost only.
+
+## Next steps
+
+- [Setup](/getting-started/installation/) — Full setup details and init options
+- [Configuration](/getting-started/configuration/) — Config options, daemon settings, HTTP servers
+- [CLI Reference](/reference/cli-commands/) — All commands

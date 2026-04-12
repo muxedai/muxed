@@ -1,50 +1,115 @@
 ---
-title: Installation
-description: Install muxed globally or use it with npx.
+title: Setup
+description: Set up muxed for your coding agent in one command.
 ---
+
+## Run `muxed init`
+
+```bash
+npx muxed init
+```
+
+That's the entire setup. Also works with `bunx muxed init` or `pnpx muxed init`.
+
+## What happens when you run it
+
+### 1. Discovers your servers
+
+`init` scans config files from every major agent and editor — Claude Desktop, Cursor, VS Code, Windsurf, Cline, Roo Code, and Amazon Q. It finds every MCP server you already have configured.
+
+### 2. Merges into one config
+
+All discovered servers go into a single `muxed.config.json`. Identical servers that appear in multiple agents get deduplicated. Conflicts (same name, different config) get resolved interactively or by priority.
+
+### 3. Injects agent instructions
+
+`init` writes CLI usage instructions directly into your agent's instruction files:
+
+| Agent | Instruction file |
+|---|---|
+| Claude Code | `~/.claude/CLAUDE.md` |
+| Codex | `~/.codex/AGENTS.md` |
+| Cursor | `.cursor/rules/muxed.mdc` (if `.cursor/` exists) |
+
+Use `--local` to also inject into project-level `CLAUDE.md` and `AGENTS.md`.
+
+## How it works in your coding agent
+
+After init, your coding agent reads the injected instructions and uses the CLI to discover and call tools on demand. No tool schemas enter the context window.
+
+### The workflow: discover, inspect, call
+
+```bash
+# 1. Find tools by searching names and descriptions
+muxed grep "database"
+
+# 2. Inspect the schema before calling (mandatory — schemas can't be guessed)
+muxed info postgres/query
+
+# 3. Call with correct parameters
+muxed call postgres/query '{"sql": "SELECT * FROM users LIMIT 10"}'
+```
+
+The agent follows this pattern for every tool interaction. It pulls in only what it needs for the current step instead of loading everything up front.
+
+### Scripts for multi-step workflows
+
+When an agent needs multiple MCP calls, data processing, or conditional logic, it writes and executes a TypeScript script instead of making individual CLI calls:
+
+```typescript
+import { createClient } from 'muxed/client';
+
+const client = await createClient();
+
+const tools = await client.tools();
+const result = await client.call('server/tool', { param: 'value' });
+const data = await client.call('db/query', { sql: 'SELECT ...' });
+
+console.log(JSON.stringify({ tools: tools.length, result, data }));
+```
+
+A single script execution replaces many sequential CLI invocations — fewer round-trips, less token usage.
+
+## Behind the scenes
+
+There is no explicit start command. The muxed daemon starts automatically the first time you run any command. Servers stay warm between calls — no cold starts, no repeated connection negotiation. After 5 minutes of inactivity, the daemon shuts itself down. The idle timeout is configurable.
+
+## Init options
+
+| Flag | Description |
+|---|---|
+| `--dry-run` | Show what would be done without writing files |
+| `-y, --yes` | Skip prompts; resolve conflicts by priority |
+| `--delete` | Remove imported servers from original agent configs |
+| `--no-replace` | Don't add muxed entry to agent configs |
+| `--local` | Also inject instructions into local agent files |
+| `--no-instructions` | Skip injecting CLI instructions |
 
 ## Prerequisites
 
 - **Node.js 18 or later** — check with `node --version`
 
-## Install globally
+## No existing servers?
 
-```bash
-npm install -g muxed
+If you don't have any MCP servers configured in other agents yet, create a config manually:
+
+```json
+{
+  "mcpServers": {
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "/home/user/projects"]
+    }
+  }
+}
 ```
 
-This makes the `muxed` command available everywhere on your system.
+Save this as `muxed.config.json` in your project root, then run `muxed init` to inject the agent instructions.
 
-## Or use npx (no install needed)
-
-You can run muxed directly without installing it:
-
-```bash
-npx muxed <command>
-```
-
-Every example in these docs works the same way with `npx muxed` in place of `muxed`.
-
-## Verify installation
-
-Check that muxed is available:
-
-```bash
-muxed --version
-```
-
-List configured servers:
-
-```bash
-muxed servers
-```
-
-## How it works
-
-There is no explicit start command. muxed starts automatically the first time you run any command. It will also shut itself down after 5 minutes of inactivity (no incoming requests). The idle timeout is configurable.
-
-You do not need to manage the lifecycle yourself — it starts on demand and exits when idle.
+See [Configuration](/getting-started/configuration/) for full config options including HTTP servers, OAuth, and daemon settings.
 
 ## Next steps
 
-Head over to the [Quick Start](/getting-started/quick-start/) to configure your first MCP server.
+- [Configuration](/getting-started/configuration/) — Full config options
+- [Claude Code](/guides/claude-code/) — Why muxed is especially effective with Claude Code
+- [CLI Reference](/reference/cli-commands/) — All available commands

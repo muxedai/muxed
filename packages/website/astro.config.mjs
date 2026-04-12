@@ -31,25 +31,25 @@ export default defineConfig({
         {
           label: "Getting Started",
           items: [
-            { label: "Installation", slug: "getting-started/installation" },
-            { label: "Quick Start", slug: "getting-started/quick-start" },
+            { label: "Setup", slug: "getting-started/installation" },
             { label: "Configuration", slug: "getting-started/configuration" },
           ],
         },
         {
-          label: "Guides",
+          label: "Integrations",
           items: [
             { label: "Claude Code", slug: "guides/claude-code" },
+            { label: "Codex", slug: "guides/codex" },
+            { label: "Cursor", slug: "guides/cursor" },
             { label: "Claude Desktop", slug: "guides/claude-desktop" },
-            { label: "Cursor & Windsurf", slug: "guides/cursor-windsurf" },
-            { label: "Custom Agents", slug: "guides/custom-agents" },
-            { label: "Programmatic API", slug: "guides/programmatic-api" },
+            { label: "MCP", slug: "guides/mcp" },
           ],
         },
         {
           label: "Reference",
           items: [
             { label: "CLI Commands", slug: "reference/cli-commands" },
+            { label: "Programmatic API", slug: "reference/programmatic-api" },
             { label: "Config Schema", slug: "reference/config-schema" },
             { label: "Architecture", slug: "reference/architecture" },
           ],

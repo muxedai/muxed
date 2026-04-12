@@ -1,0 +1,107 @@
+---
+title: MCP
+description: Use muxed as an MCP server for any MCP-compatible client.
+---
+
+Any MCP-compatible client can connect to muxed as a single MCP server. This gives the client access to all your configured servers through one entry point.
+
+## Setup
+
+First, run `muxed init` to discover and consolidate your servers:
+
+```bash
+npx muxed init
+```
+
+See [Setup](/getting-started/installation/) for details and options.
+
+Then add muxed as an MCP server in your client's config. The command is:
+
+```json
+{
+  "mcpServers": {
+    "muxed": {
+      "command": "npx",
+      "args": ["muxed@latest", "mcp"]
+    }
+  }
+}
+```
+
+Running `muxed mcp` starts a stdio MCP proxy — the client connects to this process and communicates via the MCP protocol.
+
+## Client-specific config paths
+
+| Client | Config file |
+|---|---|
+| Windsurf | `~/.codeium/windsurf/mcp_config.json` |
+| VS Code | `.vscode/mcp.json` or `~/.vscode/mcp.json` |
+| Cline | `~/.cline/mcp_settings.json` |
+| Roo Code | `~/.roo-code/mcp_settings.json` |
+
+## HTTP listener
+
+Instead of stdio, you can expose muxed over HTTP. This is useful when multiple clients need to connect to the same muxed instance simultaneously.
+
+Enable the HTTP listener in your `muxed.config.json`:
+
+```json
+{
+  "daemon": {
+    "http": {
+      "enabled": true,
+      "port": 3100,
+      "host": "127.0.0.1"
+    }
+  }
+}
+```
+
+The HTTP listener accepts POST requests with JSON-RPC payloads. Origin validation restricts access to localhost only.
+
+## Multi-client usage
+
+muxed runs a single background process that serves all connected clients simultaneously:
+
+- All clients share the same muxed instance and server connections
+- Same config file, same tools available everywhere
+- One process manages server health, reconnection, and lifecycle
+- No duplicate server processes — each MCP server runs once
+
+## CLI-based scripting
+
+Agents and scripts can chain `muxed call` commands through bash pipes. The model never sees intermediate data:
+
+```bash
+# Query → filter → write. Model never sees the raw 10k rows.
+muxed call postgres/query \
+    '{"sql":"SELECT * FROM users"}' --json \
+  | jq '[.[] | select(.active)]' \
+  | muxed call filesystem/write_file \
+    '{"path":"/tmp/active.json"}' -
+```
+
+Key features for scripting:
+
+- `--json` outputs machine-readable JSON for piping
+- `-` as the JSON argument reads from stdin
+- Chain multiple `muxed call` commands with `|` pipes
+- Use `jq`, `sed`, `awk`, or any Unix tool for filtering between calls
+
+## Config management
+
+You can manage servers from the command line without editing JSON by hand:
+
+```bash
+muxed mcp add <name> <command> [args...]    # Add a server
+muxed mcp remove <name>                      # Remove a server
+muxed mcp list                               # List configured servers
+muxed mcp add-from-claude-desktop            # Import from Claude Desktop
+```
+
+## Next steps
+
+- [Setup](/getting-started/installation/) — Full setup details
+- [Configuration](/getting-started/configuration/) — Config options, daemon settings
+- [Programmatic API](/reference/programmatic-api/) — TypeScript client for building custom agents
+- [CLI Reference](/reference/cli-commands/) — All commands
