@@ -1,15 +1,3 @@
-- name: dashboard-blank
-  input: >
-    hey, customer acme-corp says their dashboard is just showing a blank page since this morning. can you take a look?
-  expected: >
-    The agent should follow the investigation skill before diving into individual tools.
-
-- name: error-spike
-  input: >
-    we're seeing a big spike in 503s on the dashboard endpoint. not sure what changed.
-  expected: >
-    The agent should follow the investigation skill before diving into individual tools.
-
 - name: partial-outage
   input: >
     some users are complaining the dashboard works fine but others get timeouts. might be related to the rollout we did yesterday?
@@ -33,3 +21,9 @@
     something seems off with the dashboard. users are reporting it's "broken" but nobody is giving specifics.
   expected: >
     The agent should follow the investigation skill before diving into individual tools.
+
+- name: trace-debug
+  input: >
+    how was experience here? https://muxed.ai/chat?id=284
+  expected: >
+    The agent should call the exploring-llm-traces skill to debug the trace from the URL.
