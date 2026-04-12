@@ -41,13 +41,41 @@ async function waitForPort(port: number, timeoutMs = 10_000): Promise<void> {
 }
 
 /**
+ * Wait until a TCP port is no longer in use.
+ */
+async function waitForPortFree(port: number, timeoutMs = 5_000): Promise<void> {
+  const start = Date.now();
+  while (Date.now() - start < timeoutMs) {
+    const inUse = await new Promise<boolean>((resolve) => {
+      const srv = createServer();
+      srv.once('error', () => {
+        srv.close();
+        resolve(true);
+      });
+      srv.listen(port, () => {
+        srv.close(() => resolve(false));
+      });
+    });
+    if (!inUse) return;
+    await new Promise((r) => setTimeout(r, 100));
+  }
+  throw new Error(`Port ${port} still in use after ${timeoutMs}ms`);
+}
+
+/**
  * Start a single mock MCP server in HTTP mode.
  */
 async function startServer(def: MockServerDef): Promise<{
   server: RunningServer;
   process: ChildProcess;
 }> {
-  const port = await getRandomPort();
+  const port = def.port ?? (await getRandomPort());
+
+  // If using a fixed port, wait for it to be free first
+  if (def.port) {
+    await waitForPortFree(port, 5_000).catch(() => {});
+  }
+
   const serverArgs = [
     '--experimental-strip-types',
     def.scriptPath,
@@ -100,6 +128,7 @@ export async function startMockServers(
   const processes = results.map((r) => r.process);
 
   const cleanup = async () => {
+    const ports = servers.map((s) => s.port);
     for (const proc of processes) {
       if (!proc.killed) {
         proc.kill('SIGTERM');
@@ -115,6 +144,8 @@ export async function startMockServers(
         });
       }
     }
+    // Wait for all fixed ports to be free before returning
+    await Promise.all(ports.map((p) => waitForPortFree(p, 5_000).catch(() => {})));
   };
 
   return { servers, cleanup };

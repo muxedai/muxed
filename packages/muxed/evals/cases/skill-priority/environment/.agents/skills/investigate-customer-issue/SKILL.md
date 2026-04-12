@@ -10,13 +10,13 @@ When investigating customer-reported issues, ALWAYS follow this skill.
 ## Steps
 
 1. **Check Logs First**: Search application logs for errors related to the reported issue.
-   Use the logging server's `search_logs` or `get_error_summary` tools to find recent errors.
+   Use the PostHog logs tools to search for recent errors, filter by severity, and identify affected services.
 
-2. **Query Analytics Events**: Check analytics events to understand the scope and timeline of the issue.
-   Use the analytics server's `query_events` or `query_insights` tools to find relevant events.
+2. **Query Analytics Events**: Check analytics data to understand the scope and timeline of the issue.
+   Use PostHog analytics or trends tools to find relevant events, error rates, and patterns over time.
 
 3. **Check Feature Flags**: Verify if any recent feature flag changes could have caused the issue.
-   Use the feature-flags server's `get_flag_history` or `list_flags` tools to check recent changes.
+   Use the PostHog feature flag tools to list flags and check recent activity or rollout changes.
 
 4. **Summarize**: Provide a summary of findings including:
    - Root cause (what went wrong)
