@@ -3,7 +3,7 @@ title: Cursor & Windsurf
 description: Integrate muxed with Cursor and Windsurf editors.
 ---
 
-Both Cursor and Windsurf support MCP servers through their configuration files. Adding muxed as a single MCP entry gives both editors access to all your configured servers through one daemon.
+Both Cursor and Windsurf support MCP servers through their configuration files. Adding muxed as a single MCP entry gives both editors access to all your configured servers through one CLI.
 
 ## Cursor setup
 
@@ -41,7 +41,7 @@ Add muxed as an MCP server in Windsurf's config at `~/.codeium/windsurf/mcp_conf
 
 ## Alternative: HTTP listener
 
-Instead of stdio, you can use muxed's HTTP listener. This is useful when multiple editors or agents need to connect to the same daemon simultaneously.
+Instead of stdio, you can use muxed's HTTP listener. This is useful when multiple editors or agents need to connect to the same muxed instance simultaneously.
 
 1. Enable the HTTP listener in your `muxed.config.json`:
 
@@ -63,11 +63,11 @@ The HTTP listener accepts POST requests with JSON-RPC payloads. Origin validatio
 
 ## Multi-editor usage
 
-muxed runs a single daemon process that serves all connected editors simultaneously:
+muxed runs a single background process that serves all connected editors simultaneously:
 
-- All editors share the same daemon and server connections
+- All editors share the same muxed instance and server connections
 - Same config file, same tools available everywhere
-- One daemon manages server health, reconnection, and lifecycle
+- One process manages server health, reconnection, and lifecycle
 - No duplicate server processes — each MCP server runs once
 
 ## Importing existing servers

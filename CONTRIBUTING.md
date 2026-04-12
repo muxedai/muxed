@@ -26,7 +26,7 @@ The project uses Prettier for formatting. A pre-commit hook runs automatically v
 ## Project Structure
 
 - `src/cli/` – CLI commands and client
-- `src/daemon/` – Background daemon (socket server, process management)
+- `src/daemon/` – Background process (socket server, process management)
 - `src/core/` – Server management, config loading, types
 - `src/utils/` – Path utilities, logging
 - `specs/` – Design specifications

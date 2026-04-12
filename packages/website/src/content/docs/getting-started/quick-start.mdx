@@ -27,7 +27,7 @@ This prints every tool exposed by every configured server, with names and one-li
 muxed call filesystem/read_file '{"path": "/tmp/config.json"}'
 ```
 
-That's it. The tool runs through the daemon and only the result comes back.
+That's it. The tool runs through muxed and only the result comes back.
 
 ## Manual configuration
 
@@ -69,7 +69,7 @@ This is the core workflow: search, inspect, call. Agents follow the same pattern
 
 ## What happened behind the scenes
 
-- **The daemon started automatically** on the first command. There is nothing to launch or manage.
+- **muxed started automatically** on the first command. There is nothing to launch or manage.
 - **It connected to the configured MCP servers** and cached their tool schemas in memory.
 - **`grep` searched tool names and descriptions** across all servers, without any of those schemas entering the LLM context.
 - **`call` invoked the tool and returned only the result** — the raw output, ready for the agent to use.

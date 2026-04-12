@@ -17,7 +17,7 @@ Offload them to a CLI. Let your agents call tools through shell commands and scr
 
 Every MCP server you connect dumps its full tool schema into the model's context window. A standard setup with 3-4 servers can consume 20-30% of the context before the agent even starts working. More tools in context means worse tool selection, less room for reasoning, and your carefully crafted instructions get drowned out by thousands of tokens of schema JSON. This isn't a model problem. It's an architecture problem.
 
-**muxed** fixes this by moving tool management out of the harness and into a CLI. Tools stay in the daemon — agents discover and call them on-demand through the CLI. No schemas in context. Chain tool calls in bash scripts without intermediate results flowing through the LLM. The daemon auto-starts on first command and shuts down after 5 minutes idle.
+**muxed** fixes this by moving tool management out of the harness and into a CLI. Tools stay in the CLI — agents discover and call them on-demand through shell commands. No schemas in context. Chain tool calls in bash scripts without intermediate results flowing through the LLM. The CLI auto-starts a background process on first command and shuts down after 5 minutes idle.
 
 ---
 

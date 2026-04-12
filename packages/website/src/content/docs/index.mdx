@@ -1,9 +1,9 @@
 ---
 title: Overview
-description: One daemon to manage them all. The optimization layer for your MCP infrastructure.
+description: MCP tools don't belong in your model's context window. Offload them to a CLI.
 ---
 
-muxed is a background daemon and CLI that sits between your AI agent and your MCP servers. It aggregates multiple Model Context Protocol servers into a single endpoint, keeps tool schemas out of your model's context window, and lets agents discover and call tools on demand.
+muxed is a CLI that sits between your AI agent and your MCP servers. MCP tools don't belong in the model's context window — muxed offloads them so agents call tools through shell commands and scripts instead of loading schemas into context.
 
 ## The problem
 
@@ -19,9 +19,9 @@ These aren't edge cases. They're the default behavior of any agent that loads MC
 
 ### Lazy discovery
 
-Tools stay in the daemon, not in the prompt. Agents discover tools on demand with `muxed grep` and `muxed info`, pulling only what they need for the current step.
+Tools stay in the CLI, not in the prompt. Agents discover tools on demand with `muxed grep` and `muxed info`, pulling only what they need for the current step.
 
-### Background daemon
+### Always warm
 
 Servers stay warm between calls. No cold starts, no repeated connection negotiation, no waiting for servers to spin up every time an agent needs a tool.
 
@@ -31,7 +31,7 @@ Call tools from shell scripts or TypeScript with typed results. muxed works anyw
 
 ### Context reclamation
 
-By offloading tool schemas to muxed, your agent's context window is freed for skills, prompts, and the actual task. Fewer schemas means more room for the content that drives correct behavior.
+By offloading tool schemas to the CLI, your agent's context window is freed for skills, prompts, and the actual task. Fewer schemas means more room for the content that drives correct behavior.
 
 ## Context engineering, not just plumbing
 

@@ -1,7 +1,7 @@
 {
   "name": "muxed",
   "version": "0.2.1",
-  "description": "MCP server daemon and aggregator CLI – aggregate all your Model Context Protocol servers behind a single background daemon with lazy start, auto-reconnect, and idle shutdown",
+  "description": "MCP tools don't belong in your model's context window. Offload them to a CLI – agents call tools through shell commands and scripts instead of loading schemas into context.",
   "type": "module",
   "exports": {
     ".": {

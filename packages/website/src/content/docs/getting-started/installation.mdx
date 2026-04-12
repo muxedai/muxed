@@ -39,11 +39,11 @@ List configured servers:
 muxed servers
 ```
 
-## How the daemon works
+## How it works
 
-There is no explicit start command. The muxed daemon starts automatically the first time you run any command. It will also shut itself down after 5 minutes of inactivity (no incoming requests). The idle timeout is configurable.
+There is no explicit start command. muxed starts automatically the first time you run any command. It will also shut itself down after 5 minutes of inactivity (no incoming requests). The idle timeout is configurable.
 
-You do not need to manage the daemon lifecycle yourself — it starts on demand and exits when idle.
+You do not need to manage the lifecycle yourself — it starts on demand and exits when idle.
 
 ## Next steps
 
