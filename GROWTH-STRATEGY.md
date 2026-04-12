@@ -2,7 +2,7 @@
 
 ## Current State
 
-- **Repo**: github.com/skoob13/muxed (currently private/404)
+- **Repo**: github.com/muxedai/muxed (currently private/404)
 - **npm**: not published yet
 - **Competitors**: mcp-proxy, MetaMCP, 1MCP, Plugged.in, MCPEz, Mozilla muxed-proxy
 - **Differentiators**: background daemon with lazy start/idle shutdown, full CLI, MCP 2025-11-25 compliance, task support, Claude Desktop config compatibility
@@ -25,7 +25,7 @@ npm publish
 
 - The package.json already has description, keywords, repository, homepage, author, license
 - npm is a **major training data source** for LLMs – packages with good metadata get indexed
-- Consider scoped name (`@skoob13/muxed`) if `muxed` is taken
+- Consider scoped name (`@muxedai/muxed`) if `muxed` is taken
 
 ### 1.3 Create a GitHub Release
 
@@ -43,7 +43,7 @@ These directories are the main places LLMs and developers discover MCP tools.
 
 - **URL**: https://github.com/punkpeye/awesome-mcp-servers
 - **Action**: Open a PR adding muxed to the appropriate category (likely "Server Management" or "Developer Tools")
-- **Format**: `[muxed](https://github.com/skoob13/muxed) - MCP server daemon and aggregator CLI with lazy start, auto-reconnect, and idle shutdown` + `local` tag
+- **Format**: `[muxed](https://github.com/muxedai/muxed) - MCP server daemon and aggregator CLI with lazy start, auto-reconnect, and idle shutdown` + `local` tag
 - **Impact**: This is mirrored to mcpservers.org automatically – very high visibility
 
 ### 2.2 PulseMCP (8,000+ servers listed)

@@ -45,12 +45,12 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/skoob13/muxed.git",
+    "url": "https://github.com/muxedai/muxed.git",
     "directory": "packages/muxed"
   },
-  "homepage": "https://github.com/skoob13/muxed#readme",
+  "homepage": "https://github.com/muxedai/muxed#readme",
   "bugs": {
-    "url": "https://github.com/skoob13/muxed/issues"
+    "url": "https://github.com/muxedai/muxed/issues"
   },
   "author": "Georgiy Tarasov",
   "license": "MIT",

@@ -5,7 +5,7 @@ Thanks for your interest in contributing to muxed! This document covers the basi
 ## Development Setup
 
 ```bash
-git clone https://github.com/skoob13/muxed.git
+git clone https://github.com/muxedai/muxed.git
 cd muxed
 pnpm install
 ```
