@@ -19,10 +19,11 @@ import { mcpCommand } from './commands/mcp.js';
 import { typegenCommand } from './commands/typegen.js';
 import { telemetryCommand } from './commands/telemetry.js';
 import { capture, shutdown } from '../analytics.js';
+import { getVersion } from '../utils/version.js';
 
 export async function runCli(): Promise<void> {
   const program = new Command();
-  program.name('muxed').description('The optimization layer for MCP').version('0.1.0');
+  program.name('muxed').description('The optimization layer for MCP').version(getVersion());
   program.enablePositionalOptions();
   program.option('--config <path>', 'Path to config file');
 

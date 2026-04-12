@@ -8,6 +8,7 @@ import {
 } from '../../core/agents.js';
 import type { Conflict, InitResult, UnresolvedConflict } from '../../core/agents.js';
 import type { ServerConfig } from '../../core/types.js';
+import { injectAllInstructions } from '../../core/instructions.js';
 import { formatInit, formatJson } from '../formatter.js';
 import { confirm, choose } from '../prompt.js';
 import { capture } from '../../analytics.js';
@@ -72,15 +73,19 @@ export const initCommand = new Command('init')
   .option('--dry-run', 'Show what would be done without writing files')
   .option('--json', 'Output as JSON')
   .option('-y, --yes', 'Skip prompts; resolve conflicts by priority (claude-code > cursor > first)')
-  .option('--no-delete', 'Keep original server entries in agent configs')
+  .option('--delete', 'Remove imported servers from original agent configs')
   .option('--no-replace', "Don't add muxed entry to agent configs")
+  .option('--local', 'Also inject instructions into local agent files (CLAUDE.md, AGENTS.md)')
+  .option('--no-instructions', 'Skip injecting CLI instructions into agent files')
   .action(
     async (opts: {
       dryRun?: boolean;
       json?: boolean;
       yes?: boolean;
-      delete: boolean;
+      delete?: boolean;
       replace: boolean;
+      local?: boolean;
+      instructions: boolean;
     }) => {
       const configPath = initCommand.parent?.opts().config as string | undefined;
       const isInteractive = !opts.dryRun && !opts.json && !opts.yes && !!process.stdin.isTTY;
@@ -139,7 +144,7 @@ export const initCommand = new Command('init')
         ? await confirm(
             'Remove imported servers from agent config files? (backups will be created)'
           )
-        : opts.delete;
+        : !!opts.delete;
 
       if (!opts.dryRun && shouldDelete) {
         for (const dc of discovered) {
@@ -154,7 +159,16 @@ export const initCommand = new Command('init')
         }
       }
 
-      // 8. Build result
+      // 8. Inject instructions into agent instruction files
+      const shouldInject = isInteractive
+        ? await confirm('Inject muxed CLI instructions into agent files? (CLAUDE.md, AGENTS.md)')
+        : opts.instructions;
+
+      const instructionResults = shouldInject
+        ? injectAllInstructions({ local: !!opts.local, dryRun: !!opts.dryRun })
+        : [];
+
+      // 9. Build result
       const initResult: InitResult = {
         discovered: discovered.map((d) => ({
           agent: d.agent.name,
@@ -169,6 +183,7 @@ export const initCommand = new Command('init')
         modifiedFiles,
         muxedConfigPath: muxedPath,
         dryRun: opts.dryRun ?? false,
+        instructionResults,
       };
 
       capture('init_run', {
@@ -177,6 +192,8 @@ export const initCommand = new Command('init')
         conflict_count: conflicts.length,
         warning_count: warnings.length,
         discovered_agents: initResult.discovered.map((d) => d.agent),
+        instruction_targets: instructionResults.length,
+        instruction_actions: instructionResults.map((r) => r.action),
       });
       console.log(opts.json ? formatJson(initResult) : formatInit(initResult));
     }

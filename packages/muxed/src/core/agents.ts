@@ -60,6 +60,13 @@ export type InitResult = {
   modifiedFiles: string[];
   muxedConfigPath: string;
   dryRun: boolean;
+  instructionResults: Array<{
+    target: string;
+    filePath: string;
+    action: 'created' | 'updated' | 'skipped' | 'up-to-date';
+    previousVersion?: string;
+    newVersion?: string;
+  }>;
 };
 
 // All known agent config locations
