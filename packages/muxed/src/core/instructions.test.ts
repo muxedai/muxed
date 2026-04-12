@@ -56,6 +56,27 @@ describe('buildStaticInstructions', () => {
     expect(content).toContain('Scripts');
     expect(content).toContain('CLI');
   });
+
+  it('includes MCP CLI Proxy heading', () => {
+    const content = buildStaticInstructions();
+    expect(content).toContain('# Muxed — MCP CLI Proxy');
+  });
+
+  it('includes progressive schema exploration', () => {
+    const content = buildStaticInstructions();
+    expect(content).toContain('--depth 1');
+    expect(content).toContain('--path filters');
+  });
+
+  it('includes tools --include schema', () => {
+    const content = buildStaticInstructions();
+    expect(content).toContain('--include schema');
+  });
+
+  it('includes usage examples', () => {
+    const content = buildStaticInstructions();
+    expect(content).toContain('slack/search_private');
+  });
 });
 
 describe('extractMuxedVersion', () => {
